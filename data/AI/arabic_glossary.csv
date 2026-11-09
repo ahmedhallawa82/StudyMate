@@ -1,0 +1,77 @@
+arabic,english
+الذكاء الاصطناعي,artificial intelligence
+ذكاء اصطناعي,artificial intelligence
+اختبار تورنج,turing test
+تورنج,turing test
+وكيل ذكي,intelligent agent
+الوكيل,agent
+وكيل,agent
+عقلاني,rational
+المستشعرات,sensors
+حساسات,sensors
+المشغلات,actuators
+البيئة,environment
+بيئة,environment
+قابلة للملاحظة بالكامل,fully observable
+ملاحظة جزئية,partially observable
+حتمية,deterministic
+عشوائية,stochastic
+متسلسلة,sequential
+ثابتة,static
+ديناميكية,dynamic
+منفصلة,discrete
+مستمرة,continuous
+صياغة المشكلة,problem formulation
+الحالة الابتدائية,initial state
+حالة الهدف,goal test
+اختبار الهدف,goal test
+تكلفة المسار,path cost
+البحث بالعرض,breadth first search bfs
+البحث العرضي,breadth first search bfs
+البحث بالعمق,depth first search dfs
+البحث العمقي,depth first search dfs
+البحث بالتكلفة الموحدة,uniform cost search ucs
+التكلفة الموحدة,uniform cost search ucs
+التعميق التكراري,iterative deepening search
+البحث محدود العمق,depth limited search
+البحث المستنير,informed search
+البحث غير المستنير,uninformed search
+دالة استدلالية,heuristic function
+الاستدلالية,heuristic
+هيورستك,heuristic
+البحث الجشع,greedy best first search
+الجشع,greedy
+مقبولة,admissible
+متسقة,consistent
+خوارزمية ايه ستار,astar search
+ايه ستار,astar
+البحث التنافسي,adversarial search
+الالعاب,games
+مينيماكس,minimax
+التقليم,pruning
+الفا بيتا,alpha beta pruning
+ألفا بيتا,alpha beta pruning
+الاحتمالات,probability
+احتمال,probability
+شبكة بايز,bayes network
+قاعدة بايز,bayes rule
+الاستقلال الشرطي,conditional independence
+مستقلة,independent
+الاستدلال الاحتمالي,probabilistic inference
+الاستدلال,inference
+التعداد,enumeration
+حذف المتغيرات,variable elimination
+اخذ العينات,sampling
+العينات,sampling
+ما هو,what is
+ما هي,what is
+ايه هو,what is
+ايه هي,what is
+يعني ايه,what is
+الفرق بين,difference between
+تعقيد الوقت,time complexity
+تعقيد المساحة,space complexity
+مثالية,optimal
+كاملة,complete
+طابور,queue
+مكدس,stack

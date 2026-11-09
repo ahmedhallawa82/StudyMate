@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Lecturer{% endblock %}
+{% block content %}
+<div class="center-box card">
+  <h2>Lecturer area</h2>
+  <p class="muted">The dashboard and the admin page are for the course lecturer.</p>
+  <form method="post">
+    <input type="password" name="password" placeholder="Password" autofocus required>
+    <p class="muted small">Default password: <code>lecturer123</code> (change it in config.py).</p>
+    <button class="btn teal" type="submit">Enter</button>
+  </form>
+</div>
+{% endblock %}

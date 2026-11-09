@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Ask{% endblock %}
+{% block content %}
+<div class="grid">
+  <section>
+    <div class="card">
+      <form class="inline" method="get" action="{{ url_for('ask') }}">
+        <input type="text" name="q" value="{{ question }}" placeholder="Ask a question about the course, e.g. What is an admissible heuristic?" autofocus required>
+        <select name="method" title="Search method">
+          <option value="tfidf" {{ 'selected' if method == 'tfidf' }}>TF-IDF</option>
+          <option value="bm25" {{ 'selected' if method == 'bm25' }}>BM25</option>
+        </select>
+        <button class="btn" type="submit">Ask</button>
+      </form>
+      <p class="muted small" style="margin:8px 0 0">You can also ask in Arabic (e.g. «ايه هو البحث بالعرض»).</p>
+    </div>
+
+    {% if result %}
+      {% if result.found %}
+        <p class="muted">Detected topic: <b>{{ result.topic_name }}</b> ({{ result.confidence }}% confidence)
+          · {{ result.hits|length }} passages found</p>
+        {% for h in result.hits %}
+        <div class="result">
+          <span class="score">similarity {{ h.score }}</span>
+          <div class="src">Lecture {{ h.lecture }} · Slide {{ h.slide }}
+            <span class="tag">{{ names.get(h.topic, h.topic) }}</span></div>
+          <div>{{ h.html }}</div>
+        </div>
+        {% endfor %}
+        <div class="muted small" id="helpful">Was this helpful?
+          <form method="post" action="{{ url_for('helpful', log_id=result.log_id, answer='yes') }}" style="display:inline">
+            <button class="btn ghost small" type="submit">Yes</button></form>
+          <form method="post" action="{{ url_for('helpful', log_id=result.log_id, answer='no') }}" style="display:inline">
+            <button class="btn ghost small" type="submit">No</button></form>
+        </div>
+        <p style="margin-top:14px"><a class="btn teal small" href="{{ url_for('practice', topic=result.topic) }}">Practise {{ result.topic_name }}</a></p>
+      {% else %}
+        <div class="notfound"><b>Not found in the course.</b><br>
+          This question is not covered by the {{ course }} lecture slides, so StudyMate will not invent an answer.
+          Try other words, or ask your lecturer.</div>
+        <div class="muted small" style="margin-top:10px">Was this the right decision?
+          <form method="post" action="{{ url_for('helpful', log_id=result.log_id, answer='yes') }}" style="display:inline">
+            <button class="btn ghost small" type="submit">Yes</button></form>
+          <form method="post" action="{{ url_for('helpful', log_id=result.log_id, answer='no') }}" style="display:inline">
+            <button class="btn ghost small" type="submit">No</button></form>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="card">
+        <h3>Try for example</h3>
+        <ul class="small">
+          {% for ex in ["What is an admissible heuristic?", "difference between BFS and uniform cost search",
+                        "when does alpha beta prune a branch", "what does PEAS stand for",
+                        "how does variable elimination work"] %}
+          <li><a href="{{ url_for('ask', q=ex) }}">{{ ex }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </section>
+  <aside>{% include "_topics_panel.html" %}</aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+// send the helpful vote without reloading the page
+document.querySelectorAll('form[action*="/helpful/"]').forEach(f => f.addEventListener('submit', e => {
+  e.preventDefault();
+  fetch(f.action, {method: 'POST', headers: {'X-Requested-With': 'fetch'}})
+    .then(() => { f.parentElement.innerHTML = '<span class="ok">Thanks for the feedback!</span>'; });
+}));
+</script>
+{% endblock %}

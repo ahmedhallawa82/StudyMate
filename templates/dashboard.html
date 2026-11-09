@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Lecturer dashboard{% endblock %}
+{% block content %}
+<h2 style="margin-top:0;color:var(--teal-dark)">Lecturer dashboard</h2>
+<p class="muted">Read live from <code>logs.xlsx</code> (sheets Questions, Answers, Visits, Feedback).
+  <a class="btn ghost small" href="{{ url_for('download_logs') }}">Download logs.xlsx</a></p>
+<div class="grid-4" style="margin-bottom:16px">
+  <div class="kpi"><div class="v">{{ kpi.students }}</div><div class="l">students (codes)</div></div>
+  <div class="kpi"><div class="v">{{ kpi.questions }}</div><div class="l">questions asked · {{ kpi.not_found }} not found</div></div>
+  <div class="kpi"><div class="v">{{ kpi.answers }}</div><div class="l">practice answers</div></div>
+  <div class="kpi"><div class="v">{{ kpi.helpful ~ '%' if kpi.helpful is not none else '–' }}</div><div class="l">answers marked helpful</div></div>
+</div>
+{% if not kpi.questions and not kpi.answers %}
+<div class="card">No student activity yet. Ask questions and practise as a student first; the charts fill in automatically.</div>
+{% endif %}
+<div class="grid-2">
+  <div class="card"><h3>Most asked topics</h3>
+    {% if top %}<p class="small muted">Top: {% for t in top %}{{ t.name }} ({{ t.n }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+    <canvas id="asked" height="220"></canvas></div>
+  <div class="card"><h3>Topics with the lowest scores (practice, % correct)</h3>
+    {% if lowest %}<p class="small muted">Weakest: {% for t in lowest %}{{ t.name }} {{ t.avg }}% (n={{ t.n }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+    <canvas id="scores" height="220"></canvas></div>
+  <div class="card"><h3>Students per mastery colour</h3><canvas id="colours" height="240"></canvas></div>
+  <div class="card"><h3>Visits per day</h3><canvas id="visits" height="240"></canvas></div>
+</div>
+<div class="card"><h3>Latest questions answered "Not found" (possible gaps in the slides)</h3>
+  {% if not_found %}<table><tr><th>Time</th><th>Student</th><th>Question</th></tr>
+    {% for q in not_found %}<tr><td class="small">{{ q.time }}</td><td>{{ q.student_code }}</td><td>{{ q.question }}</td></tr>{% endfor %}</table>
+  {% else %}<p class="muted">None yet.</p>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chart.umd.min.js') }}"></script>
+<script>
+const D = {{ data|tojson }};
+const css = getComputedStyle(document.documentElement);
+const teal = css.getPropertyValue('--teal').trim() || '#2f6f6a', orange = css.getPropertyValue('--orange').trim() || '#e4572e';
+const opts = (extra) => Object.assign({responsive: true, plugins: {legend: {display: false}}}, extra || {});
+new Chart(document.getElementById('asked'), {type: 'bar',
+  data: {labels: D.asked_labels, datasets: [{data: D.asked_values, backgroundColor: teal}]},
+  options: opts({indexAxis: 'y', scales: {x: {beginAtZero: true, ticks: {precision: 0}}}})});
+new Chart(document.getElementById('scores'), {type: 'bar',
+  data: {labels: D.score_labels, datasets: [{data: D.score_values,
+    backgroundColor: D.score_values.map(v => v < 40 ? '#d9534f' : v < 70 ? '#f0a73a' : '#4caf6a')}]},
+  options: opts({indexAxis: 'y', scales: {x: {min: 0, max: 100}}})});
+new Chart(document.getElementById('colours'), {type: 'bar',
+  data: {labels: D.colour_labels, datasets: [
+    {label: 'red', data: D.red, backgroundColor: '#d9534f'},
+    {label: 'amber', data: D.amber, backgroundColor: '#f0a73a'},
+    {label: 'green', data: D.green, backgroundColor: '#4caf6a'}]},
+  options: {responsive: true, scales: {x: {stacked: true}, y: {stacked: true, ticks: {precision: 0}}}}});
+new Chart(document.getElementById('visits'), {type: 'bar',
+  data: {labels: D.days, datasets: [{data: D.visits, backgroundColor: orange, maxBarThickness: 60}]},
+  options: opts({scales: {y: {beginAtZero: true, ticks: {precision: 0}}}})});
+</script>
+{% endblock %}

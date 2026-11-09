@@ -1,0 +1,14 @@
+<div class="card panel">
+  <h3>My topics</h3>
+  <ul class="topics">
+    {% for t in items %}
+    <li title="{{ t.pct }}% mastery"><span class="dot {{ t.colour }}"></span>{{ t.name }}
+      <span class="pct">{{ t.pct }}%{% if not t.started %} · new{% endif %}</span></li>
+    {% endfor %}
+  </ul>
+  <div class="next">
+    {% if nxt.topic %}<b>Study next:</b> {{ nxt.name }}<br><span class="small">{{ nxt.why }}</span>
+    {% else %}<b>Study next:</b> <span class="small">{{ nxt.why }}</span>{% endif %}
+  </div>
+  {% if nxt.topic %}<a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) }}">Practise 5 questions</a>{% endif %}
+</div>

@@ -1,0 +1,13 @@
+topic,name,prerequisites,why
+intro_ai,Introduction to AI,,the starting point of the course
+agents,Intelligent Agents,intro_ai,agents build on the definition of AI
+environments,Environment Properties,agents,you need agents before environment types
+problem_formulation,Problem Formulation,environments,search problems assume a known environment type
+bfs_ucs,BFS & Uniform-Cost Search,problem_formulation,BFS/UCS work on a formulated problem
+dfs_ids,"DFS, DLS & IDS",problem_formulation,DFS/IDS work on a formulated problem
+heuristics_greedy,Heuristics & Greedy Search,bfs_ucs,greedy search is UCS with h(n) instead of g(n)
+astar,A* Search,heuristics_greedy;bfs_ucs,A* = g(n) from UCS + h(n) from heuristics
+minimax,Minimax,dfs_ids,minimax is a depth-first search of the game tree
+alpha_beta,Alpha-Beta Pruning,minimax,alpha-beta prunes the minimax tree
+probability_bayes,Probability & Bayes Networks,intro_ai,the basis of reasoning under uncertainty
+inference,Probabilistic Inference,probability_bayes,inference runs on a Bayes network

@@ -1,0 +1,361 @@
+﻿question,topic
+what is artificial intelligence in simple words,intro_ai
+whats the definition of AI from the lecture,intro_ai
+difference between thinking humanly and acting humanly?,intro_ai
+what is the turing test,intro_ai
+how does a machine pass the turing test,intro_ai
+what does total turing test add,intro_ai
+why do we need computer vision for the total turing test,intro_ai
+what is captcha used for,intro_ai
+is captcha related to the turing test??,intro_ai
+who coined the name artificial intelligence and when,intro_ai
+what happened in AI in the 80s,intro_ai
+history of AI timeline,intro_ai
+what is the cognitive modeling approach,intro_ai
+laws of thought approach example,intro_ai
+aristotle syllogism bob is a cat,intro_ai
+what is acting rationally,intro_ai
+rational agent approach vs turing test approach,intro_ai
+natural intelligence vs machine intelligence,intro_ai
+how is human intelligence different from machine intelligence,intro_ai
+where do we see AI in real life,intro_ai
+examples of AI applications,intro_ai
+relation between AI machine learning and deep learning,intro_ai
+what are the AI subfields,intro_ai
+what achievements did AI reach in games like chess,intro_ai
+biological vs phenomenal approach to AI research,intro_ai
+what is the physical symbol system hypothesis,intro_ai
+big open questions in ai,intro_ai
+which textbook is the course text,intro_ai
+wat is the turing tst,intro_ai
+4 approaches of ai,intro_ai
+what is an agent,agents
+define agent and give an example,agents
+what are sensors and actuators,agents
+sense plan act cycle,agents
+what does rational mean for an agent,agents
+is a rational agent always perfect,agents
+who chooses the performance measure,agents
+what is PEAS,agents
+peas for a taxi driver,agents
+write the PEAS of an automated taxi,agents
+how do i specify a task environment,agents
+peas of a doctor diagnosing a patient,agents
+what is a percept sequence,agents
+types of agents list,agents
+simple reflex agent,agents
+what is a model based reflex agent,agents
+difference between goal based and utility based agent,agents
+what is a utility function in agents,agents
+learning agent components,agents
+what does the critic do in a learning agent,agents
+what is the problem generator in learning agent,agents
+performance element vs learning element,agents
+why is the simple reflex agent limited,agents
+which agent keeps internal state,agents
+ai program is called what,agents
+explain any type of agent,agents
+goal-based agent example,agents
+reflex agent vs model based,agents
+what is an intelligent agnet,agents
+defnition of rational agent,agents
+what are the properties of task environments,environments
+fully observable vs partially observable,environments
+example of a partially observable environment,environments
+is chess fully observable,environments
+deterministic vs stochastic,environments
+what does stochastic mean,environments
+what makes an environment non deterministic,environments
+episodic vs sequential environment,environments
+example of episodic environment,environments
+static vs dynamic environment,environments
+what is a semi dynamic environment,environments
+is speech analysis static or dynamic,environments
+discrete vs continuous,environments
+is self driving car continuous,environments
+competitive vs collaborative environments,environments
+is robot soccer competitive or cooperative,environments
+what are the properties of sudoku,environments
+properties of the chess environment,environments
+single agent vs multi agent environment,environments
+what is a strategic environment,environments
+why do drones have dynamic environments,environments
+environment where agent needs memory,environments
+is image recognition fully observable,environments
+properties of part picking robot,environments
+classify taxi driving environment,environments
+obs det eps st disc table,environments
+what does episodic mean,environments
+enviroment types,environments
+partialy observable meaning,environments
+static dynamic discrete continuous examples,environments
+how do we formulate a search problem,problem_formulation
+five components of a problem,problem_formulation
+what is the initial state,problem_formulation
+what is the transition model,problem_formulation
+what is the goal test,problem_formulation
+what is path cost and step cost,problem_formulation
+"what does RESULT(state, action) mean",problem_formulation
+state space formulation explain in details,problem_formulation
+what is the frontier,problem_formulation
+frontier explored unexplored states,problem_formulation
+general tree search algorithm,problem_formulation
+what is a search tree,problem_formulation
+what is a search strategy,problem_formulation
+completeness and optimality of search algorithms,problem_formulation
+how do we measure search algorithm performance,problem_formulation
+what are b d and m in search,problem_formulation
+node components state parent action path cost,problem_formulation
+which data structures are used for the frontier,problem_formulation
+uninformed vs informed search,problem_formulation
+what does the agent assume when solving by search,problem_formulation
+route from arad to bucharest problem,problem_formulation
+navigation in fog why not covered,problem_formulation
+what is the solution in a search problem,problem_formulation
+requirements of searching,problem_formulation
+abbreviations bfs ucs dfs dls ids,problem_formulation
+how to build a search tree to a given depth,problem_formulation
+what is a goal based problem solving agent,problem_formulation
+tree search vs graph search explored set,problem_formulation
+problem formulaton steps,problem_formulation
+wat is transition model,problem_formulation
+what is breadth first search,bfs_ucs
+how does bfs work,bfs_ucs
+bfs uses which queue,bfs_ucs
+why is bfs fifo,bfs_ucs
+bfs time complexity,bfs_ucs
+space complexity of breadth first,bfs_ucs
+is bfs complete,bfs_ucs
+is bfs optimal,bfs_ucs
+bfs graph version vs tree version,bfs_ucs
+bfs fringe example,bfs_ucs
+level by level traversal,bfs_ucs
+number of nodes generated by bfs,bfs_ucs
+what is uniform cost search,bfs_ucs
+ucs expands which node,bfs_ucs
+ucs priority queue ordered by what,bfs_ucs
+difference between bfs and ucs,bfs_ucs
+when is ucs optimal,bfs_ucs
+why no negative edges in ucs,bfs_ucs
+ucs on romania map sibiu to bucharest,bfs_ucs
+ucs goal test when node is expanded,bfs_ucs
+is ucs complete,bfs_ucs
+ucs time and space complexity,bfs_ucs
+bfs equals ucs when,bfs_ucs
+what is g(n) in uniform cost,bfs_ucs
+breath first search,bfs_ucs
+uniform cost serch,bfs_ucs
+bfs vs ucs which is better,bfs_ucs
+shallowest goal bfs,bfs_ucs
+ucs epsilon condition,bfs_ucs
+fifo queue search,bfs_ucs
+what is depth first search,dfs_ids
+dfs uses stack?,dfs_ids
+lifo queue in dfs,dfs_ids
+how does dfs backtrack,dfs_ids
+dfs time complexity,dfs_ids
+dfs space complexity,dfs_ids
+is dfs complete,dfs_ids
+why is dfs not optimal,dfs_ids
+dfs fringe example,dfs_ids
+what is depth limited search,dfs_ids
+dls cutoff vs failure,dfs_ids
+is depth limited search complete,dfs_ids
+what is iterative deepening,dfs_ids
+ids properties,dfs_ids
+why is ids optimal,dfs_ids
+ids time complexity,dfs_ids
+why are nodes generated multiple times in ids,dfs_ids
+difference between dfs and dls,dfs_ids
+dfs vs bfs memory,dfs_ids
+what is m in dfs complexity,dfs_ids
+dfs worst case goal last node,dfs_ids
+depth limit L meaning,dfs_ids
+ids vs dls,dfs_ids
+iterative deeping search,dfs_ids
+depth frist search,dfs_ids
+what happens in dfs with infinite tree,dfs_ids
+dfs upper bound for space,dfs_ids
+dls time and space,dfs_ids
+why use ids instead of bfs,dfs_ids
+stack based search,dfs_ids
+what is informed search,heuristics_greedy
+why is uninformed search inefficient,heuristics_greedy
+what is a heuristic function,heuristics_greedy
+what does h(n) mean,heuristics_greedy
+h of goal equals zero why,heuristics_greedy
+evaluation function f(n),heuristics_greedy
+what is greedy best first search,heuristics_greedy
+greedy search uses which function,heuristics_greedy
+is greedy best first complete,heuristics_greedy
+why is greedy search not optimal,heuristics_greedy
+gbfs time complexity,heuristics_greedy
+greedy can get stuck in loop,heuristics_greedy
+gbfs vs ucs,heuristics_greedy
+greedy best first graph version,heuristics_greedy
+sliding blocks puzzle heuristic,heuristics_greedy
+misplaced tiles heuristic,heuristics_greedy
+h1 vs h2 which is better,heuristics_greedy
+max of two heuristics,heuristics_greedy
+vacuum cleaner state space,heuristics_greedy
+vacuum world how many states,heuristics_greedy
+why do we need search techniques for large state space,heuristics_greedy
+where is the intelligence in heuristics,heuristics_greedy
+how can the agent find a heuristic automatically,heuristics_greedy
+ucs not goal directed why,heuristics_greedy
+huristic function meaning,heuristics_greedy
+gready best first,heuristics_greedy
+estimated cost to goal,heuristics_greedy
+closest node to goal search,heuristics_greedy
+better heuristic expands fewer paths,heuristics_greedy
+informed vs uninformed efficiency,heuristics_greedy
+what is a star search,astar
+a* evaluation function,astar
+f(n) = g(n) + h(n),astar
+is a* optimal,astar
+is a star complete,astar
+what is an admissible heuristic,astar
+admissible means never overestimate?,astar
+what is a consistent heuristic,astar
+admissible vs consistent,astar
+why does graph a* need consistency,astar
+why admissible guarantees optimal in a* tree version,astar
+a* with h = 0,astar
+a* when h equals true cost,astar
+a* time and space complexity,astar
+a* combines ucs and greedy,astar
+astar algorithm pseudocode,astar
+difference between a* and greedy,astar
+is euclidean distance admissible for a*,astar
+h star of n meaning,astar
+a* graph search discards node,astar
+which heuristic makes a* expand fewer nodes,astar
+a* optimal conditions,astar
+a star serch,astar
+a* vs ucs,astar
+straight line distance admissible,astar
+cheapest estimated total cost through n,astar
+a* priority queue ordered by f,astar
+is consistency stronger than admissibility,astar
+indicate whether a heuristic is admissible,astar
+astar search explain,astar
+what is adversarial search,minimax
+why are games called adversarial,minimax
+competitive multi agent environments games,minimax
+what is minimax,minimax
+max and min players,minimax
+minimax assumptions,minimax
+what is the utility in games,minimax
+terminal test in games,minimax
+game as a search problem elements,minimax
+how to calculate minimax value,minimax
+minimax value of a node,minimax
+minimax example tree,minimax
+is minimax optimal,minimax
+minimax complexity,minimax
+why cant we search the whole chess tree,minimax
+chess branching factor 35,minimax
+contingent strategy in games,minimax
+what does max do at the root,minimax
+minimax against non optimal opponent,minimax
+evaluation function for games when time is limited,minimax
+player(s) and actions(s) in games,minimax
+minmax algorithm,minimax
+mini max search,minimax
+who moves first in minimax,minimax
+minimax is complete?,minimax
+zero sum game minimax,minimax
+optimal move in two player game,minimax
+minimax propagate values up the tree,minimax
+game tree search,minimax
+adverserial search,minimax
+what is alpha beta pruning,alpha_beta
+why use alpha-beta,alpha_beta
+alpha meaning in pruning,alpha_beta
+beta meaning in pruning,alpha_beta
+when do we prune,alpha_beta
+alpha >= beta cutoff,alpha_beta
+initial values of alpha and beta,alpha_beta
+alpha beta example,alpha_beta
+does pruning change the result of minimax,alpha_beta
+alpha cutoff vs beta cutoff,alpha_beta
+how does alpha beta save time,alpha_beta
+update alpha at max node,alpha_beta
+update beta at min node,alpha_beta
+pruning branches in game tree,alpha_beta
+alpha beta step by step,alpha_beta
+alpha = minus infinity beta = infinity,alpha_beta
+why are dashed branches pruned,alpha_beta
+alpha beta vs minimax nodes,alpha_beta
+alpha-beta prunning,alpha_beta
+alfa beta,alpha_beta
+when to continue in alpha beta,alpha_beta
+max finished update beta,alpha_beta
+go to next branch alpha beta,alpha_beta
+best value max is assured so far,alpha_beta
+best value min is assured,alpha_beta
+explain pruning technique,alpha_beta
+ab pruning,alpha_beta
+alpha beta order of nodes,alpha_beta
+which branches get pruned,alpha_beta
+alpha beta same decision as minimax,alpha_beta
+what is a bayes network,probability_bayes
+nodes and arcs in bayes net,probability_bayes
+why do we need bayes networks,probability_bayes
+bayes network applications,probability_bayes
+car diagnosis problem bayes,probability_bayes
+p(h) + p(t) = 1,probability_bayes
+fair coin vs unfair coin,probability_bayes
+probability of three heads,probability_bayes
+independent events rule,probability_bayes
+joint probability of independent events,probability_bayes
+complement rule,probability_bayes
+dependent events,probability_bayes
+prior and posterior,probability_bayes
+bayes rule,probability_bayes
+what is diagnostic reasoning,probability_bayes
+causal vs diagnostic reasoning,probability_bayes
+cancer test example probability,probability_bayes
+conditional independence,probability_bayes
+absolute vs conditional independence,probability_bayes
+confounding cause,probability_bayes
+happy sunny raise example,probability_bayes
+explaining away conditional dependence,probability_bayes
+how many parameters does a bayes net need,probability_bayes
+parameters for node with two parents,probability_bayes
+d separation,probability_bayes
+when are two variables independent in a bayes net,probability_bayes
+bayes net vs full joint table,probability_bayes
+baysian network,probability_bayes
+2^12 car problem,probability_bayes
+total probability rule,probability_bayes
+what is probabilistic inference,inference
+evidence query hidden variables,inference
+burglary earthquake alarm example,inference
+what is enumeration,inference
+"how to compute p(b|j,m)",inference
+why is enumeration hard,inference
+pulling out terms in enumeration,inference
+maximize independence causal direction,inference
+what is variable elimination,inference
+joining factors,inference
+summing out marginalization,inference
+order of variable elimination,inference
+rain traffic late example,inference
+what is approximate inference,inference
+advantages of sampling,inference
+disadvantage of approximate inference,inference
+what is sampling in bayes net,inference
+rejection sampling,inference
+why reject samples,inference
+likelihood weighting,inference
+how to compute the weight of a sample,inference
+gibbs sampling,inference
+markov chain monte carlo gibbs,inference
+monty hall problem,inference
+should i switch door monty hall,inference
+conditional probability general rule,inference
+boolean events notation +c -c,inference
+sprinkler rain wet grass example,inference
+exact vs approximate inference,inference
+varible elimination,inference

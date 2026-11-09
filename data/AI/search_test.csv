@@ -1,0 +1,31 @@
+﻿question,lecture,slide,accepted
+which abilities must a program have to fool a human judge in an imitation game,1,22,L01S22;L01S14
+what are the four ways of looking at the definition of artificial intelligence,1,8,L01S08
+give me the decades of AI history and what happened in each,1,27,L01S27
+what is the name of the test where websites check that i am not a robot,1,21,L01S21
+"something that senses the world and then does an action on it, what is it called",2,5,L02S05
+how should an agent pick its action to be considered doing the right thing,2,9,L02S09
+describe the self-driving cab using performance environment actuators sensors,2,11,L02S11
+agent that only reacts to what it sees right now without memory,2,25,L02S25
+agent with a critic and a problem generator that improves from experience,2,29,L02S29
+when the next state can have some randomness in it what do we call the environment,2,16,L02S16
+environment where the world keeps changing while the agent is thinking,2,18,L02S18
+"components needed to define a problem formally: start, moves, result, goal check, cost",3,8,L03S08;L03S56
+criteria to judge a search strategy such as whether it always finds a solution,3,12,L03S12
+which search goes level by level using a first in first out queue,3,18,L03S18;L03S19
+search that always expands the cheapest path so far using a priority queue on g,3,27,L03S27;L03S32;L03S29
+"why must edge costs be positive for the cheapest-first search to work, and is it complete",3,30,L03S30;L03S27;L03S32
+search with a stack that backtracks when it reaches a leaf,3,33,L03S33
+dfs with a maximum depth that can return cutoff,3,47,L03S47
+"repeat depth limited search increasing the limit each time, what are its properties",3,50,L03S50;L03S49
+estimated distance from a node to the goal used to guide search,4,6,L04S06;L04S05
+search that always expands the node that looks closest to the goal and ignores the cost so far,4,7,L04S07
+why can the greedy method loop forever and what is its complexity,4,15,L04S15
+combining path cost so far with estimated remaining cost into one evaluation function,4,18,L04S18;L04S17
+heuristic that never overestimates the real remaining cost,4,25,L04S25
+why does graph version of a star need a stronger condition than admissible,4,26,L04S26
+two player game where one player maximizes and the opponent minimizes,5,7,L05S07;L05S12
+how big is the chess game tree and why can't we search all of it,5,5,L05S05
+cutting branches of the game tree while keeping the same decision as minimax,5,17,L05S17
+"compute probability of a disease given a positive test, inverse of causal reasoning",6,18,L06S18
+two methods to answer probability questions on a bayes net exactly or by simulation,7,3,L07S03;L07S24

@@ -1,0 +1,11 @@
+/* Theme 3 - Notebook (warm paper, academic look) */
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@700&family=Source+Sans+3:wght@400;600&display=swap');
+:root { --teal: #2d5a3d; --teal-dark: #1f3d2a; --teal-soft: #f1ead8; --orange: #b8860b; --orange-dark: #8f6808;
+  --ink: #2b2620; --muted: #6f6656; --line: #e3d9c3; --bg: #f8f3e6; --card: #fffdf7; --mark: #ffe9a8; }
+body { font-family: "Source Sans 3", Georgia, serif;
+  background-image: repeating-linear-gradient(#f8f3e6 0 31px, #efe6cf 31px 32px); }
+.brand, .card h2, .card h3, .question-text { font-family: Merriweather, Georgia, serif; }
+header.top { background: #2d5a3d; border-bottom: 4px solid #b8860b; }
+.card { box-shadow: 2px 3px 0 #e3d9c3; border-radius: 4px; } .result { border-radius: 4px; border-left: 4px solid #2d5a3d; }
+.btn { border-radius: 4px; } .panel { background: #f4ecd6; } th { background: #f1ead8; }
+.next { background: #fbeedd; border-color: #ecd3a8; }

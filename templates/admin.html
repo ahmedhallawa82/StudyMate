@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Admin{% endblock %}
+{% block content %}
+<div class="grid">
+  <section>
+    <div class="card">
+      <h2>Upload a new lecture PDF</h2>
+      <p class="muted small">The slides are split into passages (one per slide) with pypdf and added to the search index.
+        Slides of a new lecture get their topic from the topic classifier. Uploading a lecture number that already exists replaces it.</p>
+      <form method="post" enctype="multipart/form-data">
+        <input type="hidden" name="action" value="upload">
+        <div class="grid-2" style="gap:10px">
+          <div><label class="small">Lecture number</label><input type="number" name="lecture_number" min="1" placeholder="8"></div>
+          <div><label class="small">Title</label><input type="text" name="title" placeholder="Machine Learning"></div>
+        </div>
+        <p><input type="file" name="pdf" accept="application/pdf" required></p>
+        <button class="btn" type="submit">Upload and rebuild index</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Lectures in the index ({{ total }} passages)</h2>
+      <table>
+        <tr><th>Lecture</th><th>Title</th><th class="num">Passages</th><th>Topics</th></tr>
+        {% for l in lectures %}<tr><td>{{ l.lecture }}</td><td>{{ l.lecture_title }}</td><td class="num">{{ l.passages }}</td><td class="small">{{ l.topics }}</td></tr>{% endfor %}
+      </table>
+    </div>
+  </section>
+  <aside>
+    <div class="card panel">
+      <h3>Maintenance</h3>
+      <form method="post"><input type="hidden" name="action" value="rebuild">
+        <button class="btn teal" type="submit">Rebuild search index</button></form>
+      <p class="muted small">Re-reads every PDF in <code>data/AI/lectures</code>.</p>
+      <form method="post"><input type="hidden" name="action" value="retrain">
+        <button class="btn ghost" type="submit">Retrain classifier + re-evaluate</button></form>
+      <p class="muted small">Use after editing the labelled questions or the question bank (takes a few seconds).</p>
+      <hr>
+      <p class="small">Topic model: <b>{{ model }}</b><br>Question bank: <b>{{ bank }}</b> questions<br>
+        "Not found" threshold: <b>{{ threshold }}</b></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Start{% endblock %}
+{% block content %}
+<div class="center-box card">
+  <h2>Welcome to StudyMate</h2>
+  <p class="muted">A study assistant for the {{ course }} course. It answers only from the lecture slides,
+    gives practice questions with hints, and tracks your level per topic.</p>
+  <form method="post">
+    <label class="small" for="code">Your student code</label>
+    <input type="text" id="code" name="code" placeholder="e.g. S001" autofocus required maxlength="20">
+    <p class="muted small">Privacy: we store only this code, never your name. Your questions and practice
+      answers are saved with the code so your progress can be shown.</p>
+    <button class="btn" type="submit">Start studying</button>
+  </form>
+</div>
+{% endblock %}

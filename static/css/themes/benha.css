@@ -1,0 +1,11 @@
+/* Theme 5 - Benha Blue (university colours: navy + gold) */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+:root { --teal: #0b3d91; --teal-dark: #072a66; --teal-soft: #eaf0fb; --orange: #d4a017; --orange-dark: #b3860f;
+  --ink: #0f1d33; --muted: #55627a; --line: #d9e2f1; --bg: #f3f6fb; --card: #ffffff; --mark: #ffe7a3; }
+body { font-family: Cairo, "Segoe UI", sans-serif; }
+header.top { background: #0b3d91; border-bottom: 5px solid #d4a017; }
+.brand::before { content: "🎓 "; }
+.btn { color: #0f1d33; } .btn.teal { background: #0b3d91; color: #fff; }
+.card h2, .card h3 { color: #0b3d91; } .result .src { color: #0b3d91; }
+.panel { background: #eaf0fb; border-color: #c9d7f0; } .next { background: #fff6dc; border-color: #f0d68a; }
+th { background: #eaf0fb; color: #0b3d91; }

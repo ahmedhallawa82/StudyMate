@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Evaluation{% endblock %}
+{% block content %}
+{% if not r %}
+<div class="card">No evaluation yet. Run <code>python scripts/evaluate.py</code>.</div>
+{% else %}
+{% set best = r.models.logreg if r.best_model == 'Logistic Regression' else r.models.nb %}
+<div class="grid-4" style="margin-bottom:16px">
+  <div class="kpi"><div class="v">{{ (best.accuracy * 100)|round(1) }}%</div><div class="l">topic accuracy ({{ r.best_model }}, {{ r.n_test }} test questions)</div></div>
+  <div class="kpi"><div class="v">{{ (r.search.methods.tfidf.top1 * 100)|round|int }}%</div><div class="l">search top-1 hit rate (TF-IDF)</div></div>
+  <div class="kpi"><div class="v">{{ (r.search.methods.tfidf.top3 * 100)|round|int }}%</div><div class="l">search top-3 hit rate (TF-IDF)</div></div>
+  <div class="kpi"><div class="v">{{ r.offtopic.rejected }}/{{ r.offtopic.total }}</div><div class="l">off-topic questions → "Not found"</div></div>
+</div>
+
+<div class="card">
+  <h2>1. Topic classifier (question → topic)</h2>
+  <p class="muted">{{ r.n_labelled }} student-style questions in {{ r.topics|length }} topics, stratified 80/20 split.
+    The test set ({{ r.n_test }} questions) is never used for training. Training also uses the question bank and slide texts.</p>
+  <table>
+    <tr><th>Model</th><th class="num">Accuracy</th><th class="num">Macro precision</th><th class="num">Macro recall</th><th class="num">Macro F1</th></tr>
+    {% for k, m in r.models.items() %}
+    <tr><td>{{ m.name }}{% if m.name == r.best_model %} <span class="tag green">used by the app</span>{% endif %}</td>
+      <td class="num">{{ m.accuracy }}</td><td class="num">{{ m.macro_precision }}</td><td class="num">{{ m.macro_recall }}</td><td class="num">{{ m.macro_f1 }}</td></tr>
+    {% endfor %}
+  </table>
+  <div class="grid-2" style="margin-top:16px">
+    <div>
+      <h3>Per-class results ({{ best.name }})</h3>
+      <table>
+        <tr><th>Topic</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">n</th></tr>
+        {% for c in best.per_class %}
+        <tr><td>{{ c.topic }}</td><td class="num">{{ c.precision }}</td><td class="num">{{ c.recall }}</td>
+          <td class="num">{{ c.f1 }}</td><td class="num">{{ c.support }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div>
+      <h3>Confusion matrix</h3>
+      <img class="report" src="{{ url_for('static', filename='reports/' + best.confusion_matrix) }}" alt="confusion matrix">
+      <details><summary>Naive Bayes confusion matrix</summary>
+        <img class="report" src="{{ url_for('static', filename='reports/' + r.models.nb.confusion_matrix) }}" alt="NB confusion matrix"></details>
+    </div>
+  </div>
+  <h3 style="margin-top:16px">Error analysis – wrong predictions of {{ best.name }}</h3>
+  <table>
+    <tr><th>Question</th><th>True topic</th><th>Predicted</th></tr>
+    {% for e in best.errors %}<tr><td>{{ e.question }}</td><td>{{ e.true }}</td><td class="bad">{{ e.predicted }}</td></tr>{% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>2. Search (question → slide)</h2>
+  <p class="muted">{{ r.search.n_test }} test questions written in different words from the slides, each with its correct slide.
+    A hit means the correct slide is the first result (top-1) or among the three results (top-3).</p>
+  <table>
+    <tr><th>Method</th><th class="num">Top-1 hit rate</th><th class="num">Top-3 hit rate</th></tr>
+    {% for k, m in r.search.methods.items() %}<tr><td>{{ m.name }}</td><td class="num">{{ m.top1 }}</td><td class="num">{{ m.top3 }}</td></tr>{% endfor %}
+  </table>
+  <details><summary>Show all {{ r.search.n_test }} search test questions</summary>
+    <table>
+      <tr><th>Question</th><th>Correct slide</th><th>Top 3 returned</th><th>Top-1</th><th>Top-3</th></tr>
+      {% for x in r.search.methods.tfidf.rows %}
+      <tr><td>{{ x.question }}</td><td>{{ x.correct }}</td><td>{{ x.top3 }}</td>
+        <td class="{{ 'ok' if x.top1_hit else 'bad' }}">{{ '✓' if x.top1_hit else '✗' }}</td>
+        <td class="{{ 'ok' if x.top3_hit else 'bad' }}">{{ '✓' if x.top3_hit else '✗' }}</td></tr>
+      {% endfor %}
+    </table>
+  </details>
+</div>
+
+<div class="card">
+  <h2>3. "Not found in the course" – off-topic test</h2>
+  <p class="muted">A question is answered only if its best cosine similarity ≥ <b>{{ r.offtopic.threshold }}</b>
+    and at least <b>{{ (r.offtopic.min_coverage * 100)|round|int }}%</b> of its content words exist in the slides.
+    Both values were tuned automatically so that every off-topic question is rejected.
+    Cost: {{ r.search.real_found }}/{{ r.search.n_test }} search-test questions and
+    {{ (r.search.student_questions_answered * 100)|round(1) }}% of the student questions still get an answer.</p>
+  <div class="grid-2">
+    <table>
+      <tr><th>Off-topic question</th><th class="num">Best score</th><th>Result</th></tr>
+      {% for x in r.offtopic.rows %}<tr><td>{{ x.question }}</td><td class="num">{{ x.best_score }}</td>
+        <td class="{{ 'ok' if x.result == 'Not found' else 'bad' }}">{{ x.result }}</td></tr>{% endfor %}
+    </table>
+    <img class="report" src="{{ url_for('static', filename='reports/threshold.png') }}" alt="threshold">
+  </div>
+</div>
+
+<div class="card">
+  <h2>4. Robustness tests</h2>
+  <p class="muted">The same test questions changed on purpose: spelling mistakes, upper case, only two key words, extra chatty words, and Arabic questions (bonus).</p>
+  <table>
+    <tr><th>Test</th><th>Example</th><th class="num">Classifier accuracy</th><th class="num">Search top-3 (with "Not found" rule)</th></tr>
+    {% for x in r.robustness %}<tr><td>{{ x.test }}</td><td class="small">{{ x.example }}</td>
+      <td class="num">{{ x.classifier_accuracy }}</td>
+      <td class="num">{{ x.search_top3 if x.search_top3 is not none else (x.note or '–') }}</td></tr>{% endfor %}
+  </table>
+  <details><summary>Arabic examples</summary>
+    <table><tr><th>Question</th><th>Expected topic</th><th>Predicted</th></tr>
+      {% for x in r.arabic_examples %}<tr><td dir="rtl">{{ x.question }}</td><td>{{ x.expected }}</td>
+        <td class="{{ 'ok' if x.expected == x.predicted else 'bad' }}">{{ x.predicted }}</td></tr>{% endfor %}
+    </table></details>
+</div>
+{% endif %}
+{% endblock %}
