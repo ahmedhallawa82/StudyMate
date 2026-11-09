@@ -13,7 +13,7 @@
 | `questions_labeled.csv` | **360 student-style questions**, 30 per topic, labelled with their topic | Written by the team (first draft prepared with an AI assistant, then reviewed against the slides) |
 | `search_test.csv` | 30 questions, each with the correct slide(s) | Written by the team, deliberately in different words from the slides |
 | `offtopic_test.csv` | 10 questions that are not in the course and must return "Not found" | Written by the team |
-| `arabic_glossary.csv` | 77 Arabic → English course terms (bonus: Arabic questions) | Written by the team |
+| `arabic_glossary.csv` | 76 Arabic → English course terms (bonus: Arabic questions) | Written by the team |
 
 ## 2. Size and labels
 - **Topics (12):** Introduction to AI · Intelligent Agents · Environment Properties · Problem Formulation · BFS & Uniform-Cost Search · DFS, DLS & IDS · Heuristics & Greedy Search · A* Search · Minimax · Alpha-Beta Pruning · Probability & Bayes Networks · Probabilistic Inference
