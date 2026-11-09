@@ -119,3 +119,10 @@ html[dir="rtl"] input[type=text]::placeholder, html[dir="rtl"] textarea::placeho
 .pick-btn:hover, .pick-btn[aria-expanded=true] { border-color: var(--orange); }
 .pick-panel { inset-inline: 0; width: auto; top: calc(100% + 4px); }
 .pick-panel li { align-items: center; }
+
+.pick-input { width: 100%; font: inherit; font-size: 16px; font-weight: 600; padding: 11px 38px 11px 14px; margin: 0;
+              border: 2px solid var(--line); border-radius: 12px; background: var(--card); color: var(--ink); }
+html[dir="rtl"] .pick-input { padding: 11px 14px 11px 38px; }
+.pick-input:focus { outline: none; border-color: var(--orange); }
+.pick-arrow { position: absolute; inset-inline-end: 14px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--muted); }
+.pick-panel li.hi { background: var(--teal-soft); }

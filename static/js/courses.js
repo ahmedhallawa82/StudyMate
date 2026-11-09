@@ -31,30 +31,40 @@
     });
     document.addEventListener("click", function (e) { if (!box.contains(e.target)) close(); });
   }
-  /* start page: the course is a drop-down with live search (value goes to the hidden field) */
+  /* start page: type straight into the course field; the list below narrows as you type */
   var pk = document.getElementById("coursePick");
   if (pk) {
-    var pb = pk.querySelector(".pick-btn"), pp = pk.querySelector(".pick-panel"), pi = pp.querySelector("input"),
+    var pi = pk.querySelector(".pick-input"), pp = pk.querySelector(".pick-panel"),
         pl = [].slice.call(pp.querySelectorAll("li")), pn = pp.querySelector(".combo-none"),
-        hid = pk.querySelector("input[type=hidden]");
-    function pclose() { pp.hidden = true; pb.setAttribute("aria-expanded", "false"); }
+        hid = pk.querySelector("input[type=hidden]"), cur = pi.value, hi = -1;
+    function vis() { return pl.filter(function (l) { return !l.hidden; }); }
+    function mark(i) {
+      var v = vis(); hi = Math.max(-1, Math.min(i, v.length - 1));
+      pl.forEach(function (l) { l.classList.remove("hi"); });
+      if (hi >= 0) { v[hi].classList.add("hi"); v[hi].scrollIntoView({ block: "nearest" }); }
+    }
+    function popen() { pp.hidden = false; pi.setAttribute("aria-expanded", "true"); }
+    function pclose() { pp.hidden = true; pi.setAttribute("aria-expanded", "false"); pi.value = cur; hi = -1; }
     function pick(li) {
-      hid.value = li.getAttribute("data-code");
-      pk.querySelector(".pick-label").textContent = li.getAttribute("data-title");
+      hid.value = li.getAttribute("data-code"); cur = li.getAttribute("data-title");
       pl.forEach(function (x) { x.classList.toggle("on", x === li); });
       pclose();
     }
-    pb.addEventListener("click", function () {
-      var open = pp.hidden; pp.hidden = !open; pb.setAttribute("aria-expanded", String(open));
-      if (open) { pi.value = ""; filter(pi, pl, pn); pi.focus(); }
-    });
-    pi.addEventListener("input", function () { filter(pi, pl, pn); });
+    pi.addEventListener("focus", function () { pi.select(); pl.forEach(function (l) { l.hidden = false; }); if (pn) pn.hidden = true; popen(); });
+    pi.addEventListener("click", function () { popen(); });
+    pi.addEventListener("input", function () { popen(); filter(pi, pl, pn); mark(0); });
     pi.addEventListener("keydown", function (e) {
-      if (e.key === "Escape") pclose();
-      if (e.key === "Enter") { e.preventDefault(); var f = pl.filter(function (l) { return !l.hidden; })[0]; if (f) pick(f); }
+      if (e.key === "Escape") { pclose(); pi.blur(); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); popen(); mark(hi + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); mark(hi - 1); }
+      else if (e.key === "Enter") { e.preventDefault(); var v = vis(); var f = v[hi >= 0 ? hi : 0]; if (f) pick(f); }
     });
-    pl.forEach(function (li) { li.addEventListener("click", function () { pick(li); }); });
-    document.addEventListener("click", function (e) { if (!pk.contains(e.target)) pclose(); });
+    pl.forEach(function (li) {
+      li.addEventListener("mousedown", function (e) { e.preventDefault(); });   /* keep the focus in the field */
+      li.addEventListener("click", function () { pick(li); pi.blur(); });
+    });
+    pk.querySelector(".pick-arrow").addEventListener("click", function () { pi.focus(); });
+    document.addEventListener("click", function (e) { if (!pk.contains(e.target) && !pp.hidden) pclose(); });
   }
   /* (old) live search above course cards */
   var s = document.getElementById("courseSearch");
