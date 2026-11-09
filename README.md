@@ -16,7 +16,7 @@ To rebuild everything from the PDFs:
 python scripts/build_passages.py   # 1) PDFs -> data/AI/passages.csv (pypdf)
 python scripts/train.py            # 2) topic classifiers (NB + LR) + search index
 python scripts/evaluate.py         # 3) metrics, confusion matrix, threshold, robustness -> static/reports/
-python -m pytest -q                # 4) 22 automatic tests
+python -m pytest -q                # 4) 23 automatic tests
 ```
 Admin area (Data, Content, Evaluation) password: `lecturer123` by default. Set your own with the environment variable `LECTURER_PASSWORD`. The Admin area is separate from the student area: while signed in as Admin the student pages are hidden; press "Exit admin" to go back and sign in as a student.
 
@@ -76,7 +76,7 @@ data/AI/               lectures/*.pdf, passages.csv, topics.csv, topic_map.csv, 
 models/                saved models (joblib)
 static/reports/        metrics.json, confusion matrices, threshold plot (used by the Evaluation page)
 templates/, static/    HTML (Jinja2), CSS, Chart.js
-tests/                 pytest tests (22)
+tests/                 pytest tests (23)
 notebooks/             StudyMate_Colab_Test.ipynb – run and test the project on Google Colab
 docs/                  presentation outline + delivery checklist
 ```
@@ -94,8 +94,9 @@ Update after a change: `cd ~/StudyMate && git checkout -- logs.xlsx && git pull`
 Deployment (GitHub + PythonAnywhere) · doctor accounts · BM25 search · Arabic questions (glossary translation) · Arabic interface · dark mode · multi-course · automatic tests · Colab notebook · 5 themes.
 
 
-## Doctors (private access codes)
-- The main admin (password `LECTURER_PASSWORD`) opens Admin -> **Doctors**, types a doctor name and gets a private code such as `K7QD-M4PX2TNB` (shown once; only a hash is stored in `data/doctors.json`).
-- A doctor signs in on the same Admin page with his code. He sees and manages only the courses registered under his name (up to 10), can add new courses (they are registered under him), and downloads only his own rows of `logs.xlsx`.
-- The main admin sees everything, can give a course to a doctor, make a new code for a doctor, or delete a doctor (his courses go back to the main admin).
-- 5 wrong tries lock the sign-in for 5 minutes. Students pick the course from a drop-down with live search.
+## Doctors (passwords + private Google Sheet)
+- The main admin (password `LECTURER_PASSWORD`) opens Admin -> **Doctors**, types a doctor name and a random password such as `K7QD-M4PX2TNB` is made for him.
+- A doctor signs in on the same Admin page with his password. He sees and manages only the courses registered under his name (up to 10), can add new courses (registered under him), downloads only his own rows of `logs.xlsx`, and can **change his password** (at least 8 characters).
+- The main admin sees everything, can give a course to a doctor, make a new password for a doctor, or delete a doctor (his courses go back to the main admin).
+- **Doctors sheet** (main admin only): a table *doctor name | courses | password made by the system | password chosen by the doctor* is shown on the Admin page and copied to a private Google Sheet after every change (`core/sheet_sync.py`, gspread). Setup: a Google service-account JSON key in `secrets/google_service_account.json` (never committed) and the sheet shared with its `client_email` as Editor; the sheet id is in `GOOGLE_SHEET_ID`. Without the key the site works normally and the page shows the setup steps.
+- Sign-in uses password hashes; 5 wrong tries lock the sign-in for 5 minutes. `data/doctors.json` stays on the server (`.gitignore`).

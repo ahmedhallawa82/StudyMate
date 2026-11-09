@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors
+from core import doctors, sheet_sync
 from core import mastery as M
 from core.classifier import TopicClassifier, KIND_NAME
 from core.logger import log_to_excel, read_sheet, ensure_workbook
@@ -525,6 +525,22 @@ def download_logs():
     return send_file(buf, as_attachment=True, download_name="logs.xlsx")
 
 
+def courses_of(doctor_id):
+    return ", ".join(c["code"] for c in config.list_courses() if c["meta"].get("owner") == doctor_id)
+
+
+def sync_sheet(wait=False):
+    """Copy the doctors table to the admin's Google Sheet (in the background)."""
+    sheet_sync.push(doctors.sheet_rows(courses_of), wait=wait)
+
+
+def sheet_view():
+    if not is_master():
+        return None
+    return {"rows": doctors.sheet_rows(courses_of), "enabled": sheet_sync.enabled(), "status": sheet_sync.STATUS,
+            "email": sheet_sync.service_email(), "url": sheet_sync.sheet_url(), "header": sheet_sync.HEADER}
+
+
 @app.route("/admin", methods=["GET", "POST"])
 @lecturer_required
 def admin():
@@ -534,7 +550,22 @@ def admin():
     mine = can_manage(code)                                  # a doctor with no course yet can only add one
     if request.method == "POST":
         action = request.form.get("action")
-        if action in ("add_doctor", "reset_doctor", "delete_doctor", "set_owner"):
+        if action == "change_password":                      # a doctor changes his own password
+            if is_master() or not admin_id():
+                flash_t("pw_master_note")
+                return redirect(url_for("admin"))
+            new = request.form.get("new", "")
+            if new != request.form.get("confirm", ""):
+                flash_t("pw_mismatch")
+            else:
+                err = doctors.change_password(admin_id(), request.form.get("old", ""), new, config.LECTURER_PASSWORD)
+                if err:
+                    flash_t(err, n=doctors.MIN_LEN)
+                else:
+                    sync_sheet()
+                    flash_t("pw_changed")
+            return redirect(url_for("admin"))
+        if action in ("add_doctor", "reset_doctor", "delete_doctor", "set_owner", "sync_sheet"):
             if not is_master():
                 flash_t("master_only")
                 return redirect(url_for("admin"))
@@ -556,7 +587,7 @@ def admin():
                         (config.BASE_DIR / "data" / c["code"] / "course.json").write_text(
                             json.dumps(meta, ensure_ascii=False), encoding="utf-8")
                 flash_t("doctor_deleted")
-            else:
+            elif action == "set_owner":
                 did = request.form.get("owner", "")
                 info = config.course_paths(code).info
                 meta = json.loads(info.read_text(encoding="utf-8"))
@@ -566,6 +597,14 @@ def admin():
                     meta.pop("owner", None)
                 info.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
                 flash_t("owner_set")
+            if action == "sync_sheet":
+                if not sheet_sync.enabled():
+                    flash_t("sheet_not_connected")
+                else:
+                    sync_sheet(wait=True)
+                    flash_t("sheet_synced" if sheet_sync.STATUS.get("ok") else "sheet_failed", err=sheet_sync.STATUS.get("error", ""))
+            else:
+                sync_sheet()
             return redirect(url_for("admin"))
         if action != "add_course" and not mine:
             flash_t("not_your_course")
@@ -583,6 +622,7 @@ def admin():
                 load_state(rep["code"])
                 session["course"] = rep["code"]
                 session.pop("practice", None)
+                sync_sheet()
                 flash_t("course_created", name=request.form.get("name_en") or rep["code"], n=rep["slides"],
                         m=rep["lectures"], q=rep["questions"])
             except FileExistsError:
@@ -604,6 +644,7 @@ def admin():
                 STATE.pop(code, None)
                 session["course"] = config.DEFAULT_COURSE
                 session.pop("practice", None)
+                sync_sheet()
                 flash_t("course_deleted", code=code)
             return redirect(url_for("admin"))
         if action == "delete_lecture":
@@ -676,7 +717,8 @@ def admin():
     visit("admin")
     if not mine:                                             # doctor without a course: only the "add a course" card
         return render_template("admin.html", no_course=True, lectures=[], total=0, full=False, code="", can_delete_course=False,
-                               bank=0, threshold="", model="", lecture_dir="", doctors=[], owner=None, is_owner_view=False)
+                               bank=0, threshold="", model="", lecture_dir="", doctors=[], owner=None, is_owner_view=False,
+                               sheet=None, pw_min=doctors.MIN_LEN)
     names = S()["names_ar"] if lang() == "ar" else S()["names"]
     passages = pd.read_csv(P.passages)
     lectures = (passages.groupby(["lecture", "lecture_title"]).agg(passages=("passage_id", "count"),
@@ -687,7 +729,8 @@ def admin():
                            doctors=doctors.list_doctors() if is_master() else [], owner=course_owner(code),
                            doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {},
                            bank=len(S()["bank"]), threshold=S()["engine"].threshold,
-                           model=KIND_NAME.get(S()["clf"].kind, S()["clf"].kind), lecture_dir=str(P.lectures.relative_to(config.BASE_DIR)))
+                           model=KIND_NAME.get(S()["clf"].kind, S()["clf"].kind), lecture_dir=str(P.lectures.relative_to(config.BASE_DIR)),
+                           sheet=sheet_view(), pw_min=doctors.MIN_LEN)
 
 
 @app.route("/lecturer/logout")

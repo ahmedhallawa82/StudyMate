@@ -243,7 +243,7 @@ def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
     did, code = doctors.add("Dr Test")
     did2, code2 = doctors.add("Dr Other")
     assert doctors.check(code.lower()) == did and doctors.check(did + "-WRONGWRONG") is None
-    assert "hash" not in str(doctors.list_doctors()) and code.split("-")[1] not in (tmp_path / "doctors.json").read_text()
+    assert "hash" not in str(doctors.list_doctors())
 
     def login(c):
         return A.app.test_client(), c
@@ -282,3 +282,35 @@ def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
     finally:
         shutil.rmtree(config.BASE_DIR / "data" / "DCT9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "DCT9", ignore_errors=True)
+
+
+def test_doctor_changes_password_and_sheet_rows(admin, tmp_path, monkeypatch):
+    import app as A
+    from core import doctors, sheet_sync
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    pushed = []
+    monkeypatch.setattr(sheet_sync, "push", lambda rows, wait=False: pushed.append(rows))
+    monkeypatch.setattr(sheet_sync, "enabled", lambda: True)
+    admin.post("/admin", data={"action": "add_doctor", "doctor_name": "Dr Sheet"})
+    did = doctors.list_doctors()[0]["id"]
+    first = pushed[-1][0]
+    assert first[0] == "Dr Sheet" and first[2].startswith(did + "-") and first[3] == ""
+    # the admin page shows the doctors sheet; a doctor never sees it
+    assert "Doctors sheet" in admin.get("/admin").get_data(as_text=True)
+    d = A.app.test_client()
+    d.post("/lecturer", data={"password": first[2]})
+    page = d.get("/admin").get_data(as_text=True)
+    assert "Doctors sheet" not in page and "Change my password" in page
+    d.post("/admin", data={"action": "change_password", "old": "wrong", "new": "MyNewPass9", "confirm": "MyNewPass9"})
+    assert pushed[-1][0][3] == ""                                   # wrong old password: nothing changed
+    d.post("/admin", data={"action": "change_password", "old": first[2], "new": "short", "confirm": "short"})
+    assert pushed[-1][0][3] == ""
+    d.post("/admin", data={"action": "change_password", "old": first[2], "new": "MyNewPass9", "confirm": "MyNewPass9"})
+    assert pushed[-1][0][3] == "MyNewPass9" and pushed[-1][0][2] == first[2]
+    # new password works, the system one no longer does
+    assert doctors.check("MyNewPass9") == did and doctors.check(first[2]) is None
+    n = A.app.test_client(); n.post("/lecturer", data={"password": "MyNewPass9"})
+    assert n.get("/admin").status_code == 200 and "Change my password" in n.get("/admin").get_data(as_text=True)
+    # the admin makes a new password -> the doctor's own one is cleared
+    admin.post("/admin", data={"action": "reset_doctor", "doctor": did})
+    assert pushed[-1][0][3] == "" and doctors.check("MyNewPass9") is None

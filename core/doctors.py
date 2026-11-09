@@ -1,7 +1,11 @@
-"""Doctor accounts: every doctor has a private access code; the courses he creates are registered under his name.
+"""Doctor accounts.
 
-data/doctors.json  ->  [{"id", "name", "hash", "created"}].  A code looks like  K7QD-M4PX2TNB  (id - secret).
-Only a hash of the code is stored, so the code is shown once (when the doctor is created or his code is reset).
+data/doctors.json -> [{"id", "name", "hash", "created", "initial", "new"}]
+- The admin types a doctor name -> a random password such as  K7QD-M4PX2TNB  is made for him.
+- The doctor can change it from his own Admin page.
+- Sign-in checks a hash of the password. The plain passwords ("initial" = made by the system, "new" = chosen by
+  the doctor) are kept only so they can be written to the admin's private Google Sheet (core/sheet_sync.py),
+  as the course owner asked. This file never goes to GitHub (.gitignore).
 """
 import json
 import secrets
@@ -16,6 +20,7 @@ FILE = lambda: config.BASE_DIR / "data" / "doctors.json"
 _lock = threading.Lock()
 _ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"          # no 0/O/1/I/L: easy to read out loud
 MASTER = "master"
+MIN_LEN = 8
 
 
 def _load():
@@ -43,43 +48,70 @@ def get(doctor_id):
 
 
 def add(name):
-    """Returns (doctor_id, code). The code cannot be read again later."""
+    """Returns (doctor_id, password)."""
     with _lock:
         rows = _load()
         ids = {d["id"] for d in rows}
         did = _rand(4)
         while did in ids:
             did = _rand(4)
-        secret = _rand(8)
-        rows.append({"id": did, "name": name.strip()[:60] or did, "hash": generate_password_hash(secret),
-                     "created": datetime.now().strftime("%Y-%m-%d")})
+        pw = f"{did}-{_rand(8)}"
+        rows.append({"id": did, "name": name.strip()[:60] or did, "hash": generate_password_hash(pw),
+                     "created": datetime.now().strftime("%Y-%m-%d"), "initial": pw, "new": ""})
         _save(rows)
-    return did, f"{did}-{secret}"
+    return did, pw
 
 
 def reset(doctor_id):
+    """A new random password; the doctor's own password stops working."""
     with _lock:
         rows = _load()
         for d in rows:
             if d["id"] == doctor_id:
-                secret = _rand(8)
-                d["hash"] = generate_password_hash(secret)
+                pw = f"{doctor_id}-{_rand(8)}"
+                d.update(hash=generate_password_hash(pw), initial=pw, new="")
                 _save(rows)
-                return f"{doctor_id}-{secret}"
+                return pw
     return None
 
 
 def remove(doctor_id):
     with _lock:
-        rows = _load()
-        _save([d for d in rows if d["id"] != doctor_id])
+        _save([d for d in _load() if d["id"] != doctor_id])
 
 
-def check(code):
-    """The doctor id if the code is right, else None."""
-    code = (code or "").strip().upper().replace(" ", "")
-    if "-" not in code:
+def check(password):
+    """The doctor id whose password this is, else None."""
+    pw = (password or "").strip()
+    if not pw:
         return None
-    did, secret = code.split("-", 1)
-    d = next((d for d in _load() if d["id"] == did), None)
-    return did if d and check_password_hash(d["hash"], secret) else None
+    rows = _load()
+    head = pw.upper().split("-", 1)[0]                     # system passwords start with the doctor id: try him first
+    rows.sort(key=lambda d: d["id"] != head)
+    for d in rows:
+        if check_password_hash(d["hash"], pw) or check_password_hash(d["hash"], pw.upper()):
+            return d["id"]
+    return None
+
+
+def change_password(doctor_id, old, new, master_password=""):
+    """Returns an error key ('' = done)."""
+    new = (new or "").strip()
+    with _lock:
+        rows = _load()
+        me = next((d for d in rows if d["id"] == doctor_id), None)
+        if not me or not (check_password_hash(me["hash"], (old or "").strip()) or
+                          check_password_hash(me["hash"], (old or "").strip().upper())):
+            return "pw_old_wrong"
+        if len(new) < MIN_LEN:
+            return "pw_too_short"
+        if new == master_password or any(check_password_hash(d["hash"], new) for d in rows if d is not me):
+            return "pw_taken"
+        me.update(hash=generate_password_hash(new), new=new)
+        _save(rows)
+    return ""
+
+
+def sheet_rows(courses_of):
+    """[[name, courses, system password, doctor's own password]] – courses_of(doctor_id) -> 'AI, MAM336'."""
+    return [[d["name"], courses_of(d["id"]), d.get("initial", ""), d.get("new", "")] for d in _load()]

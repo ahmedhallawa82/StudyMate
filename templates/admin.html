@@ -19,6 +19,28 @@
   {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
 <div class="grid">
   <section>
+    {% if sheet %}
+    <div class="card">
+      <h2>{{ t('sheet_title') }}</h2>
+      <p class="muted small">{{ t('sheet_note') }}</p>
+      <div class="table-wrap"><table>
+        <tr>{% for h in sheet.header %}<th>{{ h }}</th>{% endfor %}</tr>
+        {% for r in sheet.rows %}<tr><td>{{ r[0] }}</td><td dir="ltr">{{ r[1] or '—' }}</td><td dir="ltr"><code>{{ r[2] }}</code></td><td dir="ltr">{% if r[3] %}<code>{{ r[3] }}</code>{% else %}—{% endif %}</td></tr>
+        {% else %}<tr><td colspan="4" class="muted small">{{ t('sheet_empty') }}</td></tr>{% endfor %}
+      </table></div>
+      {% if sheet.enabled %}
+        <p class="small">{{ t('sheet_connected', email=sheet.email) }}
+          {% if sheet.status.ok %} · {{ t('sheet_last_ok', time=sheet.status.time) }}{% elif sheet.status.ok == false %} · <span style="color:var(--red,#c0392b)">{{ t('sheet_last_err', time=sheet.status.time, err=sheet.status.error) }}</span>{% endif %}</p>
+        <div class="actions">
+          <form method="post" class="inline"><input type="hidden" name="action" value="sync_sheet"><button class="btn teal" type="submit">{{ t('sheet_sync_btn') }}</button></form>
+          <a class="btn ghost" href="{{ sheet.url }}" target="_blank" rel="noopener">{{ t('sheet_open') }}</a>
+        </div>
+      {% else %}
+        <details class="small"><summary><b>{{ t('sheet_off') }}</b></summary>
+          <ol>{% for k in ['sheet_s1','sheet_s2','sheet_s3','sheet_s4','sheet_s5'] %}<li>{{ t(k) }}</li>{% endfor %}</ol></details>
+      {% endif %}
+    </div>
+    {% endif %}
     {% if not no_course %}
     <div class="card">
       <h2>{{ t('adm_upload') }} · {{ course }}</h2>
@@ -74,6 +96,17 @@
     </div>
   </section>
   <aside>
+    {% if admin_role == 'doctor' %}
+    <div class="card panel">
+      <h3>{{ t('pw_title') }}</h3>
+      <p class="muted small">{{ t('pw_note', n=pw_min) }}</p>
+      <form method="post" autocomplete="off"><input type="hidden" name="action" value="change_password">
+        <input type="password" name="old" placeholder="{{ t('pw_old') }}" required dir="ltr" autocomplete="current-password"><p></p>
+        <input type="password" name="new" placeholder="{{ t('pw_new') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
+        <input type="password" name="confirm" placeholder="{{ t('pw_confirm') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
+        <button class="btn teal" type="submit">{{ t('pw_btn') }}</button></form>
+    </div>
+    {% endif %}
     {% if admin_role == 'master' %}
     <div class="card panel">
       <h3>{{ t('doctors') }}</h3>
