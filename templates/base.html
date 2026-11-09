@@ -22,7 +22,7 @@
 <body>
 <header class="top">
   <div class="bar">
-    <a class="brand" href="{{ url_for('home') }}">{{ t('app_name') if lang == 'ar' else 'StudyMate' }} <small>· {{ course }}</small></a>
+    <a class="brand" href="{{ url_for('home') }}">{{ t('app_name') if lang == 'ar' else 'StudyMate' }}</a>
     <nav>
       {% set path = request.path %}
       {% if is_lecturer %}
