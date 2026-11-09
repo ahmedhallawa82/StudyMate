@@ -246,6 +246,23 @@ T = {
     "help_keep": ("Good to know: uploaded files live on the server. To keep them for good, also put them in your GitHub repository (data/<course>/lectures/) – otherwise a new server may start without them.",
                   "حاجة مهمة: الملفات المرفوعة بتتحفظ على السيرفر. علشان تفضل للأبد ضيفها كمان في مستودع GitHub (data/<المادة>/lectures/)، وإلا لو السيرفر اتغيّر ممكن تضيع."),
     "ev_lecturer_only": ("The evaluation page is for the lecturer / reviewer.", "صفحة التقييم للمحاضر / المراجع."),
+    # ---- delete + method hint
+    "hint_method": ("Hint: TF-IDF (the default) ranks slides by the rare, distinctive words of your question. BM25 is a newer version of the same idea: it also limits the effect of repeated words and of very long slides. Both usually give similar results – try the other one if you do not find what you need.",
+                    "تلميح: TF-IDF (الافتراضي) بيرتّب الشرايح حسب الكلمات النادرة والمميزة في سؤالك. أما BM25 فهو نسخة أحدث من نفس الفكرة، وبيقلّل تأثير الكلمات المتكررة والشرايح الطويلة. الاتنين غالباً بيدّوا نتايج متقاربة، فجرّب التاني لو مالقيتش اللي عايزه."),
+    "adm_delete_lecture": ("Delete a lecture", "امسح محاضرة"),
+    "adm_delete_lecture_note": ("Removes the PDF from the current course and rebuilds the index. For an added course its topic and practice questions are removed too.",
+                                "بيمسح ملف الـ PDF من المادة الحالية ويعيد بناء الفهرس. وفي المواد المضافة بيمسح موضوعها وأسئلتها كمان."),
+    "adm_delete_course": ("Delete this course", "امسح المادة دي"),
+    "adm_delete_course_note": ("Deletes the whole course (PDFs, index, topics, questions). Student logs stay in logs.xlsx. To confirm, type the course code: {code}",
+                               "بيمسح المادة كلها (الـ PDF والفهرس والمواضيع والأسئلة). سجلات الطلاب بتفضل في logs.xlsx. للتأكيد اكتب كود المادة: {code}"),
+    "delete_btn": ("Delete", "امسح"),
+    "confirm_delete_lecture": ("Delete this lecture? This cannot be undone.", "تمسح المحاضرة دي؟ مينفعش ترجع."),
+    "lecture_deleted": ("Lecture {n} deleted and the index rebuilt.", "اتمسحت المحاضرة {n} واتعاد بناء الفهرس."),
+    "course_deleted": ("Course {code} deleted.", "اتمسحت المادة {code}."),
+    "cannot_delete_default": ("The first course cannot be deleted (the app needs it).", "المادة الأولى مينفعش تتمسح (التطبيق محتاجها)."),
+    "bad_confirm": ("The code you typed does not match.", "الكود اللي كتبته مش مطابق."),
+    "no_such_lecture": ("That lecture was not found.", "المحاضرة دي مش موجودة."),
+    "last_lecture": ("A course must keep at least one lecture. Delete the whole course instead.", "المادة لازم يفضل فيها محاضرة واحدة على الأقل. امسح المادة كلها بدل كده."),
 }
 
 

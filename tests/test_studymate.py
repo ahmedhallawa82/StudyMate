@@ -160,3 +160,30 @@ def test_second_course_search_and_arabic(client):
     r = client.get("/ask", query_string={"q": "ايه هو محول العزم"})
     assert "Lecture 5 · Slide" in r.get_data(as_text=True)
     client.get("/course/AI")
+
+
+def test_delete_lecture_and_course_from_admin(client):
+    import io, shutil
+    src = config.LECTURES_DIR
+    client.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
+    pdfs = [src / "lecture 2 Intelligent Agents.pdf", src / "lecture 4 Informed Search.pdf"]
+    data = {"action": "add_course", "code": "del9", "name_en": "Delete me", "name_ar": "",
+            "pdfs": [(io.BytesIO(p.read_bytes()), p.name) for p in pdfs]}
+    try:
+        client.post("/admin", data=data, content_type="multipart/form-data")
+        assert "DEL9" in [c["code"] for c in config.list_courses()]
+        client.post("/admin", data={"action": "delete_lecture", "lecture": "2"})
+        left = list((config.BASE_DIR / "data" / "DEL9" / "lectures").glob("*.pdf"))
+        assert len(left) == 1 and "Informed" in left[0].name
+        client.post("/admin", data={"action": "delete_lecture", "lecture": "4"})      # last lecture: refused
+        assert len(list((config.BASE_DIR / "data" / "DEL9" / "lectures").glob("*.pdf"))) == 1
+        client.post("/admin", data={"action": "delete_course", "confirm": "wrong"})
+        assert (config.BASE_DIR / "data" / "DEL9").exists()
+        client.post("/admin", data={"action": "delete_course", "confirm": "DEL9"})
+        assert not (config.BASE_DIR / "data" / "DEL9").exists()
+        client.post("/admin", data={"action": "delete_course", "confirm": "AI"})      # first course is protected
+        assert (config.BASE_DIR / "data" / "AI").exists()
+    finally:
+        shutil.rmtree(config.BASE_DIR / "data" / "DEL9", ignore_errors=True)
+        shutil.rmtree(config.BASE_DIR / "models" / "DEL9", ignore_errors=True)
+        client.get("/course/AI")

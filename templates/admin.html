@@ -38,6 +38,17 @@
       </table>
     </div>
     <div class="card">
+      <h2>{{ t('adm_delete_lecture') }}</h2>
+      <p class="muted small">{{ t('adm_delete_lecture_note') }}</p>
+      <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_lecture') }}')">
+        <input type="hidden" name="action" value="delete_lecture">
+        <select name="lecture" style="flex:1;width:100%">
+          {% for l in lectures %}<option value="{{ l.lecture }}">{{ t('lecture') }} {{ l.lecture }} — {{ l.lecture_title }}</option>{% endfor %}
+        </select>
+        <button class="btn red" type="submit">{{ t('delete_btn') }}</button>
+      </form>
+    </div>
+    <div class="card">
       <h2>{{ t('add_course') }}</h2>
       <p class="muted small">{{ t('add_course_note') }}</p>
       <form method="post" enctype="multipart/form-data">
@@ -74,6 +85,17 @@
           <span class="pct">{{ c.code }} · {{ t('course_full') if c.full else t('course_auto') }}</span></li>{% endfor %}
       </ul>
     </div>
+    {% if can_delete_course %}
+    <div class="card panel">
+      <h3>{{ t('adm_delete_course') }}</h3>
+      <p class="muted small">{{ t('adm_delete_course_note', code=code) }}</p>
+      <form method="post">
+        <input type="hidden" name="action" value="delete_course">
+        <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off">
+        <p></p><button class="btn red" type="submit">{{ t('delete_btn') }}</button>
+      </form>
+    </div>
+    {% endif %}
   </aside>
 </div>
 {% endblock %}

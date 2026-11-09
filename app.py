@@ -460,6 +460,48 @@ def admin():
             except RuntimeError:
                 flash_t("course_failed")
             return redirect(url_for("admin"))
+        if action == "delete_course":
+            import shutil
+            if code == config.DEFAULT_COURSE:
+                flash_t("cannot_delete_default")
+            elif request.form.get("confirm", "").strip().upper() != code:
+                flash_t("bad_confirm")
+            else:
+                for d in (P.data, P.models, P.reports):
+                    shutil.rmtree(d, ignore_errors=True)
+                STATE.pop(code, None)
+                session["course"] = config.DEFAULT_COURSE
+                session.pop("practice", None)
+                flash_t("course_deleted", code=code)
+            return redirect(url_for("admin"))
+        if action == "delete_lecture":
+            from core.passages import lecture_number
+            num = request.form.get("lecture", "")
+            pdfs = [f for f in P.lectures.glob("*.pdf") if str(lecture_number(f.name)) == num]
+            if not pdfs:
+                flash_t("no_such_lecture")
+                return redirect(url_for("admin"))
+            if len(list(P.lectures.glob("*.pdf"))) <= len(pdfs):
+                flash_t("last_lecture")
+                return redirect(url_for("admin"))
+            for f in pdfs:
+                for c in (P.data / "ocr_cache").glob(f"{f.stem}__p*.txt"):
+                    c.unlink()
+                f.unlink()
+            if not full:                       # added course: drop the lecture's topic and questions too
+                tp, bk = pd.read_csv(P.topics), pd.read_csv(P.bank)
+                tp[tp.topic != f"lec{num}"].to_csv(P.topics, index=False, encoding="utf-8")
+                bk[bk.lecture.astype(str) != num].to_csv(P.bank, index=False, encoding="utf-8-sig")
+                from core.autocourse import regenerate
+                regenerate(code)
+            else:
+                from core.passages import build_passages
+                clf = S()["clf"]
+                df = build_passages(predict_topic=lambda text: clf.predict(text)[0], verbose=False, course=code)
+                build_index(df, course=code)
+            load_state(code)
+            flash_t("lecture_deleted", n=num)
+            return redirect(url_for("admin"))
         if action == "upload":
             f = request.files.get("pdf")
             if not f or not f.filename.lower().endswith(".pdf"):
@@ -509,7 +551,8 @@ def admin():
     lectures = (passages.groupby(["lecture", "lecture_title"]).agg(passages=("passage_id", "count"),
                 topics=("topic", lambda s: ", ".join(names.get(t, t) for t in sorted(set(s)))))
                 .reset_index().to_dict("records"))
-    return render_template("admin.html", lectures=lectures, total=len(passages), full=full,
+    return render_template("admin.html", lectures=lectures, total=len(passages), full=full, code=code,
+                           can_delete_course=code != config.DEFAULT_COURSE,
                            bank=len(S()["bank"]), threshold=S()["engine"].threshold,
                            model=KIND_NAME.get(S()["clf"].kind, S()["clf"].kind), lecture_dir=str(P.lectures.relative_to(config.BASE_DIR)))
 
