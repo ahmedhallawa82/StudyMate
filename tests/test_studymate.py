@@ -187,3 +187,23 @@ def test_delete_lecture_and_course_from_admin(client):
         shutil.rmtree(config.BASE_DIR / "data" / "DEL9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "DEL9", ignore_errors=True)
         client.get("/course/AI")
+
+
+def test_upload_several_lectures_at_once(client):
+    import io, shutil
+    src = config.LECTURES_DIR
+    client.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
+    pdfs = [src / "lecture 2 Intelligent Agents.pdf", src / "lecture 4 Informed Search.pdf", src / "lecture 5 Adversarial Search.pdf"]
+    mk = {"action": "add_course", "code": "mul9", "name_en": "Multi", "name_ar": "",
+          "pdfs": [(io.BytesIO(pdfs[0].read_bytes()), pdfs[0].name)]}
+    try:
+        client.post("/admin", data=mk, content_type="multipart/form-data")
+        client.post("/admin", data={"action": "upload",
+                    "pdf": [(io.BytesIO(p.read_bytes()), p.name) for p in pdfs[1:]]}, content_type="multipart/form-data")
+        names = sorted(f.name for f in (config.BASE_DIR / "data" / "MUL9" / "lectures").glob("*.pdf"))
+        assert len(names) == 3 and any(n.startswith("lecture 5") for n in names)
+        assert len(__import__("pandas").read_csv(config.BASE_DIR / "data" / "MUL9" / "passages.csv").lecture.unique()) == 3
+    finally:
+        shutil.rmtree(config.BASE_DIR / "data" / "MUL9", ignore_errors=True)
+        shutil.rmtree(config.BASE_DIR / "models" / "MUL9", ignore_errors=True)
+        client.get("/course/AI")

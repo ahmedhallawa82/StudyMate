@@ -503,24 +503,20 @@ def admin():
             flash_t("lecture_deleted", n=num)
             return redirect(url_for("admin"))
         if action == "upload":
-            f = request.files.get("pdf")
-            if not f or not f.filename.lower().endswith(".pdf"):
+            from core.autocourse import save_lecture
+            files = [f for f in request.files.getlist("pdf") if f.filename.lower().endswith(".pdf")]
+            if not files:
                 flash_t("choose_pdf")
                 return redirect(url_for("admin"))
             num = request.form.get("lecture_number", "").strip()
-            title = re.sub(r"[^A-Za-z0-9 _-]", "", request.form.get("title", "")).strip() or "New lecture"
-            if not num.isdigit():
-                m = re.search(r"(?:lecture|week)\s*[_-]?\s*(\d+)", f.filename, re.I)
-                num = m.group(1) if m else ""
-            if not num.isdigit():
-                flash_t("give_number")
-                return redirect(url_for("admin"))
-            name = secure_filename(f"lecture {int(num)} {title}.pdf").replace("_", " ")
-            P.lectures.mkdir(parents=True, exist_ok=True)
-            for old in P.lectures.glob(f"lecture {int(num)} *.pdf"):
-                old.unlink()   # replacing an existing lecture
-            f.save(P.lectures / name)
-            flash_t("saved_file", name=name)
+            title = re.sub(r"[^A-Za-z0-9 _-]", "", request.form.get("title", "")).strip()
+            single = len(files) == 1                  # number and title typed in the form only apply to one file
+            saved = []
+            for f in files:
+                n = save_lecture(code, f.filename, f.read(), number=int(num) if single and num.isdigit() else None,
+                                 title=title if single and title else None)
+                saved.append(n)
+            flash_t("saved_n", n=len(saved), nums=", ".join(str(n) for n in sorted(saved)))
         if action in ("upload", "rebuild", "retrain") and not full:
             from core.autocourse import regenerate
             try:

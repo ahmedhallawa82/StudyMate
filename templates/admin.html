@@ -26,7 +26,8 @@
           <div><label class="small">{{ t('lecture_number') }}</label><input type="number" name="lecture_number" min="1" placeholder="8"></div>
           <div><label class="small">{{ t('title') }}</label><input type="text" name="title" placeholder="Machine Learning" dir="ltr"></div>
         </div>
-        <p><input type="file" name="pdf" accept="application/pdf" required></p>
+        <p><input type="file" name="pdf" accept="application/pdf" multiple required></p>
+        <p class="muted small">{{ t('adm_multi') }}</p>
         <button class="btn" type="submit">{{ t('upload_rebuild') }}</button>
       </form>
     </div>

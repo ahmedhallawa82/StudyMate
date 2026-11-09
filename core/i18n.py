@@ -132,13 +132,16 @@ T = {
     "none_yet": ("None yet.", "لسه مفيش."),
     "red": ("red", "أحمر"), "amber": ("amber", "أصفر"), "green": ("green", "أخضر"),
     # ---- admin
-    "adm_upload": ("Upload a new lecture PDF", "ارفع محاضرة PDF جديدة"),
+    "adm_upload": ("Upload lecture PDFs", "ارفع محاضرات PDF"),
     "adm_upload_note": ("The slides are split into passages (one per slide) with pypdf and added to the search index. Slides of a new "
                         "lecture get their topic from the topic classifier. Uploading a lecture number that already exists replaces it.",
                         "الشرايح بتتقسم لفقرات (فقرة لكل شريحة) وبتتضاف لفهرس البحث. شرايح المحاضرة الجديدة موضوعها بيتحدد "
                         "بالمصنّف. رفع رقم محاضرة موجود بيستبدلها."),
     "lecture_number": ("Lecture number", "رقم المحاضرة"), "title": ("Title", "العنوان"),
     "upload_rebuild": ("Upload and rebuild index", "ارفع وأعد بناء الفهرس"),
+    "adm_multi": ("You can select several PDFs at once (Ctrl or Shift + click). The lecture number is taken from each file name (“lecture 3 …”, “… week 3”); a file without a number gets the next free one. The number and title boxes are used only when you upload a single file.",
+                  "تقدر تختار أكتر من PDF مرة واحدة (Ctrl أو Shift + ضغطة). رقم المحاضرة بيتاخد من اسم كل ملف («lecture 3 …» أو «… week 3»)، والملف اللي من غير رقم بياخد أول رقم فاضي. خانتا الرقم والعنوان بتتستخدم لو رفعت ملف واحد بس."),
+    "saved_n": ("Saved {n} lecture file(s): {nums}.", "اتحفظ {n} ملف محاضرة: {nums}."),
     "lectures_in_index": ("Lectures in the index", "المحاضرات في الفهرس"), "passages": ("passages", "فقرات"),
     "topics_col": ("Topics", "المواضيع"),
     "maintenance": ("Maintenance", "الصيانة"),
