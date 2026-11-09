@@ -1,20 +1,30 @@
 {% extends "base.html" %}
 {% block title %}{{ t('welcome') }}{% endblock %}
 {% block content %}
-<div class="center-box card">
+<div class="center-box card" style="max-width:560px">
   <h2>{{ t('welcome') }}</h2>
   <p class="muted">{{ t('intro', course=course) }}</p>
   <form method="post">
     {% if courses|length > 1 %}
-    <label class="small" for="course">{{ t('choose_course') }}</label>
-    <select id="course" name="course" style="width:100%;margin-bottom:12px">
-      {% for c in courses %}<option value="{{ c.code }}" {{ 'selected' if c.code == course_code }}>{{ c.title }}</option>{% endfor %}
-    </select>
+    <p class="small" style="margin-bottom:6px"><b>{{ t('choose_course') }}</b> — {{ t('course_cards_note') }}</p>
+    <div class="course-cards">
+      {% for c in courses %}
+      <label class="course-card">
+        <input type="radio" name="course" value="{{ c.code }}" {{ 'checked' if c.code == course_code }}>
+        <span><b>{{ c.title }}</b><br><span class="small muted">{{ t('n_lectures_slides', a=c.lectures, b=c.slides) }}</span></span>
+      </label>
+      {% endfor %}
+    </div>
     {% endif %}
     <label class="small" for="code">{{ t('student_code') }}</label>
-    <input type="text" id="code" name="code" placeholder="{{ t('code_ph') }}" autofocus required maxlength="20" dir="ltr">
+    <input type="text" id="code" name="code" placeholder="{{ t('code_ph') }}" autofocus maxlength="20" dir="ltr">
     <p class="muted small">{{ t('privacy') }}</p>
-    <button class="btn" type="submit">{{ t('start_btn') }}</button>
+    <div class="actions" style="align-items:center">
+      <button class="btn" type="submit">{{ t('start_btn') }}</button>
+      <span class="muted small">{{ t('or') }}</span>
+      <button class="btn ghost" type="submit" name="guest" value="1" formnovalidate>{{ t('guest_btn') }}</button>
+    </div>
+    <p class="muted small" style="margin-top:8px">{{ t('guest_note') }}</p>
   </form>
 </div>
 {% endblock %}

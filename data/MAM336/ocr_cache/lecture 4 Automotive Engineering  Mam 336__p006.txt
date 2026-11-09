@@ -1,0 +1,17 @@
+Types of gears
+It is also a circular shaped metal
+made on a cylindrical metal having the
+teeth cut not parallel to the axis but in
+helical shaped cut at certain angle inclined
+to the cylinder’s axis. This type of gear We can transmit the rotational
+is called as the helical gear. power to two shafts which are either
+P parallel or non parallel through the helical
+’ ,, as gear. Compared to straight spur gears
+,% ei if more power can be transmitted through
+. , a f ff ,. helical gears. This type of gear is used
+; é a / / in synchromesh gear box and constant
+\ //; mesh gear box.
+\ Py y
+*
+Pi
+4

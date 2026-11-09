@@ -88,16 +88,18 @@ def test_practice_flow_logs_answer(client):
     assert read_sheet("Answers")[-1]["hints_used"] == 1
 
 
-@pytest.mark.parametrize("page", ["/progress", "/evaluation"])
+@pytest.mark.parametrize("page", ["/progress"])
 def test_pages_open(client, page):
     assert client.get(page).status_code == 200
 
 
 def test_lecturer_pages(client):
     assert client.get("/dashboard").status_code == 302          # needs password
+    assert client.get("/evaluation").status_code == 302         # evaluation is for the lecturer only
     client.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
     assert client.get("/dashboard").status_code == 200
     assert client.get("/admin").status_code == 200
+    assert client.get("/evaluation").status_code == 200
     assert client.get("/dashboard/logs.xlsx").status_code == 200
 
 
@@ -139,3 +141,22 @@ def test_add_course_from_pdfs(client):
         shutil.rmtree(config.BASE_DIR / "data" / "TST9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "TST9", ignore_errors=True)
         client.get("/course/AI")
+
+
+def test_guest_login_and_no_evaluation_link_for_students():
+    import app as A
+    c = A.app.test_client()
+    r = c.post("/start", data={"guest": "1", "code": ""}, follow_redirects=True)
+    html = r.get_data(as_text=True)
+    assert "GUEST-" in html and "/evaluation" not in html
+
+
+def test_second_course_search_and_arabic(client):
+    r = client.get("/course/MAM336")
+    r = client.get("/ask", query_string={"q": "what does a clutch do"})
+    assert "Lecture 3 · Slide" in r.get_data(as_text=True)
+    r = client.get("/ask", query_string={"q": "who won the world cup"})
+    assert "Not found in the course" in r.get_data(as_text=True)
+    r = client.get("/ask", query_string={"q": "ايه هو محول العزم"})
+    assert "Lecture 5 · Slide" in r.get_data(as_text=True)
+    client.get("/course/AI")

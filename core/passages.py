@@ -1,5 +1,10 @@
 """Turn lecture PDFs into passages (about one passage per slide) with pypdf."""
 import re
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
 import pandas as pd
 from pypdf import PdfReader
 
@@ -7,14 +12,42 @@ import config
 from core.text import clean_slide_text, is_useful
 
 
+LECTURE_RE = r"(?:lecture|week)\s*[_-]?\s*(\d+)"        # "lecture 3 ..." or "... week 3.pdf"
+
+
+def ocr_page(pdf: Path, page_no: int, cache_dir: Path) -> str:
+    """Text of a picture-only slide, read with Tesseract OCR (needs the tesseract and pdftoppm programs).
+
+    The result is cached in data/<course>/ocr_cache, so the OCR runs once (the online server can then skip it).
+    """
+    cache = cache_dir / f"{pdf.stem}__p{page_no:03d}.txt"
+    if cache.exists():
+        return cache.read_text(encoding="utf-8")
+    if not (shutil.which("tesseract") and shutil.which("pdftoppm")):
+        return ""
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp) / "pg"
+        subprocess.run(["pdftoppm", "-r", "170", "-f", str(page_no), "-l", str(page_no), "-png", str(pdf), str(base)],
+                       check=False, capture_output=True, timeout=120)
+        imgs = sorted(Path(tmp).glob("pg*.png"))
+        if not imgs:
+            return ""
+        out = subprocess.run(["tesseract", str(imgs[0]), "stdout", "-l", "eng", "--psm", "6"],
+                             check=False, capture_output=True, timeout=120)
+    text = out.stdout.decode("utf-8", errors="ignore")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache.write_text(text, encoding="utf-8")
+    return text
+
+
 def lecture_number(filename: str):
-    m = re.search(r"lecture\s*[_-]?\s*(\d+)", filename, flags=re.IGNORECASE)
+    m = re.search(LECTURE_RE, filename, flags=re.IGNORECASE)
     return int(m.group(1)) if m else None
 
 
 def lecture_title(filename: str) -> str:
     stem = re.sub(r"\.pdf$", "", filename, flags=re.IGNORECASE)
-    stem = re.sub(r"lecture\s*[_-]?\s*\d+", "", stem, flags=re.IGNORECASE)
+    stem = re.sub(LECTURE_RE, "", stem, flags=re.IGNORECASE)
     return stem.strip(" _-").title() or "Lecture"
 
 
@@ -44,11 +77,14 @@ def build_passages(predict_topic=None, verbose=True, course=None) -> pd.DataFram
         lec = lecture_number(pdf.name)
         if lec is None:
             if verbose:
-                print(f"  skipped {pdf.name}: file name must contain 'lecture <number>'")
+                print(f"  skipped {pdf.name}: file name must contain 'lecture <number>' or 'week <number>'")
             continue
         reader = PdfReader(str(pdf))
         for i, page in enumerate(reader.pages, start=1):
-            text = clean_slide_text(page.extract_text() or "")
+            raw = page.extract_text() or ""
+            if len(raw.strip()) < 40:                       # picture-only slide -> read it with OCR
+                raw = ocr_page(pdf, i, P.data / "ocr_cache") or raw
+            text = clean_slide_text(raw)
             if not is_useful(text):
                 dropped += 1
                 continue

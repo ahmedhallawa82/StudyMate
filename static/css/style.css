@@ -93,3 +93,10 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 20px
 .tools select option { color: #1e1b4b; }
 html[lang="ar"] body { font-family: Cairo, Tahoma, "Segoe UI", sans-serif; }
 html[dir="rtl"] input[type=text]::placeholder, html[dir="rtl"] textarea::placeholder { text-align: right; }
+
+.course-cards { display: grid; gap: 8px; margin: 6px 0 14px; }
+.course-card { display: flex; gap: 10px; align-items: center; border: 2px solid var(--line); border-radius: 12px;
+               padding: 10px 14px; cursor: pointer; background: var(--card); }
+.course-card input { width: auto; accent-color: var(--orange); }
+.course-card:has(input:checked) { border-color: var(--orange); background: var(--teal-soft); }
+.help ol { padding-inline-start: 20px; } .help li { margin: 6px 0; font-size: 14px; }

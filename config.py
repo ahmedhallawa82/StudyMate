@@ -63,8 +63,22 @@ def course_paths(code=None):
         reports_url="reports" if default else f"reports/{code}")
 
 
+_counts = {}
+
+
+def _counts_of(folder):
+    """(lectures, slides) of a course, cached until its passages.csv changes."""
+    f = folder / "passages.csv"
+    key = (str(f), f.stat().st_mtime)
+    if key not in _counts:
+        import pandas as pd
+        p = pd.read_csv(f, usecols=["lecture"])
+        _counts[key] = (int(p.lecture.nunique()), len(p))
+    return _counts[key]
+
+
 def list_courses():
-    """[{code, name_en, name_ar, full}] for every folder data/<CODE>/ that has a course.json and passages."""
+    """[{code, name_en, name_ar, full, lectures, slides, meta}] for every data/<CODE>/ with course.json + passages."""
     out = []
     for info in sorted((BASE_DIR / "data").glob("*/course.json")):
         try:
@@ -73,6 +87,7 @@ def list_courses():
             continue
         code = info.parent.name
         if (info.parent / "passages.csv").exists():
+            lec, sl = _counts_of(info.parent)
             out.append({"code": code, "name_en": meta.get("name_en", code), "name_ar": meta.get("name_ar", ""),
-                        "full": meta.get("full", True)})
+                        "full": meta.get("full", True), "lectures": lec, "slides": sl, "meta": meta})
     return out

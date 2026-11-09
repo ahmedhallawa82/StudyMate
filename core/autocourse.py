@@ -36,11 +36,16 @@ def _cloze(passages: pd.DataFrame, code: str, per_topic: int = 6) -> pd.DataFram
     for topic, g in passages.groupby("topic", sort=False):
         cands = []
         for _, r in g.iterrows():
+            if r.slide == 1:                              # title slide
+                continue
             for line in re.split(r"[\n•▪·]|(?<=[.!?])\s+", r.text):
                 line = line.strip(" -–:;,")
                 words = line.split()
                 if not (6 <= len(words) <= 32) or not (35 <= len(line) <= 230):
                     continue
+                letters = sum(c.isalpha() or c == " " for c in line) / len(line)
+                if letters < 0.88 or re.search(r"\bdr\s*/|reference|copyright|www\.", line, re.I):
+                    continue                              # OCR noise, names, references
                 terms = [w for w in _WORD.findall(line) if w.lower() not in STOP]
                 if not terms:
                     continue
@@ -59,6 +64,23 @@ def _cloze(passages: pd.DataFrame, code: str, per_topic: int = 6) -> pd.DataFram
     return out
 
 
+def _keywords(passages: pd.DataFrame, n: int = 3) -> dict:
+    """The most typical words of each lecture (words that appear on at least 2 slides, so OCR noise is ignored)."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    try:
+        v = TfidfVectorizer(stop_words="english", token_pattern=r"[A-Za-z]{4,}", min_df=2, max_df=0.5, sublinear_tf=True)
+        X = v.fit_transform(passages.text)
+    except ValueError:                                  # tiny course: no word repeats
+        return {}
+    vocab = v.get_feature_names_out()
+    out = {}
+    for lec, idx in passages.groupby("lecture").indices.items():
+        row = X[idx].mean(axis=0).A1
+        top = row.argsort()[::-1][:n]
+        out[lec] = ", ".join(vocab[i].capitalize() for i in top if row[i] > 0)
+    return out
+
+
 def regenerate(code: str):
     """(Re)build everything of an automatic course from the PDFs in data/<CODE>/lectures."""
     P = config.course_paths(code)
@@ -72,15 +94,38 @@ def regenerate(code: str):
         raise RuntimeError("empty")
     nums = sorted(passages.lecture.unique())
     titles = passages.drop_duplicates("lecture").set_index("lecture")["lecture_title"].to_dict()
-    topics = pd.DataFrame({
-        "topic": [f"lec{n}" for n in nums],
-        "name": [f"L{n}: {titles.get(n, 'Lecture')}" for n in nums],
-        "name_ar": [f"م{n}: {titles.get(n, 'محاضرة')}" for n in nums],
-        "prerequisites": [""] + [f"lec{n}" for n in nums[:-1]],
-        "why": [f"lecture {n} of the course" for n in nums]})
-    topics.to_csv(P.topics, index=False, encoding="utf-8")
-    bank = _cloze(passages, code)
-    bank.to_csv(P.bank, index=False, encoding="utf-8-sig")
+    info = {}
+    if P.info.exists():
+        info = json.loads(P.info.read_text(encoding="utf-8"))
+    if info.get("curated") and P.topics.exists() and P.bank.exists():
+        # hand-made topics / question bank are kept; only lectures that were added later get automatic ones
+        topics = pd.read_csv(P.topics).fillna("")
+        bank = pd.read_csv(P.bank).fillna("")
+        kw = _keywords(passages)
+        new = [n for n in nums if f"lec{n}" not in set(topics.topic)]
+        if new:
+            add = pd.DataFrame({"topic": [f"lec{n}" for n in new], "name": [f"L{n}: {kw.get(n) or 'Lecture'}" for n in new],
+                                "name_ar": [f"م{n}: {kw.get(n) or 'محاضرة'}" for n in new],
+                                "prerequisites": [f"lec{n - 1}" if f"lec{n - 1}" in set(topics.topic) | {f"lec{m}" for m in new} else "" for n in new],
+                                "why": [f"lecture {n} of the course" for n in new]})
+            topics = pd.concat([topics, add], ignore_index=True)
+            extra = _cloze(passages[passages.topic.isin(add.topic)], code)
+            extra["q_id"] = [f"{code}-A{i:03d}" for i in range(1, len(extra) + 1)]
+            bank = pd.concat([bank, extra], ignore_index=True)
+        topics.to_csv(P.topics, index=False, encoding="utf-8")
+        bank.to_csv(P.bank, index=False, encoding="utf-8-sig")
+    else:
+        kw = _keywords(passages)
+        label = {n: (kw.get(n) or titles.get(n, "Lecture")) for n in nums}
+        topics = pd.DataFrame({
+            "topic": [f"lec{n}" for n in nums],
+            "name": [f"L{n}: {label[n]}" for n in nums],
+            "name_ar": [f"م{n}: {label[n]}" for n in nums],
+            "prerequisites": [""] + [f"lec{n}" for n in nums[:-1]],
+            "why": [f"lecture {n} of the course" for n in nums]})
+        topics.to_csv(P.topics, index=False, encoding="utf-8")
+        bank = _cloze(passages, code)
+        bank.to_csv(P.bank, index=False, encoding="utf-8-sig")
     # topic classifier trained on slide texts + the generated questions
     train = pd.concat([passages.rename(columns={"text": "question"})[["question", "topic"]],
                        bank[["question", "topic"]]], ignore_index=True)

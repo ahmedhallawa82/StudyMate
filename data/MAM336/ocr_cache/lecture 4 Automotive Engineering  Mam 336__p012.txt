@@ -1,0 +1,6 @@
+Types of gear box
+|. Sliding mesh gear box
+2. Constant mesh gear box
+3. Synchromesh gear box
+4. Epicyclic gear box
+5. Automatic gear box

@@ -1,0 +1,7 @@
+Clutch
+Clutch is a mechanical device ;
+which is used to transfer and cut the
+engine's power transmitted to the driveline.
+It is located in between engine and :
+gear box. ,
+Figure 1.8.4 Clutch

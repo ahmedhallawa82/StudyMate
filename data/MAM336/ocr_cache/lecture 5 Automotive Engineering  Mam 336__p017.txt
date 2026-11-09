@@ -1,0 +1,10 @@
+Automatic gear box
+Operating steps:
+1. The engine produces rotational power.
+2. The clutch connects the engine to the gearbox.
+3. When the driver presses the clutch pedal, the engine is disconnected from the transmission.
+4. The driver moves the gear lever to select the required gear.
+5. The synchronizer matches the rotational speeds of the components before engagement.
+6. The driver releases the clutch, and power is transmitted to the wheels.
+Advantages: Simple construction, high efficiency, low manufacturing cost, and direct driver control.
+Disadvantages: Requires manual operation and can be tiring in heavy traffic.

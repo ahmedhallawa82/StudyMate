@@ -27,13 +27,18 @@ Lecturer pages (Dashboard, Admin) password: `lecturer123` by default. Set your o
   Admin → *Add a new course*: upload the lecture PDFs (`lecture 1 Intro.pdf` …) and StudyMate builds the index, one topic per lecture, a classifier and fill-in-the-blank practice questions automatically.
   The first course (Artificial Intelligence) is the fully evaluated one (question bank, 360 labelled questions, search test, off-topic test).
 
+- **Guest mode** – students can press *Continue as guest* (no code needed).
+- **Second course – Automotive Engineering (MAM 336)**, 5 weekly lectures (108 slides, picture-only slides read with OCR), 47 hand-written practice questions with hints, Arabic glossary, search test (22 questions: top-3 = 86%) and off-topic test (10/10 “Not found”).
+- **Evaluation page** is visible only after the lecturer logs in (students do not see it).
+- **Admin page explains** how an uploaded PDF becomes searchable (step by step, in Arabic and English).
+
 ## Pages
 | Page | What it does |
 |---|---|
 | **Ask** | Question box → detected topic + confidence, the 3 closest passages with "Lecture X · Slide Y" and highlighted words, or "Not found in the course". TF-IDF or BM25. "Was this helpful?" Yes/No. Side panel: my topics (coloured dots) + "Study next" with the reason. Arabic questions work too. |
 | **Practice** | One question at a time → Show hint → Show a clearer hint → Check / Show the answer → "I got it right / wrong". Sets of 5 per topic. |
 | **My progress** | Every topic in red / amber / green with its %, plus "Study next" and why (based on topic prerequisites). |
-| **Evaluation** | Accuracy, precision, recall, F1 per class, confusion matrices (NB and LR), error analysis, search top-1/top-3, off-topic test, robustness tests. |
+| **Evaluation** (lecturer) | Accuracy, precision, recall, F1 per class, confusion matrices (NB and LR), error analysis, search top-1/top-3, off-topic test, robustness tests. |
 | **Dashboard** (lecturer) | Most asked topics, topics with the lowest scores, students per colour, visits per day, latest "Not found" questions – read live from `logs.xlsx`. |
 | **Admin** (lecturer) | Upload a new lecture PDF and rebuild the index; retrain + re-evaluate. |
 

@@ -1,0 +1,9 @@
+Steering system
+The steering system operates on
+a very simple mechanism that directly
+transforms steering wheel rotation into
+straight line movement and helps in turn
+the vehicle as per the road. It is shown
+Figure 1.8.10.
++ ——apgeae
+Figure 1.8.10 Steering system

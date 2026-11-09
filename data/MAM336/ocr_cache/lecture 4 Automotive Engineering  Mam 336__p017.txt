@@ -1,0 +1,17 @@
+Working principle
+d) Third gear
+Dog Clutch is located on the gear
+1 in the input (clutch) shaft and the B: T ———EEEE——
+gear 6 in the output shaft as shown in EF i
+4
+Figure 3.5.1.3. Now by moving the gear
+shift fork on the left as shown in Figure a fp
+the dog clutch is allowed to mesh with oa | er aie
+the dog clutch in the clutch shaft. ;
+Now the output shaft rotates at the
+speed same as the clutch (main) shaft. This , ;
+he i : Figure 3.5.1.3 Third gear power
+is the maximum speed and the gear ratio
+in this condition is 1:1. The rotational transmission
+power is now directly transmitted from
+the clutch shaft to the output shaft.

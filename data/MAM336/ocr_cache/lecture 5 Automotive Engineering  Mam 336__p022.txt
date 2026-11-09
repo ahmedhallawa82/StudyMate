@@ -1,0 +1,21 @@
+$$ __________ Working Principle EEUU
+A Dual-Clutch Transmission uses two independently controlled clutches to transmit engine power through
+two sets of gears.
+Typically:
+¢ Clutch 1: Controls odd-numbered gears (1, 3, 5, 7).
+¢ Clutch 2: Controls even-numbered gears (2, 4, 6).
+eT
+| | |
+| | 1 3 5 |
+| | hollow shaft |
+| | |
+| | |
+| | |
+crankshaft | | | transmission-
+| | | output
+| | of afl 6 |
+| | |
+| | |
+| | |
+be ee eb
+ee “me senses

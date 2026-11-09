@@ -1,0 +1,12 @@
+Dual-Clutch Transmission (DCT)
+Operating steps
+1. The vehicle moves in first gear through Clutch 1.
+2. Second gear is preselected on the other gear shaft.
+3. When the control unit requests an upshift, Clutch 1 begins disengaging.
+4. Simultaneously, Clutch 2 begins engaging.
+5. Engine torque transfers from the first gear path to the second gear path.
+6. Third gear can then be preselected for the next shift.
+This overlapping clutch operation enables very fast gear changes with minimal interruption of wheel torque.
+Advantages: Rapid shifting, high mechanical efficiency, and good acceleration.
+Disadvantages: Complex mechanical and electronic control systems, potentially expensive repairs, and
+possible low-speed hesitation or clutch wear in some designs.

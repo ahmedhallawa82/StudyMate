@@ -1,0 +1,19 @@
+Reverse Speed <= hl
+
+; 5 *,
+
+To obtain the reverse gear, the .
+synchronizer S, is actuated to move right ry
+towards the reverse gear 6 to engage as shown be
+in Figure 3.5.3.5. As the idler gear is placed . f aw 4
+between the gears 5 in the lay shaft and 6
+i ak ow
+in the main shaft the idler gear changes the |
+direction of rotation of the gear 6 in the ‘|
+main shaft. Now the vehicle moves in the _ JS
+reverse direction. The power transmitted | I]
+from the clutch shaft to the main shaft is
+
+sare 1-9-5- er-6-S
+through gears 1-2-5-Idler-6-S..
+Figure 3.5.3.5 Reversed gear condition

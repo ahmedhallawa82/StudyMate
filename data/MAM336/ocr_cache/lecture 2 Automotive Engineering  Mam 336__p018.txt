@@ -1,0 +1,6 @@
+Propeller Shaft
+It is a type of long hollow shaft. This
+is located in between the gear box and
+differential. It transmits power from gear
+box to differential. It is shown Figure 1.8.6.
+Figure 1.8.6 Propeller shaft

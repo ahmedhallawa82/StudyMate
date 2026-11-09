@@ -1,0 +1,11 @@
+Types of gears
+Gears are of many different types.
+The following are some of the important
+gears
+1. Spur gear
+2. Helical gear
+3. Double helical gear
+4. Bevel gear
+5. Rack and pinion gear
+6. Worm and worm gear
+7. Internal gear

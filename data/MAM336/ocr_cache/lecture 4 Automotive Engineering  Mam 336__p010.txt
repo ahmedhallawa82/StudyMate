@@ -1,0 +1,9 @@
+Types of gears
+The internal gear is the one in
+which the teeth are cut internally on the
+inner circular metal pipe. This is called
+as the internal gear. This gear could
+transmit more power in short places.
+They are strong in structure. They are
+used in a small mechanisms and tractor
+mechanism. Figure 3.2.1.7 Internal gear

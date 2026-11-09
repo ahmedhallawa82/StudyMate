@@ -1,0 +1,22 @@
+Feature MT AT AMT CVT DCT
+
+Gear selection Driver Automatic Automatic Continuous ratio Automatic
+
+Clutch pedal Yes No No No No
+
+Typical Gear pairs Planetary gear Manual gears with Variable pulleys Two gear paths
+
+mechanism sets actuators
+
+Shift Driver- Very smooth Moderate Very smooth Generally
+
+smoothness dependent smooth
+
+Shift speed Driver- Fast Often slower No discrete shifts Very fast
+
+dependent
+
+Complexity Low High Medium Medium-high High
+
+Main advantage _ Driver control Comfort Low-cost automation Smooth ratio Rapid gear
+variation changes

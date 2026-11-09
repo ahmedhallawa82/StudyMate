@@ -1,6 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ t('nav_admin') }}{% endblock %}
 {% block content %}
+<div class="card help">
+  <details open>
+    <summary style="font-size:17px">{{ t('help_title') }}</summary>
+    <p class="muted">{{ t('help_intro') }}</p>
+    <ol>
+      {% for k in ['help_1','help_2','help_3','help_4','help_5','help_6'] %}<li>{{ t(k) }}</li>{% endfor %}
+    </ol>
+    <h3>{{ t('help_btns') }}</h3>
+    <ul class="small">
+      {% for k in ['help_b1','help_b2','help_b3','help_b4'] %}<li>{{ t(k) }}</li>{% endfor %}
+    </ul>
+    <p class="small"><b>{{ t('help_keep') }}</b></p>
+  </details>
+</div>
 <div class="grid">
   <section>
     <div class="card">

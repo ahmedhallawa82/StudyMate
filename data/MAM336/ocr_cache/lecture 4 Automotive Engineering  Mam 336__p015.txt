@@ -1,0 +1,14 @@
+Working principle
+b) First gear
+
+The gear (1) in the clutch shaft is
+in mesh with the gear in the counter shaft ee F {| tan} ———
+(2). As the gears 3 and 4 are in the counter aa | i
+shaft they also rotate. When the gear shift J
+fork is moved towards left as shown in if t + -
+Figure 3.5.1.1 to engage the gear 5 in the ee 4 am i =
+output shaft with the gear 4 in the lay shaft, S ‘
+then the output shaft rotates. The rotary
+power is now transmitted to the output Figure 3.5.1.1 First gear power
+shaft from gear 1-2-4-5. Now we can get transmission
+first gear ratio 3:1.

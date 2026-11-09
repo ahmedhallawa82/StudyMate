@@ -1,0 +1,19 @@
+Types of gears
+It is like a circular shaped one made
+on a cylindrical metal having teeth cut
+in parallel to the axis of the cylinder. It
+is called as spur gear.
+
+This gear is used to transmit the
+
+a rotary power only between two parallel
+
+shafts. It is capable of transmitting
+
+moderate force and speed. A smaller
+
+gear is called as pinion. Normally in gear
+
+box this type of gear is used for first and
+
+a - reverse gear speed operations.

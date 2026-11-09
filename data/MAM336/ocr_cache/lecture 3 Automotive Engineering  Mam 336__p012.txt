@@ -1,0 +1,8 @@
+Types of Clutch
+1. Single plate clutch
+2. Multi plate clutch
+3. Diaphragm clutch
+4. Centrifugal clutch
+5. Hydraulic clutch
+6. Fluid flywheel clutch
+7. Electric clutch

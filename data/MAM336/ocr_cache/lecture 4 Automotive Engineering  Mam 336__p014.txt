@@ -1,0 +1,14 @@
+Working principle
+a) Neutral position 3.2 67 R
+The gear teeth (1) in the input — <<
+(clutch) shaft is in mesh with the counter as 4 — ry
+= = =
+shaft gear 2. Hence the counter shaft tos o aS =
+rotates. However the gears (3 or 4) are = = =
+not in mesh with the output shaft gears a — a — oo —
+— —_— wee
+(5 or 6) as shown in Figure 3.5.1.1. Hence = =i o
+it S oo @
+the power will not be transmitted to the = => — ae
+output shaft. This condition is called as = =
+neutral position P Figure 3.5.1 Sliding mesh gear box

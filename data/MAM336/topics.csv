@@ -1,0 +1,6 @@
+topic,name,name_ar,prerequisites,why
+lec1,Vehicle classification & systems,تصنيف المركبات وأنظمتها,,the introduction of the course
+lec2,Transmission system & vehicle components,نظام نقل الحركة ومكونات السيارة,lec1,you need the vehicle systems before the transmission details
+lec3,Clutch,القابض (الكلتش),lec2,the clutch is the first part of the transmission
+lec4,Gears & manual gearbox,التروس وصندوق التروس اليدوي,lec3,the gearbox comes after the clutch
+lec5,Synchromesh & automatic transmissions,السنكروميش والنقل الأوتوماتيكي,lec4,builds on sliding and constant mesh gearboxes

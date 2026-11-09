@@ -1,0 +1,12 @@
+Types of gears
+It is used to transmit the rotational
+power by connecting two shafts that are
+perpendicular to each other. The gear =
+which looks like a spur gear is called
+as the worm. The small shaft with the
+single start thread or multi start thread
+cut made on it is called the worm shaft.
+This type of gear is used in places where
+high speed reduction and high power
+transmission are obtained. It is used in a A
+steering gear box in automobiles. Figure 3.2.1.5 Worm and worm gear

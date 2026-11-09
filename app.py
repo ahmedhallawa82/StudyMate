@@ -84,6 +84,10 @@ def lang():
     return session.get("lang", "en")
 
 
+def is_full_course():
+    return any(c["full"] for c in config.list_courses() if c["code"] == course_code())
+
+
 def course_title(code=None, l=None):
     code, l = code or course_code(), l or lang()
     for c in config.list_courses():
@@ -176,6 +180,9 @@ def inject():
 def start():
     if request.method == "POST":
         code = re.sub(r"[^A-Za-z0-9_-]", "", request.form.get("code", "")).upper()[:20]
+        if request.form.get("guest"):                  # guest: no code needed, a temporary one is made
+            import secrets
+            code = "GUEST-" + secrets.token_hex(2).upper()
         if not code:
             flash_t("enter_code")
         else:
@@ -218,6 +225,13 @@ def ask():
         clf, eng = S()["clf"], S()["engine"]
         topic, conf = clf.predict(question)
         found, hits = eng.search(question, method=method)
+        if found and hits and not is_full_course():
+            # courses without labelled questions: the topic of the closest slides is more reliable than the classifier
+            votes = Counter()
+            for h in hits:
+                votes[h["topic"]] += h["score"]
+            topic = votes.most_common(1)[0][0]
+            conf = votes[topic] / sum(votes.values())
         for h in hits:
             h["html"] = Markup(highlight(h["text"], question))
         log_id = log("Questions", {
@@ -242,8 +256,13 @@ def examples():
                     "ايه هو التقليم الفا بيتا", "ما هي شبكة بايز"]
         return ["What is an admissible heuristic?", "difference between BFS and uniform cost search",
                 "when does alpha beta prune a branch", "what does PEAS stand for", "how does variable elimination work"]
+    meta = next((c["meta"] for c in config.list_courses() if c["code"] == course_code()), {})
+    ex = meta.get("examples_ar" if lang() == "ar" else "examples_en")
+    if ex:
+        return ex
     bank = S()["bank"]
-    return [] if bank.empty else [q.split("_____")[0].strip()[:60] or q[:60] for q in bank.answer.head(4)]
+    plain = bank[~bank.question.str.startswith("Fill in the blank")]
+    return list(plain.question.head(4)) if len(plain) else []
 
 
 @app.route("/helpful/<int:log_id>/<answer>", methods=["POST"])
@@ -343,6 +362,7 @@ def progress():
 
 # ------------------------------------------------------------------ Evaluation
 @app.route("/evaluation")
+@lecturer_required
 def evaluation():
     visit("evaluation")
     P = config.course_paths(course_code())
@@ -448,7 +468,7 @@ def admin():
             num = request.form.get("lecture_number", "").strip()
             title = re.sub(r"[^A-Za-z0-9 _-]", "", request.form.get("title", "")).strip() or "New lecture"
             if not num.isdigit():
-                m = re.search(r"lecture\s*[_-]?\s*(\d+)", f.filename, re.I)
+                m = re.search(r"(?:lecture|week)\s*[_-]?\s*(\d+)", f.filename, re.I)
                 num = m.group(1) if m else ""
             if not num.isdigit():
                 flash_t("give_number")
@@ -461,9 +481,12 @@ def admin():
             flash_t("saved_file", name=name)
         if action in ("upload", "rebuild", "retrain") and not full:
             from core.autocourse import regenerate
-            rep = regenerate(code)
-            load_state(code)
-            flash_t("index_rebuilt", n=rep["slides"], m=rep["lectures"])
+            try:
+                rep = regenerate(code)
+                load_state(code)
+                flash_t("index_rebuilt", n=rep["slides"], m=rep["lectures"])
+            except RuntimeError:
+                flash_t("course_failed")
         elif action in ("upload", "rebuild"):
             from core.passages import build_passages
             clf = S()["clf"]

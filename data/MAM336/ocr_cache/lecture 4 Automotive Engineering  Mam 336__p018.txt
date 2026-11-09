@@ -1,0 +1,15 @@
+Working principle
+
+e) Reverse gear
+
+For reverse gear, the gear shift fork
+| Sian -omeae <a =-j8|—i5F—
+is moved towards the right direction as i
+shown in the Figure 3.5.1.4. Hence the
+gear 5 in the output shaft is in mesh with | i 4 |p
+the gear 8 in the lay shaft which is the 1 4 —— 7 - e
+idler gear. Now the power transmission is il hl ?
+from gear 1-2-7-8-5 to the output shaft.
+
+Figure 3.5.1.4 Reverse gear power
+transmission
