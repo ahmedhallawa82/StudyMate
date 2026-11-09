@@ -31,7 +31,32 @@
     });
     document.addEventListener("click", function (e) { if (!box.contains(e.target)) close(); });
   }
-  /* same live search above the course cards on the start page */
+  /* start page: the course is a drop-down with live search (value goes to the hidden field) */
+  var pk = document.getElementById("coursePick");
+  if (pk) {
+    var pb = pk.querySelector(".pick-btn"), pp = pk.querySelector(".pick-panel"), pi = pp.querySelector("input"),
+        pl = [].slice.call(pp.querySelectorAll("li")), pn = pp.querySelector(".combo-none"),
+        hid = pk.querySelector("input[type=hidden]");
+    function pclose() { pp.hidden = true; pb.setAttribute("aria-expanded", "false"); }
+    function pick(li) {
+      hid.value = li.getAttribute("data-code");
+      pk.querySelector(".pick-label").textContent = li.getAttribute("data-title");
+      pl.forEach(function (x) { x.classList.toggle("on", x === li); });
+      pclose();
+    }
+    pb.addEventListener("click", function () {
+      var open = pp.hidden; pp.hidden = !open; pb.setAttribute("aria-expanded", String(open));
+      if (open) { pi.value = ""; filter(pi, pl, pn); pi.focus(); }
+    });
+    pi.addEventListener("input", function () { filter(pi, pl, pn); });
+    pi.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") pclose();
+      if (e.key === "Enter") { e.preventDefault(); var f = pl.filter(function (l) { return !l.hidden; })[0]; if (f) pick(f); }
+    });
+    pl.forEach(function (li) { li.addEventListener("click", function () { pick(li); }); });
+    document.addEventListener("click", function (e) { if (!pk.contains(e.target)) pclose(); });
+  }
+  /* (old) live search above course cards */
   var s = document.getElementById("courseSearch");
   if (s) {
     var cards = [].slice.call(document.querySelectorAll(".course-card")), n = document.getElementById("courseNone");

@@ -111,3 +111,11 @@ html[dir="rtl"] input[type=text]::placeholder, html[dir="rtl"] textarea::placeho
 .combo-panel li:hover, .combo-panel li.on { background: var(--teal-soft); }
 .combo-panel li small { color: var(--muted, #6b7280); }
 .who { margin-bottom: 12px; }
+
+.pick { position: relative; margin: 4px 0 14px; }
+.pick-btn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 8px; text-align: start; cursor: pointer;
+            font: inherit; font-size: 16px; font-weight: 600; color: var(--ink); background: var(--card);
+            border: 2px solid var(--line); border-radius: 12px; padding: 11px 14px; }
+.pick-btn:hover, .pick-btn[aria-expanded=true] { border-color: var(--orange); }
+.pick-panel { inset-inline: 0; width: auto; top: calc(100% + 4px); }
+.pick-panel li { align-items: center; }
