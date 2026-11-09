@@ -89,3 +89,10 @@ or preview any page with `?theme=midnight` in the address bar.
 
 ## Bonus items included
 Deployment (GitHub + free hosting) · BM25 search · Arabic questions (glossary translation) · Arabic interface · dark mode · multi-course · automatic tests · Colab notebook · 5 themes.
+
+
+## Doctors (private access codes)
+- The main admin (password `LECTURER_PASSWORD`) opens Admin -> **Doctors**, types a doctor name and gets a private code such as `K7QD-M4PX2TNB` (shown once; only a hash is stored in `data/doctors.json`).
+- A doctor signs in on the same Admin page with his code. He sees and manages only the courses registered under his name (up to 10), can add new courses (they are registered under him), and downloads only his own rows of `logs.xlsx`.
+- The main admin sees everything, can give a course to a doctor, make a new code for a doctor, or delete a doctor (his courses go back to the main admin).
+- 5 wrong tries lock the sign-in for 5 minutes. Students pick the course from a drop-down with live search.

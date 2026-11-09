@@ -232,3 +232,53 @@ def test_upload_several_lectures_at_once(admin):
         shutil.rmtree(config.BASE_DIR / "data" / "MUL9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "MUL9", ignore_errors=True)
         admin.get("/course/AI")
+
+
+# ---------------- doctors: private codes, own courses only
+def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
+    import io, shutil
+    import app as A
+    from core import doctors
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    did, code = doctors.add("Dr Test")
+    did2, code2 = doctors.add("Dr Other")
+    assert doctors.check(code.lower()) == did and doctors.check(did + "-WRONGWRONG") is None
+    assert "hash" not in str(doctors.list_doctors()) and code.split("-")[1] not in (tmp_path / "doctors.json").read_text()
+
+    def login(c):
+        return A.app.test_client(), c
+    d1, d2 = A.app.test_client(), A.app.test_client()
+    bad = A.app.test_client()
+    bad.post("/lecturer", data={"password": did + "-NOPE2345"})
+    assert bad.get("/dashboard").status_code == 302                      # wrong code: not admitted
+    d1.post("/lecturer", data={"password": code})
+    d2.post("/lecturer", data={"password": code2})
+    html = d1.get("/admin").get_data(as_text=True)
+    assert "Dr. Dr Test" in html and "Add a course" in html or "Dr Test" in html
+    assert d1.get("/dashboard").status_code == 302                       # no course yet -> sent to Admin
+    src = config.LECTURES_DIR
+    pdfs = [src / "lecture 2 Intelligent Agents.pdf", src / "lecture 4 Informed Search.pdf"]
+    try:
+        d1.post("/admin", data={"action": "add_course", "code": "dct9", "name_en": "Doctor course", "name_ar": "",
+                "pdfs": [(io.BytesIO(p.read_bytes()), p.name) for p in pdfs]}, content_type="multipart/form-data")
+        assert next(c for c in config.list_courses() if c["code"] == "DCT9")["meta"]["owner"] == did
+        assert d1.get("/dashboard").status_code == 200 and d1.get("/evaluation").status_code == 200
+        assert d1.get("/dashboard/logs.xlsx").status_code == 200
+        # he sees only his own course (not AI / MAM336) in the course list
+        page = d1.get("/admin").get_data(as_text=True)
+        assert "DCT9" in page and "MAM336" not in page and "Doctors" not in page
+        # another doctor can neither edit nor delete it, and cannot make doctors
+        d2.post("/admin", data={"action": "delete_course", "confirm": "DCT9"})
+        d2.post("/admin", data={"action": "add_doctor", "doctor_name": "Hacker"})
+        assert (config.BASE_DIR / "data" / "DCT9").exists() and len(doctors.list_doctors()) == 2
+        # the main admin sees everything and can manage doctors
+        assert "Doctors" in admin.get("/admin").get_data(as_text=True)
+        admin.post("/admin", data={"action": "delete_doctor", "doctor": did2})
+        assert len(doctors.list_doctors()) == 1
+        # students see all courses, with the live-search list
+        s = A.app.test_client(); s.post("/start", data={"code": "SRCH1"})
+        html = s.get("/ask").get_data(as_text=True)
+        assert 'id="courseCombo"' in html and "DCT9" in html and "js/courses.js" in html
+    finally:
+        shutil.rmtree(config.BASE_DIR / "data" / "DCT9", ignore_errors=True)
+        shutil.rmtree(config.BASE_DIR / "models" / "DCT9", ignore_errors=True)

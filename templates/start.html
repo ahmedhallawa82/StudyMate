@@ -7,14 +7,16 @@
   <form method="post">
     {% if courses|length > 1 %}
     <p class="small" style="margin-bottom:6px"><b>{{ t('choose_course') }}</b> — {{ t('course_cards_note') }}</p>
+    {% if courses|length > 4 %}<input type="search" id="courseSearch" placeholder="{{ t('search_courses') }}" autocomplete="off">{% endif %}
     <div class="course-cards">
       {% for c in courses %}
-      <label class="course-card">
+      <label class="course-card" data-q="{{ (c.code ~ ' ' ~ c.name_en ~ ' ' ~ c.name_ar)|lower }}">
         <input type="radio" name="course" value="{{ c.code }}" {{ 'checked' if c.code == course_code }}>
         <span><b>{{ c.title }}</b><br><span class="small muted">{{ t('n_lectures_slides', a=c.lectures, b=c.slides) }}</span></span>
       </label>
       {% endfor %}
     </div>
+    <p class="small muted" id="courseNone" hidden>{{ t('no_match') }}</p>
     {% endif %}
     <label class="small" for="code">{{ t('student_code') }}</label>
     <input type="text" id="code" name="code" placeholder="{{ t('code_ph') }}" autofocus maxlength="20" dir="ltr">

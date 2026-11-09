@@ -14,6 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
+from core import doctors
 from core import mastery as M
 from core.classifier import TopicClassifier, KIND_NAME
 from core.logger import log_to_excel, read_sheet, ensure_workbook
@@ -69,6 +70,10 @@ def course_codes():
 
 def course_code():
     c = session.get("course")
+    if session.get("lecturer") and not is_master():            # a doctor works only on his own courses
+        own = [x["code"] for x in visible_courses()]
+        if own:
+            return c if c in own else own[0]
     return c if c in course_codes() else config.DEFAULT_COURSE
 
 
@@ -132,6 +137,33 @@ def lecturer_required(view):
     return wrapper
 
 
+# ------------------------------------------------------------------ who is the admin? (master or one doctor)
+def admin_id():
+    return session.get("admin_id") if session.get("lecturer") else None
+
+
+def is_master():
+    return admin_id() == doctors.MASTER
+
+
+def course_owner(code):
+    return next((c["meta"].get("owner") for c in config.list_courses() if c["code"] == code), None)
+
+
+def can_manage(code):
+    """The master manages every course; a doctor only the courses registered under his name."""
+    if not session.get("lecturer"):
+        return False
+    return is_master() or (course_owner(code) is not None and course_owner(code) == admin_id())
+
+
+def visible_courses():
+    allc = config.list_courses()
+    if session.get("lecturer") and not is_master():
+        return [c for c in allc if can_manage(c["code"])]
+    return allc
+
+
 def visit(page):
     if session.get("lecturer"):                        # admin pages are not student visits
         return
@@ -176,7 +208,9 @@ def inject():
             "is_lecturer": session.get("lecturer"), "names": S()["names_ar" if l == "ar" else "names"],
             "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
-                        for c in config.list_courses()]}
+                        for c in visible_courses()],
+            "admin_role": ("master" if is_master() else "doctor") if session.get("lecturer") else None,
+            "admin_name": session.get("admin_name", "")}
 
 
 # ------------------------------------------------------------------ student login (code only, no names)
@@ -203,7 +237,7 @@ def start():
 
 @app.route("/course/<code>")
 def choose_course(code):
-    if code in course_codes() and code != session.get("course"):
+    if code in course_codes() and code != session.get("course") and (not session.get("lecturer") or can_manage(code)):
         session["course"] = code
         session.pop("practice", None)
     if session.get("lecturer"):
@@ -374,6 +408,8 @@ def progress():
 @app.route("/evaluation")
 @lecturer_required
 def evaluation():
+    if not can_manage(course_code()):
+        return redirect(url_for("admin"))
     visit("evaluation")
     P = config.course_paths(course_code())
     path = P.reports / "metrics.json"
@@ -383,14 +419,44 @@ def evaluation():
 
 
 # ------------------------------------------------------------------ Lecturer: login, dashboard, admin
+_FAILS = {}                                         # ip -> (count, first_time): a short lock after 5 wrong tries
+
+
+def _locked(ip):
+    import time
+    n, t0 = _FAILS.get(ip, (0, 0))
+    if n >= 5 and time.time() - t0 < 300:
+        return True
+    if n >= 5:
+        _FAILS.pop(ip, None)
+    return False
+
+
 @app.route("/lecturer", methods=["GET", "POST"])
 def lecturer_login():
     if request.method == "POST":
-        if request.form.get("password") == config.LECTURER_PASSWORD:
+        import time, hmac
+        ip = request.remote_addr or "?"
+        if _locked(ip):
+            flash_t("too_many_tries")
+            return render_template("lecturer_login.html")
+        pw = request.form.get("password", "").strip()
+        who, name = None, ""
+        if hmac.compare_digest(pw, config.LECTURER_PASSWORD):
+            who, name = doctors.MASTER, ""
+        else:
+            did = doctors.check(pw)
+            if did:
+                who, name = did, doctors.get(did)["name"]
+        if who:
+            _FAILS.pop(ip, None)
             session["lecturer"] = True
+            session["admin_id"], session["admin_name"] = who, name
             session.pop("student_code", None)            # an admin is not a student: leave the student area first
             session.pop("practice", None)
             return redirect(request.args.get("next") or url_for("dashboard"))
+        n, t0 = _FAILS.get(ip, (0, time.time()))
+        _FAILS[ip] = (n + 1, t0)
         flash_t("wrong_password")
     return render_template("lecturer_login.html")
 
@@ -398,6 +464,8 @@ def lecturer_login():
 @app.route("/dashboard")
 @lecturer_required
 def dashboard():
+    if not can_manage(course_code()):
+        return redirect(url_for("admin"))
     visit("dashboard")
     names = S()["names_ar"] if lang() == "ar" else S()["names"]
     cc = course_code()
@@ -443,7 +511,18 @@ def dashboard():
 def download_logs():
     from flask import send_file
     ensure_workbook()
-    return send_file(config.LOGS_XLSX, as_attachment=True, download_name="logs.xlsx")
+    if is_master():
+        return send_file(config.LOGS_XLSX, as_attachment=True, download_name="logs.xlsx")
+    import io
+    mine = {c["code"] for c in visible_courses()}           # a doctor gets only the rows of his own courses
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xw:
+        from core.logger import SHEETS
+        for sheet, cols in SHEETS.items():
+            rows = [r for r in read_sheet(sheet) if r.get("course") in mine]
+            pd.DataFrame(rows, columns=cols).to_excel(xw, sheet_name=sheet, index=False)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name="logs.xlsx")
 
 
 @app.route("/admin", methods=["GET", "POST"])
@@ -452,14 +531,55 @@ def admin():
     code = course_code()
     P = config.course_paths(code)
     full = any(c["full"] for c in config.list_courses() if c["code"] == code)
+    mine = can_manage(code)                                  # a doctor with no course yet can only add one
     if request.method == "POST":
         action = request.form.get("action")
+        if action in ("add_doctor", "reset_doctor", "delete_doctor", "set_owner"):
+            if not is_master():
+                flash_t("master_only")
+                return redirect(url_for("admin"))
+            if action == "add_doctor":
+                name = request.form.get("doctor_name", "").strip()
+                if name:
+                    did, new_code = doctors.add(name)
+                    flash_t("doctor_added", name=name, code=new_code)
+            elif action == "reset_doctor":
+                new_code = doctors.reset(request.form.get("doctor", ""))
+                if new_code:
+                    flash_t("doctor_reset", code=new_code)
+            elif action == "delete_doctor":
+                did = request.form.get("doctor", "")
+                doctors.remove(did)
+                for c in config.list_courses():              # his courses go back to the main admin
+                    if c["meta"].get("owner") == did:
+                        meta = dict(c["meta"]); meta.pop("owner", None)
+                        (config.BASE_DIR / "data" / c["code"] / "course.json").write_text(
+                            json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+                flash_t("doctor_deleted")
+            else:
+                did = request.form.get("owner", "")
+                info = config.course_paths(code).info
+                meta = json.loads(info.read_text(encoding="utf-8"))
+                if did and doctors.get(did):
+                    meta["owner"] = did
+                else:
+                    meta.pop("owner", None)
+                info.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+                flash_t("owner_set")
+            return redirect(url_for("admin"))
+        if action != "add_course" and not mine:
+            flash_t("not_your_course")
+            return redirect(url_for("admin"))
         if action == "add_course":
             from core.autocourse import build_course, clean_code
+            if not is_master() and len([c for c in config.list_courses() if c["meta"].get("owner") == admin_id()]) >= config.MAX_COURSES_PER_DOCTOR:
+                flash_t("too_many_courses", n=config.MAX_COURSES_PER_DOCTOR)
+                return redirect(url_for("admin"))
             files = [(f.filename, f.read()) for f in request.files.getlist("pdfs") if f.filename.lower().endswith(".pdf")]
             try:
+                owner = admin_id() if not is_master() else (request.form.get("owner") or None)
                 rep = build_course(request.form.get("code", ""), request.form.get("name_en", "").strip(),
-                                   request.form.get("name_ar", "").strip(), files)
+                                   request.form.get("name_ar", "").strip(), files, owner=owner)
                 load_state(rep["code"])
                 session["course"] = rep["code"]
                 session.pop("practice", None)
@@ -554,20 +674,26 @@ def admin():
             flash_t("retrained")
         return redirect(url_for("admin"))
     visit("admin")
+    if not mine:                                             # doctor without a course: only the "add a course" card
+        return render_template("admin.html", no_course=True, lectures=[], total=0, full=False, code="", can_delete_course=False,
+                               bank=0, threshold="", model="", lecture_dir="", doctors=[], owner=None, is_owner_view=False)
     names = S()["names_ar"] if lang() == "ar" else S()["names"]
     passages = pd.read_csv(P.passages)
     lectures = (passages.groupby(["lecture", "lecture_title"]).agg(passages=("passage_id", "count"),
                 topics=("topic", lambda s: ", ".join(names.get(t, t) for t in sorted(set(s)))))
                 .reset_index().to_dict("records"))
     return render_template("admin.html", lectures=lectures, total=len(passages), full=full, code=code,
-                           can_delete_course=code != config.DEFAULT_COURSE,
+                           can_delete_course=code != config.DEFAULT_COURSE, no_course=False,
+                           doctors=doctors.list_doctors() if is_master() else [], owner=course_owner(code),
+                           doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {},
                            bank=len(S()["bank"]), threshold=S()["engine"].threshold,
                            model=KIND_NAME.get(S()["clf"].kind, S()["clf"].kind), lecture_dir=str(P.lectures.relative_to(config.BASE_DIR)))
 
 
 @app.route("/lecturer/logout")
 def lecturer_logout():
-    session.pop("lecturer", None)
+    for k in ("lecturer", "admin_id", "admin_name"):
+        session.pop(k, None)
     return redirect(url_for("start"))
 
 

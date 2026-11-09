@@ -110,8 +110,8 @@ T = {
     "sn_earliest": ("{t} is the earliest topic in the course that is not mastered yet.", "{t} أول موضوع في المادة لسه ما اتقنتوش."),
     # ---- lecturer
     "lecturer_area": ("Admin", "الأدمن"),
-    "lecturer_note": ("Sign in to see all the data (questions, practice, visits), manage the lectures and courses and read the evaluation.", "سجّل الدخول علشان تشوف كل البيانات (الأسئلة والتدريب والزيارات) وتدير المحاضرات والمواد وتقرا التقييم."),
-    "password": ("Password", "كلمة المرور"), "enter": ("Enter", "دخول"),
+    "lecturer_note": ("Enter the admin password, or your own doctor access code, to see the data of your courses, manage their lectures and read the evaluation.", "اكتب باسورد الأدمن، أو كود الدكتور الخاص بيك، علشان تشوف داتا موادك وتدير محاضراتها وتقرا التقييم."),
+    "password": ("Password or doctor code", "كلمة المرور أو كود الدكتور"), "enter": ("Enter", "دخول"),
     "wrong_password": ("Wrong password.", "كلمة المرور غلط."),
     # ---- dashboard
     "dash_title": ("Admin · Data", "الأدمن · البيانات"),
@@ -268,6 +268,27 @@ T = {
     "bad_confirm": ("The code you typed does not match.", "الكود اللي كتبته مش مطابق."),
     "no_such_lecture": ("That lecture was not found.", "المحاضرة دي مش موجودة."),
     "last_lecture": ("A course must keep at least one lecture. Delete the whole course instead.", "المادة لازم يفضل فيها محاضرة واحدة على الأقل. امسح المادة كلها بدل كده."),
+    # ---- doctors
+    "too_many_tries": ("Too many wrong tries. Wait 5 minutes and try again.", "محاولات غلط كتير. استنى 5 دقايق وجرّب تاني."),
+    "master_only": ("Only the main admin can do this.", "ده للأدمن الرئيسي بس."),
+    "not_your_course": ("This course is not registered under your name.", "المادة دي مش مسجّلة باسمك."),
+    "too_many_courses": ("You can create up to {n} courses.", "تقدر تعمل لحد {n} مواد."),
+    "doctor_added": ("Doctor “{name}” added. Access code (shown only once, copy it now): {code}", "اتضاف الدكتور «{name}». كود الدخول (بيظهر مرة واحدة بس، انسخه دلوقتي): {code}"),
+    "doctor_reset": ("New access code (shown only once, copy it now): {code}", "كود الدخول الجديد (بيظهر مرة واحدة بس، انسخه دلوقتي): {code}"),
+    "doctor_deleted": ("Doctor deleted. His courses went back to the main admin.", "اتمسح الدكتور. وموادّه رجعت للأدمن الرئيسي."),
+    "owner_set": ("Course owner saved.", "اتحفظ صاحب المادة."),
+    "signed_as_master": ("You are signed in as the main admin: you see and manage every course and every doctor.", "إنت داخل كأدمن رئيسي: بتشوف وتدير كل المواد وكل الدكاترة."),
+    "signed_as_doctor": ("You are signed in as Dr. {name}: you see and manage only the courses registered under your name.", "إنت داخل كـ د. {name}: بتشوف وتدير بس المواد المسجّلة باسمك."),
+    "no_course_yet": ("you have no courses yet. Add your first course below.", "لسه معندكش مواد. أضف أول مادة من تحت."),
+    "course_owner": ("Course owner", "صاحب المادة"), "owner_none": ("Main admin (no doctor)", "الأدمن الرئيسي (بدون دكتور)"),
+    "doctors": ("Doctors", "الدكاترة"),
+    "doctors_note": ("Each doctor gets a private access code and sees only his own courses. The code is shown once when you add the doctor or press “New code”.",
+                     "كل دكتور بياخد كود دخول خاص وبيشوف مواده بس. الكود بيظهر مرة واحدة لما تضيف الدكتور أو تضغط «كود جديد»."),
+    "doctor_name_ph": ("Doctor name", "اسم الدكتور"), "add_doctor": ("Add doctor", "إضافة دكتور"),
+    "new_code": ("New code", "كود جديد"), "save": ("Save", "حفظ"),
+    "confirm_reset_doctor": ("Make a new code? The old code stops working.", "تعمل كود جديد؟ الكود القديم هيقف."),
+    "confirm_delete_doctor": ("Delete this doctor? His courses go back to the main admin.", "تمسح الدكتور ده؟ موادّه هترجع للأدمن الرئيسي."),
+    "search_courses": ("Search courses…", "ابحث عن مادة…"), "no_match": ("No matching course", "مفيش مادة مطابقة"),
 }
 
 

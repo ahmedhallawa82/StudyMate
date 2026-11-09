@@ -33,6 +33,7 @@ GREEN_FROM = 0.70
 # Lecturer pages (Admin + Dashboard). Change before a real deployment.
 import os
 LECTURER_PASSWORD = os.environ.get("LECTURER_PASSWORD", "lecturer123")
+MAX_COURSES_PER_DOCTOR = 10                       # keeps the free hosting disk from filling up
 SECRET_KEY = os.environ.get("SECRET_KEY", "studymate-dev-key-change-me")
 
 RANDOM_STATE = 42

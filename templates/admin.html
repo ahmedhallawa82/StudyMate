@@ -15,8 +15,11 @@
     <p class="small"><b>{{ t('help_keep') }}</b></p>
   </details>
 </div>
+<div class="who card small">{{ t('signed_as_master') if admin_role == 'master' else t('signed_as_doctor', name=admin_name) }}
+  {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
 <div class="grid">
   <section>
+    {% if not no_course %}
     <div class="card">
       <h2>{{ t('adm_upload') }} · {{ course }}</h2>
       <p class="muted small">{{ t('adm_upload_note') }}</p>
@@ -49,6 +52,7 @@
         <button class="btn red" type="submit">{{ t('delete_btn') }}</button>
       </form>
     </div>
+    {% endif %}
     <div class="card">
       <h2>{{ t('add_course') }}</h2>
       <p class="muted small">{{ t('add_course_note') }}</p>
@@ -59,12 +63,43 @@
           <div><label class="small">{{ t('course_name_en') }}</label><input type="text" name="name_en" placeholder="Machine Learning" required dir="ltr"></div>
         </div>
         <p><label class="small">{{ t('course_name_ar') }}</label><input type="text" name="name_ar" placeholder="تعلّم الآلة"></p>
+        {% if admin_role == 'master' and doctors %}
+        <p><label class="small">{{ t('course_owner') }}</label>
+          <select name="owner"><option value="">{{ t('owner_none') }}</option>
+            {% for d in doctors %}<option value="{{ d.id }}">{{ d.name }} ({{ d.id }})</option>{% endfor %}</select></p>
+        {% endif %}
         <p><label class="small">{{ t('pdf_files') }}</label><br><input type="file" name="pdfs" accept="application/pdf" multiple required></p>
         <button class="btn teal" type="submit">{{ t('create_course') }}</button>
       </form>
     </div>
   </section>
   <aside>
+    {% if admin_role == 'master' %}
+    <div class="card panel">
+      <h3>{{ t('doctors') }}</h3>
+      <p class="muted small">{{ t('doctors_note') }}</p>
+      <ul class="topics">
+        {% for d in doctors %}<li><span>{{ d.name }} <span class="small muted" dir="ltr">({{ d.id }})</span></span>
+          <span class="pct" style="display:flex;gap:4px;align-items:center">{{ doctor_courses[d.id] }} {{ t('courses') }}
+            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_reset_doctor') }}')"><input type="hidden" name="action" value="reset_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn ghost" style="padding:2px 8px" type="submit">{{ t('new_code') }}</button></form>
+            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_doctor') }}')"><input type="hidden" name="action" value="delete_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn red" style="padding:2px 8px" type="submit">✕</button></form>
+          </span></li>{% endfor %}
+      </ul>
+      <form method="post"><input type="hidden" name="action" value="add_doctor">
+        <input type="text" name="doctor_name" placeholder="{{ t('doctor_name_ph') }}" required maxlength="60">
+        <p></p><button class="btn teal" type="submit">{{ t('add_doctor') }}</button></form>
+    </div>
+    {% if not no_course %}
+    <div class="card panel">
+      <h3>{{ t('course_owner') }}: {{ code }}</h3>
+      <form method="post"><input type="hidden" name="action" value="set_owner">
+        <select name="owner"><option value="">{{ t('owner_none') }}</option>
+          {% for d in doctors %}<option value="{{ d.id }}" {{ 'selected' if d.id == owner }}>{{ d.name }} ({{ d.id }})</option>{% endfor %}</select>
+        <p></p><button class="btn ghost" type="submit">{{ t('save') }}</button></form>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% if not no_course %}
     <div class="card panel">
       <h3>{{ t('maintenance') }}</h3>
       <form method="post"><input type="hidden" name="action" value="rebuild">
@@ -79,11 +114,12 @@
       <p class="small">{{ t('topic_model') }}: <b>{{ model }}</b><br>{{ t('question_bank') }}: <b>{{ bank }}</b> {{ t('questions') }}<br>
         {{ t('nf_threshold') }}: <b>{{ threshold }}</b></p>
     </div>
+    {% endif %}
     <div class="card panel">
       <h3>{{ t('courses') }}</h3>
       <ul class="topics">
         {% for c in courses %}<li><a href="{{ url_for('choose_course', code=c.code, next=url_for('admin')) }}">{{ c.title }}</a>
-          <span class="pct">{{ c.code }} · {{ t('course_full') if c.full else t('course_auto') }}</span></li>{% endfor %}
+          <span class="pct">{{ c.code }}{% if admin_role == 'master' and c.meta.owner %} · {{ c.meta.owner }}{% endif %} · {{ t('course_full') if c.full else t('course_auto') }}</span></li>{% endfor %}
       </ul>
     </div>
     {% if can_delete_course %}

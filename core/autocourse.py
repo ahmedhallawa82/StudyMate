@@ -154,7 +154,7 @@ def save_lecture(code: str, fname: str, blob: bytes, number=None, title=None):
     return num
 
 
-def build_course(code: str, name_en: str, name_ar: str, files):
+def build_course(code: str, name_en: str, name_ar: str, files, owner=None):
     """files: list of (filename, bytes). Raises ValueError (bad input) / FileExistsError / RuntimeError."""
     code = clean_code(code)
     if len(code) < 2 or not files:
@@ -173,7 +173,7 @@ def build_course(code: str, name_en: str, name_ar: str, files):
             save_lecture(code, fname, blob, number=num)
         report = regenerate(code)
         P.info.write_text(json.dumps({"name_en": name_en or code, "name_ar": name_ar or name_en or code,
-                                      "full": False}, ensure_ascii=False), encoding="utf-8")
+                                      "full": False, **({"owner": owner} if owner else {})}, ensure_ascii=False), encoding="utf-8")
     except Exception:
         import shutil
         shutil.rmtree(P.data, ignore_errors=True)

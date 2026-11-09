@@ -40,9 +40,16 @@
     </nav>
     <div class="tools">
       {% if courses|length > 1 %}
-      <select aria-label="{{ t('course_label') }}" onchange="location.href='{{ url_for('choose_course', code='__C__') }}'.replace('__C__', this.value) + '?next=' + encodeURIComponent(location.pathname)">
-        {% for c in courses %}<option value="{{ c.code }}" {{ 'selected' if c.code == course_code }}>{{ c.title }}</option>{% endfor %}
-      </select>
+      <div class="combo" id="courseCombo" data-url="{{ url_for('choose_course', code='__C__') }}">
+        <button type="button" class="tool" aria-haspopup="listbox" aria-expanded="false" aria-label="{{ t('course_label') }}">{{ t('course_label') }} ▾</button>
+        <div class="combo-panel" hidden>
+          <input type="search" placeholder="{{ t('search_courses') }}" aria-label="{{ t('search_courses') }}" autocomplete="off">
+          <ul role="listbox">
+            {% for c in courses %}<li role="option" data-code="{{ c.code }}" data-q="{{ (c.code ~ ' ' ~ c.name_en ~ ' ' ~ c.name_ar)|lower }}" class="{{ 'on' if c.code == course_code }}">{{ c.title }} <small>{{ c.code }}</small></li>{% endfor %}
+          </ul>
+          <p class="small muted combo-none" hidden>{{ t('no_match') }}</p>
+        </div>
+      </div>
       {% endif %}
       <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
       <a class="tool" href="{{ lang_url }}" title="{{ t('toggle_lang') }}">{{ t('lang_name') }}</a>
@@ -68,5 +75,6 @@
 })();
 </script>
 {% block scripts %}{% endblock %}
+<script src="{{ url_for('static', filename='js/courses.js') }}"></script>
 </body>
 </html>
