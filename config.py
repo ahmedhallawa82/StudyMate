@@ -40,3 +40,39 @@ RANDOM_STATE = 42
 # Interface theme: teal | midnight | notebook | indigo | benha   (preview any page with ?theme=name)
 THEME = "indigo"
 THEMES = ["teal", "midnight", "notebook", "indigo", "benha"]
+
+
+# ---------------------------------------------------------------- multi-course support
+import json
+from types import SimpleNamespace
+
+DEFAULT_COURSE = COURSE_CODE
+
+
+def course_paths(code=None):
+    """All file locations of one course. The original course (AI) keeps its old places (models/, static/reports/)."""
+    code = code or DEFAULT_COURSE
+    d = BASE_DIR / "data" / code
+    default = code == DEFAULT_COURSE
+    return SimpleNamespace(
+        code=code, data=d, lectures=d / "lectures", passages=d / "passages.csv", topics=d / "topics.csv",
+        topic_map=d / "topic_map.csv", bank=d / "question_bank.csv", labeled=d / "questions_labeled.csv",
+        search_test=d / "search_test.csv", offtopic=d / "offtopic_test.csv", glossary=d / "arabic_glossary.csv",
+        info=d / "course.json", models=MODELS_DIR if default else MODELS_DIR / code,
+        reports=REPORTS_DIR if default else REPORTS_DIR / code,
+        reports_url="reports" if default else f"reports/{code}")
+
+
+def list_courses():
+    """[{code, name_en, name_ar, full}] for every folder data/<CODE>/ that has a course.json and passages."""
+    out = []
+    for info in sorted((BASE_DIR / "data").glob("*/course.json")):
+        try:
+            meta = json.loads(info.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        code = info.parent.name
+        if (info.parent / "passages.csv").exists():
+            out.append({"code": code, "name_en": meta.get("name_en", code), "name_ar": meta.get("name_ar", ""),
+                        "full": meta.get("full", True)})
+    return out

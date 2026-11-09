@@ -1,45 +1,45 @@
 {% extends "base.html" %}
-{% block title %}Practice{% endblock %}
+{% block title %}{{ t('nav_practice') }}{% endblock %}
 {% block content %}
 <div class="grid">
   <section>
     {% if last %}
-    <div class="flash">Saved: you answered <b class="{{ 'ok' if last.correct else 'bad' }}">{{ 'correctly' if last.correct else 'incorrectly' }}</b>.
-      Mastery {{ last.old }}% → <b>{{ last.new }}%</b> <span class="tag {{ last.colour }}">{{ last.colour }}</span></div>
+    <div class="flash">{{ t('saved_you') }} <b class="{{ 'ok' if last.correct else 'bad' }}">{{ t('correctly') if last.correct else t('incorrectly') }}</b>.
+      {{ t('mastery') }} {{ last.old }}% → <b>{{ last.new }}%</b> <span class="tag {{ last.colour }}">{{ t(last.colour) }}</span></div>
     {% endif %}
     <div class="card">
       <div class="progress-steps">
         {% for i in range(p.goal) %}<span class="{{ 'done' if i < p.count }}"></span>{% endfor %}
       </div>
-      <p class="muted small">{{ topic_name }} · question {{ (p.count % p.goal) + 1 }} of {{ p.goal }}
-        {% if p.count >= p.goal %}· set finished, keep going if you like{% endif %}
-        · Lecture {{ q.lecture }}</p>
-      <div class="question-text">{{ q.question }}</div>
+      <p class="muted small">{{ topic_name }} · {{ t('question_n', i=(p.count % p.goal) + 1, n=p.goal) }}
+        {% if p.count >= p.goal %}· {{ t('set_finished') }}{% endif %}
+        · {{ t('lecture') }} {{ q.lecture }}</p>
+      <div class="question-text" dir="auto" style="text-align:start">{{ q.question }}</div>
 
-      {% if p.hints >= 1 %}<div class="hint"><b>Hint:</b> {{ q.hint1 }}</div>{% endif %}
-      {% if p.hints >= 2 %}<div class="hint"><b>Clearer hint:</b> {{ q.hint2 }}</div>{% endif %}
+      {% if p.hints >= 1 %}<div class="hint" dir="auto" style="text-align:start"><b>{{ t('hint') }}:</b> {{ q.hint1 }}</div>{% endif %}
+      {% if p.hints >= 2 %}<div class="hint" dir="auto" style="text-align:start"><b>{{ t('hint2') }}:</b> {{ q.hint2 }}</div>{% endif %}
 
       {% if p.stage == 'ask' %}
         <form method="post">
-          <textarea name="answer" placeholder="Write your answer first, then check it (optional but recommended)"></textarea>
+          <textarea name="answer" placeholder="{{ t('answer_ph') }}" dir="auto"></textarea>
           <div class="actions">
-            <button class="btn" name="action" value="check">Check my answer</button>
+            <button class="btn" name="action" value="check">{{ t('check_btn') }}</button>
             {% if p.hints < 2 %}<button class="btn ghost" name="action" value="hint" formnovalidate>
-              {{ 'Show hint' if p.hints == 0 else 'Show a clearer hint' }}</button>{% endif %}
-            <button class="btn ghost" name="action" value="reveal" formnovalidate>Show the answer</button>
+              {{ t('show_hint') if p.hints == 0 else t('show_hint2') }}</button>{% endif %}
+            <button class="btn ghost" name="action" value="reveal" formnovalidate>{{ t('show_answer') }}</button>
           </div>
         </form>
       {% else %}
-        {% if p.answer %}<p class="small"><b>Your answer:</b> {{ p.answer }}</p>{% endif %}
-        <div class="answer"><b>Answer (Lecture {{ q.lecture }} · Slide {{ q.slide }}):</b> {{ q.answer }}</div>
-        {% if match %}<p class="small muted">Your answer contains {{ match.hit }} of {{ match.total }} key ideas
+        {% if p.answer %}<p class="small" dir="auto" style="text-align:start"><b>{{ t('your_answer') }}:</b> {{ p.answer }}</p>{% endif %}
+        <div class="answer" dir="auto" style="text-align:start"><b>{{ t('answer_lbl') }} ({{ t('lecture') }} {{ q.lecture }} · {{ t('slide') }} {{ q.slide }}):</b> {{ q.answer }}</div>
+        {% if match %}<p class="small muted">{{ t('key_ideas', a=match.hit, b=match.total) }}
           {% if match.found %}({{ match.found|join(', ') }}){% endif %}.
-          {% if match.hit / match.total >= 0.6 %}<span class="ok">Looks right.</span>{% else %}<span class="bad">Compare carefully.</span>{% endif %}</p>{% endif %}
+          {% if match.hit / match.total >= 0.6 %}<span class="ok">{{ t('looks_right') }}</span>{% else %}<span class="bad">{{ t('compare') }}</span>{% endif %}</p>{% endif %}
         <form method="post">
-          <p class="small">Be honest: did you get it right? (hints used: {{ p.hints }})</p>
+          <p class="small">{{ t('be_honest', h=p.hints) }}</p>
           <div class="actions">
-            <button class="btn green" name="action" value="right">I got it right</button>
-            <button class="btn red" name="action" value="wrong">I got it wrong</button>
+            <button class="btn green" name="action" value="right">{{ t('got_right') }}</button>
+            <button class="btn red" name="action" value="wrong">{{ t('got_wrong') }}</button>
           </div>
         </form>
       {% endif %}
@@ -47,13 +47,12 @@
   </section>
   <aside>
     <div class="card panel">
-      <h3>Choose a topic</h3>
+      <h3>{{ t('choose_topic') }}</h3>
       <ul class="topics">
-        {% for t in topics %}<li><a href="{{ url_for('practice', topic=t.topic) }}">{{ t.name }}</a>
-          {% if t.topic == p.topic %}<span class="pct">current</span>{% endif %}</li>{% endfor %}
+        {% for x in topics %}<li><a href="{{ url_for('practice', topic=x.topic) }}">{{ x.name }}</a>
+          {% if x.topic == p.topic %}<span class="pct">{{ t('current') }}</span>{% endif %}</li>{% endfor %}
       </ul>
-      <p class="muted small">Mastery rises most when you answer without hints:
-        no hint = full credit, 1 hint = 70%, 2 hints = 40%, wrong = 0.</p>
+      <p class="muted small">{{ t('mastery_rule') }}</p>
     </div>
   </aside>
 </div>

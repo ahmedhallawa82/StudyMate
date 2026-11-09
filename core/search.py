@@ -14,8 +14,16 @@ try:
 except Exception:  # bonus only
     BM25Okapi = None
 
-INDEX_FILE = config.MODELS_DIR / "search_index.joblib"
+INDEX_FILE = config.MODELS_DIR / "search_index.joblib"            # default course (kept for scripts)
 THRESHOLD_FILE = config.MODELS_DIR / "search_threshold.joblib"
+
+
+def index_file(course=None):
+    return config.course_paths(course).models / "search_index.joblib"
+
+
+def threshold_file(course=None):
+    return config.course_paths(course).models / "search_threshold.joblib"
 
 # small stop list for highlighting / BM25 tokens
 STOP = set("""a an the is are was were be been of in on at to for from by with and or not what which who whom
@@ -37,10 +45,12 @@ def _load_glossary():
     global _glossary
     if _glossary is None:
         _glossary = []
-        if config.ARABIC_GLOSSARY_CSV.exists():
-            g = pd.read_csv(config.ARABIC_GLOSSARY_CSV)
-            # longest phrases first so "البحث بالعرض" wins over "البحث"
-            _glossary = sorted(zip(g.arabic, g.english), key=lambda x: -len(x[0]))
+        pairs = []
+        for f in sorted((config.BASE_DIR / "data").glob("*/arabic_glossary.csv")):   # every course adds its terms
+            g = pd.read_csv(f)
+            pairs += list(zip(g.arabic, g.english))
+        # longest phrases first so "البحث بالعرض" wins over "البحث"
+        _glossary = sorted(pairs, key=lambda x: -len(x[0]))
     return _glossary
 
 
@@ -138,45 +148,47 @@ class SearchEngine:
         return float(s.max()) if len(s) else 0.0
 
     # ---------------- persistence ----------------
-    def save(self):
-        config.MODELS_DIR.mkdir(exist_ok=True)
-        joblib.dump(self, INDEX_FILE)
+    def save(self, course=None):
+        f = index_file(course)
+        f.parent.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self, f)
 
     @staticmethod
-    def load():
-        eng = joblib.load(INDEX_FILE)
-        if THRESHOLD_FILE.exists():
-            eng.threshold, eng.min_coverage, eng.topic_weight = _read_threshold()
+    def load(course=None):
+        eng = joblib.load(index_file(course))
+        if threshold_file(course).exists():
+            eng.threshold, eng.min_coverage, eng.topic_weight = _read_threshold(course)
         return eng
 
 
-def _read_threshold():
-    t = joblib.load(THRESHOLD_FILE)
+def _read_threshold(course=None):
+    t = joblib.load(threshold_file(course))
     if isinstance(t, dict):
         return t["similarity"], t["coverage"], t.get("topic_weight", 0.0)
     return t, 0.5, 0.0
 
 
-def build_index(passages: pd.DataFrame = None, topic_names: dict = None) -> SearchEngine:
+def build_index(passages: pd.DataFrame = None, topic_names: dict = None, course=None) -> SearchEngine:
+    P = config.course_paths(course)
     if passages is None:
-        passages = pd.read_csv(config.PASSAGES_CSV)
+        passages = pd.read_csv(P.passages)
     if topic_names is None:
         from core.topics import topic_names as _tn
-        topic_names = _tn()
+        topic_names = _tn(course)
     passages = passages.copy()
     passages["topic_name"] = passages["topic"].map(topic_names).fillna("")
     # document expansion: the question-bank questions/answers written for a slide are added to that
     # slide's index text (not to what the student sees), so student wording finds the slide more easily
     passages["index_extra"] = ""
-    if config.QUESTION_BANK_CSV.exists():
-        qb = pd.read_csv(config.QUESTION_BANK_CSV)
+    if P.bank.exists():
+        qb = pd.read_csv(P.bank)
         qb["pid"] = [f"L{int(l):02d}S{int(s):02d}" for l, s in zip(qb.lecture, qb.slide)]
         add = qb.groupby("pid").apply(lambda g: " ".join(g.question + " " + g.answer)).to_dict()
         passages["index_extra"] = passages["passage_id"].map(add).fillna("")
     eng = SearchEngine(passages)
-    if THRESHOLD_FILE.exists():
-        eng.threshold, eng.min_coverage, eng.topic_weight = _read_threshold()
-    eng.save()
+    if threshold_file(course).exists():
+        eng.threshold, eng.min_coverage, eng.topic_weight = _read_threshold(course)
+    eng.save(course)
     return eng
 
 

@@ -16,9 +16,16 @@ To rebuild everything from the PDFs:
 python scripts/build_passages.py   # 1) PDFs -> data/AI/passages.csv (pypdf)
 python scripts/train.py            # 2) topic classifiers (NB + LR) + search index
 python scripts/evaluate.py         # 3) metrics, confusion matrix, threshold, robustness -> static/reports/
-python -m pytest -q                # 4) 13 automatic tests
+python -m pytest -q                # 4) 17 automatic tests
 ```
-Lecturer pages (Dashboard, Admin) password: `lecturer123` (change it in `config.py`).
+Lecturer pages (Dashboard, Admin) password: `lecturer123` by default. Set your own with the environment variable `LECTURER_PASSWORD`.
+
+## New in this version
+- **Arabic / English interface** – the button in the header switches the whole interface (right-to-left in Arabic). Slides and practice questions stay in the course language.
+- **Dark mode** – the button next to it switches light / dark; the first visit follows the device setting.
+- **Several courses** – pick the course on the start page or from the header menu. Every course has its own slides, topics, practice questions, progress and dashboard.
+  Admin → *Add a new course*: upload the lecture PDFs (`lecture 1 Intro.pdf` …) and StudyMate builds the index, one topic per lecture, a classifier and fill-in-the-blank practice questions automatically.
+  The first course (Artificial Intelligence) is the fully evaluated one (question bank, 360 labelled questions, search test, off-topic test).
 
 ## Pages
 | Page | What it does |
@@ -56,24 +63,24 @@ Created automatically. Every write goes through one function, `log_to_excel()` i
 ```
 app.py                 Flask app (all pages)
 config.py              paths and settings
-core/                  text cleaning, passages (pypdf), search, classifier, mastery, topics, logger
+core/                  text cleaning, passages (pypdf), search, classifier, mastery, topics, logger, i18n (AR/EN), autocourse
 scripts/               build_passages.py, train.py, evaluate.py
 data/AI/               lectures/*.pdf, passages.csv, topics.csv, topic_map.csv, question_bank.csv,
                        questions_labeled.csv, search_test.csv, offtopic_test.csv, arabic_glossary.csv, data_card.md
 models/                saved models (joblib)
 static/reports/        metrics.json, confusion matrices, threshold plot (used by the Evaluation page)
 templates/, static/    HTML (Jinja2), CSS, Chart.js
-tests/                 pytest tests
+tests/                 pytest tests (17)
 notebooks/             StudyMate_Colab_Test.ipynb – run and test the project on Google Colab
 docs/                  presentation outline + delivery checklist
 ```
 
 ## Interface themes
-Five themes are included: `teal`, `midnight`, `notebook`, `indigo` (default), `benha`. Change `THEME` in `config.py`,
+Five colour themes are included: `teal`, `midnight`, `notebook`, `indigo` (default), `benha`. Change `THEME` in `config.py`,
 or preview any page with `?theme=midnight` in the address bar.
 
 ## Online version (bonus: deployment)
 `render.yaml` + `deploy/DEPLOY_RENDER.md`: run the real Flask app free on Render from GitHub (Hugging Face Docker files are also in `deploy/huggingface/`).
 
 ## Bonus items included
-Deployment (Hugging Face) · BM25 search · Arabic questions (glossary translation) · automatic tests · Colab notebook · 5 themes.
+Deployment (GitHub + free hosting) · BM25 search · Arabic questions (glossary translation) · Arabic interface · dark mode · multi-course · automatic tests · Colab notebook · 5 themes.

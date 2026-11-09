@@ -1,0 +1,32 @@
+/* Dark mode: loaded last, active when <html data-mode="dark"> (set by the toggle in the header) */
+html[data-mode="dark"] { color-scheme: dark;
+  --teal: #8b9cff; --teal-dark: #c7d2fe; --teal-soft: #1f2545; --orange: #7c3aed; --orange-dark: #6d28d9;
+  --ink: #e8eaf6; --muted: #a0a8cc; --line: #2b3153; --bg: #0e1120; --card: #171b30; --mark: #5b4bb7; }
+html[data-mode="dark"] body { background: var(--bg); color: var(--ink); }
+html[data-mode="dark"] header.top { background: linear-gradient(90deg, #1e1b4b, #4c1d95); }
+html[data-mode="dark"] .card, html[data-mode="dark"] .kpi, html[data-mode="dark"] .result { background: var(--card);
+  box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+html[data-mode="dark"] .panel { background: #1b2040; border-color: var(--line); }
+html[data-mode="dark"] input[type=text], html[data-mode="dark"] input[type=password], html[data-mode="dark"] input[type=number],
+html[data-mode="dark"] textarea, html[data-mode="dark"] select { background: #11152a; color: var(--ink); border-color: #3a4170; }
+html[data-mode="dark"] .btn.ghost { background: transparent; color: #c7d2fe; border-color: #6d78c9; }
+html[data-mode="dark"] .btn.teal { background: #4f46e5; }
+html[data-mode="dark"] mark { color: #fff; }
+html[data-mode="dark"] .notfound { background: #3a1d22; border-color: #6b2e36; color: #fecaca; }
+html[data-mode="dark"] .next { background: #251f4a; border-color: #4a3f8f; }
+html[data-mode="dark"] .flash { background: #14301f; border-color: #25573a; color: #d1fae5; }
+html[data-mode="dark"] .hint { background: #3a2f14; color: #fde9b8; }
+html[data-mode="dark"] .answer { background: #14301f; color: #d1fae5; }
+html[data-mode="dark"] .tag { background: #252b55; color: #c7d2fe; }
+html[data-mode="dark"] .tag.red { background: #3a1d22; color: #fca5a5; }
+html[data-mode="dark"] .tag.amber { background: #3a2f14; color: #fcd34d; }
+html[data-mode="dark"] .tag.green { background: #14301f; color: #86efac; }
+html[data-mode="dark"] .track, html[data-mode="dark"] .progress-steps span { background: #2b3153; }
+html[data-mode="dark"] .progress-steps span.done { background: #8b9cff; }
+html[data-mode="dark"] th { background: #1f2545; color: var(--teal-dark); }
+html[data-mode="dark"] .ok { color: #86efac; } html[data-mode="dark"] .bad { color: #fca5a5; }
+html[data-mode="dark"] a { color: #a5b4fc; }
+html[data-mode="dark"] .btn, html[data-mode="dark"] nav a, html[data-mode="dark"] .brand { color: #fff; }
+html[data-mode="dark"] img.report { background: #fff; }
+html[data-mode="dark"] code { background: #252b55; padding: 1px 5px; border-radius: 4px; }
+html[data-mode="dark"] hr { border-color: var(--line); }

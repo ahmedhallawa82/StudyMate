@@ -1,16 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Start{% endblock %}
+{% block title %}{{ t('welcome') }}{% endblock %}
 {% block content %}
 <div class="center-box card">
-  <h2>Welcome to StudyMate</h2>
-  <p class="muted">A study assistant for the {{ course }} course. It answers only from the lecture slides,
-    gives practice questions with hints, and tracks your level per topic.</p>
+  <h2>{{ t('welcome') }}</h2>
+  <p class="muted">{{ t('intro', course=course) }}</p>
   <form method="post">
-    <label class="small" for="code">Your student code</label>
-    <input type="text" id="code" name="code" placeholder="e.g. S001" autofocus required maxlength="20">
-    <p class="muted small">Privacy: we store only this code, never your name. Your questions and practice
-      answers are saved with the code so your progress can be shown.</p>
-    <button class="btn" type="submit">Start studying</button>
+    {% if courses|length > 1 %}
+    <label class="small" for="course">{{ t('choose_course') }}</label>
+    <select id="course" name="course" style="width:100%;margin-bottom:12px">
+      {% for c in courses %}<option value="{{ c.code }}" {{ 'selected' if c.code == course_code }}>{{ c.title }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <label class="small" for="code">{{ t('student_code') }}</label>
+    <input type="text" id="code" name="code" placeholder="{{ t('code_ph') }}" autofocus required maxlength="20" dir="ltr">
+    <p class="muted small">{{ t('privacy') }}</p>
+    <button class="btn" type="submit">{{ t('start_btn') }}</button>
   </form>
 </div>
 {% endblock %}

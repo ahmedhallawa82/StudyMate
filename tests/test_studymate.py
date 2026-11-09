@@ -99,3 +99,43 @@ def test_lecturer_pages(client):
     assert client.get("/dashboard").status_code == 200
     assert client.get("/admin").status_code == 200
     assert client.get("/dashboard/logs.xlsx").status_code == 200
+
+
+# ---------------- language, dark mode, courses
+def test_arabic_interface_is_rtl_and_translated(client):
+    html = client.get("/ask", query_string={"lang": "ar"}).get_data(as_text=True)
+    assert 'dir="rtl"' in html and "اسأل" in html and "تدرّب" in html
+    html = client.get("/ask", query_string={"lang": "en"}).get_data(as_text=True)
+    assert 'dir="ltr"' in html and "Practice" in html
+
+
+def test_dark_mode_assets_and_toggle(client):
+    html = client.get("/ask").get_data(as_text=True)
+    assert "dark.css" in html and 'id="modeBtn"' in html
+    assert client.get("/static/css/dark.css").status_code == 200
+
+
+def test_all_texts_have_both_languages():
+    from core.i18n import T
+    assert all(en and ar for en, ar in T.values())
+
+
+def test_add_course_from_pdfs(client):
+    import io, shutil
+    src = config.LECTURES_DIR
+    pdfs = [(src / "lecture 2 Intelligent Agents.pdf"), (src / "lecture 4 Informed Search.pdf")]
+    client.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
+    data = {"action": "add_course", "code": "tst9", "name_en": "Test Course", "name_ar": "مادة",
+            "pdfs": [(io.BytesIO(p.read_bytes()), p.name) for p in pdfs]}
+    try:
+        client.post("/admin", data=data, content_type="multipart/form-data")
+        assert "TST9" in [c["code"] for c in config.list_courses()]
+        r = client.get("/ask", query_string={"q": "what is a model-based reflex agent"})
+        assert r.status_code == 200 and "Lecture 2 · Slide" in r.get_data(as_text=True)
+        assert client.get("/practice").status_code == 200 and client.get("/evaluation").status_code == 200
+        # progress of the new course is separate from the first course
+        assert client.get("/progress").status_code == 200
+    finally:
+        shutil.rmtree(config.BASE_DIR / "data" / "TST9", ignore_errors=True)
+        shutil.rmtree(config.BASE_DIR / "models" / "TST9", ignore_errors=True)
+        client.get("/course/AI")

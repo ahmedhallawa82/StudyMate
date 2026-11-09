@@ -7,10 +7,10 @@ import config
 
 SHEETS = {
     "Questions": ["id", "time", "student_code", "question", "topic", "confidence", "first_slide",
-                  "found", "method", "helpful"],
-    "Answers": ["id", "time", "student_code", "question_id", "topic", "correct", "hints_used", "mastery_after"],
-    "Visits": ["id", "time", "student_code", "page"],
-    "Feedback": ["id", "time", "student_code", "question_log_id", "helpful", "comment"],
+                  "found", "method", "helpful", "course"],
+    "Answers": ["id", "time", "student_code", "question_id", "topic", "correct", "hints_used", "mastery_after", "course"],
+    "Visits": ["id", "time", "student_code", "page", "course"],
+    "Feedback": ["id", "time", "student_code", "question_log_id", "helpful", "comment", "course"],
 }
 _lock = threading.Lock()
 
@@ -25,6 +25,13 @@ def _open(path):
         if name not in wb.sheetnames:
             ws = wb.create_sheet(name)
             ws.append(cols)
+        else:                                   # older file without the new columns -> add their headers
+            ws = wb[name]
+            have = [c.value for c in ws[1]]
+            for col in cols[len(have):]:
+                if col not in have:
+                    ws.cell(row=1, column=len(have) + 1, value=col)
+                    have.append(col)
     return wb
 
 
@@ -64,7 +71,11 @@ def read_sheet(sheet: str, path=None):
     if not rows:
         return []
     header = rows[0]
-    return [dict(zip(header, r)) for r in rows[1:] if any(v is not None for v in r)]
+    out = [dict(zip(header, r)) for r in rows[1:] if any(v is not None for v in r)]
+    for r in out:                                # rows written before multi-course belong to the first course
+        if not r.get("course"):
+            r["course"] = config.DEFAULT_COURSE
+    return out
 
 
 def ensure_workbook(path=None):

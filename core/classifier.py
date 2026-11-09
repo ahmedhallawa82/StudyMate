@@ -12,6 +12,13 @@ from core.search import translate_arabic
 MODEL_FILE = config.MODELS_DIR / "topic_classifier.joblib"      # the best model (used by the app)
 KIND_FILE = {"nb": config.MODELS_DIR / "topic_classifier_nb.joblib",
              "logreg": config.MODELS_DIR / "topic_classifier_logreg.joblib"}
+
+
+def model_file(course=None, kind=None):
+    m = config.course_paths(course).models
+    return m / (f"topic_classifier_{kind}.joblib" if kind else "topic_classifier.joblib")
+
+
 KIND_NAME = {"nb": "Naive Bayes", "logreg": "Logistic Regression"}
 
 
@@ -46,13 +53,13 @@ class TopicClassifier:
         proba = self.pipeline.predict_proba([question])[0]
         return dict(zip(self.pipeline.classes_, map(float, proba)))
 
-    def save(self, best: bool = False):
-        config.MODELS_DIR.mkdir(exist_ok=True)
-        joblib.dump(self, KIND_FILE[self.kind])
+    def save(self, best: bool = False, course=None):
+        config.course_paths(course).models.mkdir(parents=True, exist_ok=True)
+        joblib.dump(self, model_file(course, self.kind))
         if best:
-            joblib.dump(self, MODEL_FILE)
+            joblib.dump(self, model_file(course))
 
     @staticmethod
-    def load(kind: str = None):
-        path = KIND_FILE.get(kind, MODEL_FILE) if kind else MODEL_FILE
-        return joblib.load(path if path.exists() else MODEL_FILE)
+    def load(kind: str = None, course=None):
+        path = model_file(course, kind) if kind else model_file(course)
+        return joblib.load(path if path.exists() else model_file(course))

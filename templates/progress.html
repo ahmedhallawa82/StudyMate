@@ -1,34 +1,32 @@
 {% extends "base.html" %}
-{% block title %}My progress{% endblock %}
+{% block title %}{{ t('nav_progress') }}{% endblock %}
 {% block content %}
 <div class="grid-4" style="margin-bottom:16px">
-  <div class="kpi"><div class="v">{{ stats.answered }}</div><div class="l">practice answers</div></div>
-  <div class="kpi"><div class="v">{{ stats.correct }}</div><div class="l">correct</div></div>
-  <div class="kpi"><div class="v">{{ stats.green }}/{{ stats.total }}</div><div class="l">topics green</div></div>
-  <div class="kpi"><div class="v">{{ (100 * stats.correct / stats.answered)|round|int if stats.answered else '–' }}{% if stats.answered %}%{% endif %}</div><div class="l">accuracy</div></div>
+  <div class="kpi"><div class="v">{{ stats.answered }}</div><div class="l">{{ t('practice_answers') }}</div></div>
+  <div class="kpi"><div class="v">{{ stats.correct }}</div><div class="l">{{ t('correct') }}</div></div>
+  <div class="kpi"><div class="v">{{ stats.green }}/{{ stats.total }}</div><div class="l">{{ t('topics_green') }}</div></div>
+  <div class="kpi"><div class="v">{{ (100 * stats.correct / stats.answered)|round|int if stats.answered else '–' }}{% if stats.answered %}%{% endif %}</div><div class="l">{{ t('accuracy') }}</div></div>
 </div>
 <div class="grid">
   <section class="card">
-    <h2>Topics</h2>
-    <p class="muted small"><span class="dot red"></span>red below 40% · <span class="dot amber"></span>amber 40–69% · <span class="dot green"></span>green 70% and above</p>
-    {% for t in items %}
+    <h2>{{ t('topics') }}</h2>
+    <p class="muted small"><span class="dot red"></span>{{ t('legend') }}</p>
+    {% for x in items %}
     <div class="bar-row">
-      <div><span class="dot {{ t.colour }}"></span><a href="{{ url_for('practice', topic=t.topic) }}">{{ t.name }}</a></div>
-      <div class="track"><div class="fill {{ t.colour }}" style="width: {{ [t.pct, 2]|max }}%"></div></div>
-      <div class="small muted">{{ t.pct }}%</div>
+      <div><span class="dot {{ x.colour }}"></span><a href="{{ url_for('practice', topic=x.topic) }}">{{ x.name }}</a></div>
+      <div class="track"><div class="fill {{ x.colour }}" style="width: {{ [x.pct, 2]|max }}%"></div></div>
+      <div class="small muted">{{ x.pct }}%</div>
     </div>
     {% endfor %}
   </section>
   <aside>
     <div class="card panel">
-      <h3>Study next</h3>
+      <h3>{{ t('study_next') }}</h3>
       {% if nxt.topic %}
         <div class="next"><b>{{ nxt.name }}</b><span class="small">{{ nxt.why }}</span></div>
-        <a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) }}">Practise 5 questions</a>
+        <a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) }}">{{ t('practise5') }}</a>
       {% else %}<p>{{ nxt.why }}</p>{% endif %}
-      <p class="muted small" style="margin-top:14px">How the level is computed: after each answer,
-        level = level + 0.35 × (result − level). Result is 1 for a correct answer without hints,
-        0.7 with one hint, 0.4 with two hints and 0 for a wrong answer.</p>
+      <p class="muted small" style="margin-top:14px">{{ t('how_level') }}</p>
     </div>
   </aside>
 </div>

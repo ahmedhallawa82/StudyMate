@@ -3,6 +3,7 @@
 :root { --teal: #4f46e5; --teal-dark: #312e81; --teal-soft: #eef2ff; --orange: #7c3aed; --orange-dark: #6d28d9;
   --ink: #1e1b4b; --muted: #6b7280; --line: #e5e7eb; --bg: #f5f6fb; --card: #ffffff; --mark: #ddd6fe; }
 body { font-family: Inter, "Segoe UI", sans-serif; }
+html[lang="ar"] body { font-family: Cairo, Tahoma, "Segoe UI", sans-serif; }
 header.top { background: linear-gradient(90deg, #4338ca, #7c3aed); }
 .card, .kpi, .result { border: none; border-radius: 16px; box-shadow: 0 4px 18px rgba(49,46,129,.08); }
 .btn { border-radius: 999px; box-shadow: 0 4px 12px rgba(124,58,237,.25); }

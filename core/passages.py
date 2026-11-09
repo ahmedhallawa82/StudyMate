@@ -18,10 +18,11 @@ def lecture_title(filename: str) -> str:
     return stem.strip(" _-").title() or "Lecture"
 
 
-def load_topic_map():
-    if not config.TOPIC_MAP_CSV.exists():
+def load_topic_map(course=None):
+    path = config.course_paths(course).topic_map
+    if not path.exists():
         return pd.DataFrame(columns=["lecture", "slide_from", "slide_to", "topic"])
-    return pd.read_csv(config.TOPIC_MAP_CSV)
+    return pd.read_csv(path)
 
 
 def topic_for(topic_map, lecture, slide):
@@ -29,15 +30,16 @@ def topic_for(topic_map, lecture, slide):
     return rows.iloc[0]["topic"] if len(rows) else None
 
 
-def build_passages(predict_topic=None, verbose=True) -> pd.DataFrame:
+def build_passages(predict_topic=None, verbose=True, course=None) -> pd.DataFrame:
     """Read every PDF in data/AI/lectures and write passages.csv.
 
     predict_topic: optional function(text) -> topic, used for slides of a NEW lecture
     that is not listed in topic_map.csv (e.g. a PDF uploaded from the Admin page).
     """
-    topic_map = load_topic_map()
+    P = config.course_paths(course)
+    topic_map = load_topic_map(course)
     rows, dropped = [], 0
-    pdfs = sorted(config.LECTURES_DIR.glob("*.pdf"), key=lambda p: (lecture_number(p.name) or 999, p.name))
+    pdfs = sorted(P.lectures.glob("*.pdf"), key=lambda p: (lecture_number(p.name) or 999, p.name))
     for pdf in pdfs:
         lec = lecture_number(pdf.name)
         if lec is None:
@@ -57,7 +59,7 @@ def build_passages(predict_topic=None, verbose=True) -> pd.DataFrame:
                 source = "predicted" if predict_topic else "none"
             rows.append({
                 "passage_id": f"L{lec:02d}S{i:02d}",
-                "course": config.COURSE_CODE,
+                "course": P.code,
                 "lecture": lec,
                 "lecture_title": lecture_title(pdf.name),
                 "slide": i,
@@ -66,7 +68,7 @@ def build_passages(predict_topic=None, verbose=True) -> pd.DataFrame:
                 "topic_source": source,
             })
     df = pd.DataFrame(rows)
-    df.to_csv(config.PASSAGES_CSV, index=False, encoding="utf-8-sig")
+    df.to_csv(P.passages, index=False, encoding="utf-8-sig")
     if verbose:
         print(f"  {len(df)} passages from {len(pdfs)} PDFs ({dropped} empty/picture-only slides dropped)")
     return df
