@@ -25,14 +25,18 @@
     <a class="brand" href="{{ url_for('home') }}">{{ t('app_name') if lang == 'ar' else 'StudyMate' }} <small>· {{ course }}</small></a>
     <nav>
       {% set path = request.path %}
+      {% if is_lecturer %}
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}">{{ t('nav_dashboard') }}</a>
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}">{{ t('nav_content') }}</a>
+      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}">{{ t('nav_eval') }}</a>
+      <span class="chip">{{ t('lecturer_chip') }}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
+      {% else %}
       <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}">{{ t('nav_ask') }}</a>
       <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}">{{ t('nav_practice') }}</a>
       <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}">{{ t('nav_progress') }}</a>
-      {% if is_lecturer %}<a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}">{{ t('nav_eval') }}</a>{% endif %}
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}">{{ t('nav_dashboard') }}</a>
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}">{{ t('nav_admin') }}</a>
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') or path.startswith('/lecturer') }}">{{ t('nav_admin') }}</a>
       {% if student_code %}<span class="chip">{{ student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>{% endif %}
-      {% if is_lecturer %}<span class="chip">{{ t('lecturer_chip') }}<a href="{{ url_for('lecturer_logout') }}">{{ t('exit') }}</a></span>{% endif %}
+      {% endif %}
     </nav>
     <div class="tools">
       {% if courses|length > 1 %}

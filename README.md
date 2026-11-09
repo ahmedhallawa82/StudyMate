@@ -18,7 +18,7 @@ python scripts/train.py            # 2) topic classifiers (NB + LR) + search ind
 python scripts/evaluate.py         # 3) metrics, confusion matrix, threshold, robustness -> static/reports/
 python -m pytest -q                # 4) 17 automatic tests
 ```
-Lecturer pages (Dashboard, Admin) password: `lecturer123` by default. Set your own with the environment variable `LECTURER_PASSWORD`.
+Admin area (Data, Content, Evaluation) password: `lecturer123` by default. Set your own with the environment variable `LECTURER_PASSWORD`. The Admin area is separate from the student area: while signed in as Admin the student pages are hidden; press "Exit admin" to go back and sign in as a student.
 
 ## New in this version
 - **Arabic / English interface** – the button in the header switches the whole interface (right-to-left in Arabic). Slides and practice questions stay in the course language.

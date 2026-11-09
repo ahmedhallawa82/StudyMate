@@ -115,6 +115,8 @@ def student():
 def student_required(view):
     @wraps(view)
     def wrapper(*a, **kw):
+        if session.get("lecturer"):                    # the admin area and the student area are separate
+            return redirect(url_for("dashboard"))
         if not student():
             return redirect(url_for("start", next=request.path))
         return view(*a, **kw)
@@ -131,6 +133,8 @@ def lecturer_required(view):
 
 
 def visit(page):
+    if session.get("lecturer"):                        # admin pages are not student visits
+        return
     log("Visits", {"student_code": student() or ("lecturer" if session.get("lecturer") else ""), "page": page})
 
 
@@ -178,6 +182,8 @@ def inject():
 # ------------------------------------------------------------------ student login (code only, no names)
 @app.route("/start", methods=["GET", "POST"])
 def start():
+    if session.get("lecturer"):
+        return redirect(url_for("dashboard"))
     if request.method == "POST":
         code = re.sub(r"[^A-Za-z0-9_-]", "", request.form.get("code", "")).upper()[:20]
         if request.form.get("guest"):                  # guest: no code needed, a temporary one is made
@@ -200,6 +206,8 @@ def choose_course(code):
     if code in course_codes() and code != session.get("course"):
         session["course"] = code
         session.pop("practice", None)
+    if session.get("lecturer"):
+        return redirect(request.args.get("next") or url_for("dashboard"))
     return redirect(request.args.get("next") or url_for("ask" if student() else "start"))
 
 
@@ -211,6 +219,8 @@ def logout():
 
 @app.route("/")
 def home():
+    if session.get("lecturer"):
+        return redirect(url_for("dashboard"))
     return redirect(url_for("ask") if student() else url_for("start"))
 
 
@@ -378,6 +388,8 @@ def lecturer_login():
     if request.method == "POST":
         if request.form.get("password") == config.LECTURER_PASSWORD:
             session["lecturer"] = True
+            session.pop("student_code", None)            # an admin is not a student: leave the student area first
+            session.pop("practice", None)
             return redirect(request.args.get("next") or url_for("dashboard"))
         flash_t("wrong_password")
     return render_template("lecturer_login.html")
@@ -556,7 +568,7 @@ def admin():
 @app.route("/lecturer/logout")
 def lecturer_logout():
     session.pop("lecturer", None)
-    return redirect(url_for("ask") if student() else url_for("start"))
+    return redirect(url_for("start"))
 
 
 load_state()
