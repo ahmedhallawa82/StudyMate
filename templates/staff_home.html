@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_home') }}{% endblock %}
+{% block content %}
+<div class="edu-head fade" style="--i:0">
+  <div>
+    <div class="hero-date" id="today" data-iso="{{ today }}"></div>
+    <h1>{{ t(greet) }}{{ '،' if lang == 'ar' else ',' }} {{ name }} 👋</h1>
+    <p class="muted">{{ t('sh_sub_admin') if master else t('sh_sub_doctor') }}</p>
+  </div>
+  <div class="edu-actions">
+    <a class="btn teal" href="{{ url_for('dashboard') }}">📊 {{ t('nav_dashboard') }}</a>
+    <a class="btn ghost" href="{{ url_for('admin') }}">🛠️ {{ t('nav_content') }}</a>
+  </div>
+</div>
+
+<div class="edu-grid">
+  <section class="col-main">
+    <div class="stats">
+      {% if master %}
+      <div class="stat fade" style="--i:1"><div class="ic">👨‍🏫</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></div>
+      <button type="button" class="stat fade click" style="--i:2" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
+      <div class="stat fade" style="--i:3"><div class="ic">🌐</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }} · {{ t('sh_visitors', n=stats.visitors) }}</div></div></div>
+      <div class="stat fade" style="--i:4"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></div>
+      {% else %}
+      <div class="stat fade" style="--i:1"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_my_courses') }}</div></div></div>
+      <button type="button" class="stat fade click" style="--i:2" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_my_students') }}</div></div></button>
+      <div class="stat fade" style="--i:3"><div class="ic">📝</div><div><div class="v" data-count="{{ stats.exams }}">0</div><div class="l">{{ t('sh_exams') }}</div></div></div>
+      <div class="stat fade" style="--i:4"><div class="ic">💬</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('sh_asked') }}</div></div></div>
+      {% endif %}
+    </div>
+
+    <div class="card per-course fade" id="per-course" style="--i:5">
+      <div class="card-top"><h3>🎓 {{ t('sh_per_course') }}</h3><a href="{{ url_for('students_page') }}">{{ t('nav_students') }} →</a></div>
+      {% for c in by_course %}
+      <div class="pc-row"><span>📚 {{ c.title }} <small class="muted">{{ c.code }}</small></span><b>{{ c.n }}</b></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
+
+    <div class="card fade" style="--i:6">
+      <div class="card-top"><h3>🌐 {{ t('sh_traffic_week') }}</h3><span class="pill">{{ week_total }} {{ t('sh_visits_unit') }}</span></div>
+      <div class="chart">
+        {% set wdn = t('home_wd').split(',') %}
+        {% for w in week %}
+        <div class="col{{ ' today' if w.today }}"><div class="bar"><i data-h="{{ [w.h, 6]|max }}" style="height:0" title="{{ w.n }}"></i></div><span>{{ wdn[loop.index0] }} {{ w.day }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="tiles">
+      <a class="tile fade" style="--i:7" href="{{ url_for('dashboard') }}"><span class="ti">📊</span><b>{{ t('nav_dashboard') }}</b></a>
+      <a class="tile fade" style="--i:8" href="{{ url_for('admin') }}"><span class="ti">🛠️</span><b>{{ t('nav_content') }}</b></a>
+      <a class="tile fade" style="--i:9" href="{{ url_for('exams_manage') }}"><span class="ti">📝</span><b>{{ t('nav_exams') }}</b></a>
+      <a class="tile fade" style="--i:10" href="{{ url_for('students_page') }}"><span class="ti">👥</span><b>{{ t('nav_students') }}</b></a>
+    </div>
+  </section>
+
+  <aside class="col-side">
+    {% if master %}
+    <div class="card fade" style="--i:2">
+      <div class="card-top"><h3>👨‍🏫 {{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
+      {% for d in team %}<div class="pc-row"><span>{{ d.name }}</span><small class="muted" dir="ltr">{{ d.courses }}</small></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
+    {% else %}
+    <div class="card fade" style="--i:2">
+      <div class="card-top"><h3>📚 {{ t('sh_my_courses') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
+      {% for c in courses %}<div class="pc-row"><span>{{ c.name_ar or c.name_en if lang == 'ar' else c.name_en }}</span><small class="muted">{{ c.code }}</small></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="card fade" style="--i:3">
+      <h3>🆕 {{ t('sh_recent') }}</h3>
+      {% for r in recent %}<div class="pc-row"><span>{{ r.first }} {{ r.last }}</span><small class="muted" dir="ltr">@{{ r.username }}</small></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

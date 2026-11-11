@@ -136,7 +136,7 @@ def test_admin_and_student_areas_are_separate():
     # inside Admin: no student pages, no student navigation, not signed in as a student any more
     for page in ("/ask", "/practice", "/progress", "/start"):
         r = c.get(page)
-        assert r.status_code == 302 and "/dashboard" in r.headers["Location"]
+        assert r.status_code == 302 and "/overview" in r.headers["Location"]
     html = c.get("/dashboard").get_data(as_text=True)
     assert "/practice" not in html and "/progress" not in html and "SEP1" not in html and "/evaluation" in html
     # leaving Admin brings back the student side (needs a new sign-in)
@@ -400,7 +400,7 @@ def test_admin_and_doctor_username_login(admin, tmp_path, monkeypatch):
     monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
     a = A.app.test_client()
     assert a.post("/start", data={"username": "admin", "password": "nope"}).status_code == 200
-    assert "/dashboard" in a.post("/start", data={"username": "admin", "password": config.LECTURER_PASSWORD}).headers["Location"]
+    assert "/overview" in a.post("/start", data={"username": "admin", "password": config.LECTURER_PASSWORD}).headers["Location"]
     admin.post("/admin", data={"action": "add_doctor", "doctor_name": "Dr Mail", "doctor_email": "dr@x.com"})
     d = doctors.list_doctors()[0]
     assert d["email"] == "dr@x.com" and d["username"].startswith("dr")
@@ -408,7 +408,7 @@ def test_admin_and_doctor_username_login(admin, tmp_path, monkeypatch):
     other = A.app.test_client()
     assert other.post("/start", data={"username": "dr-wrong", "password": pw}).status_code == 200   # username must match
     doc = A.app.test_client()
-    assert "/dashboard" in doc.post("/start", data={"username": d["username"], "password": pw}).headers["Location"]
+    assert "/overview" in doc.post("/start", data={"username": d["username"], "password": pw}).headers["Location"]
     page = doc.get("/admin").get_data(as_text=True)
     assert "Doctor" in page and "Dr Mail" in page                                        # role chip shows who is signed in
     assert "Admin" in admin.get("/admin").get_data(as_text=True)
@@ -521,3 +521,20 @@ def test_essay_similarity_grading(tmp_path, monkeypatch):
     assert EX._grade_essay("T", "A* picks the node with smallest f = g + h and an admissible heuristic gives the optimal path", q, st)[0] == 1.0
     assert EX._grade_essay("T", "It is a sorting algorithm for arrays", q, st)[0] == 0.0
     assert EX._grade_essay("T", "", q, st)[0] == 0.0
+
+
+def test_staff_home_admin_and_doctor(admin):
+    from core import doctors
+    import app as A
+    r = admin.get("/overview")
+    html = r.get_data(as_text=True)
+    assert r.status_code == 200 and "per-course" in html and "👨‍🏫" in html          # admin: doctors / students / traffic / courses
+    assert admin.get("/").headers["Location"].endswith("/overview")
+    did, code = doctors.add("Dr Home")
+    try:
+        d = A.app.test_client()
+        d.post("/lecturer", data={"username": doctors.username_of(doctors.get(did)), "password": code})
+        h = d.get("/overview").get_data(as_text=True)
+        assert "per-course" in h and "👨‍🏫" not in h and "Dr Home" in h               # doctor: his courses / students / exams / questions
+    finally:
+        doctors.remove(did)

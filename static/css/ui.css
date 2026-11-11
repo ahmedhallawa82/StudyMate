@@ -151,3 +151,10 @@ html[data-theme="edu"][data-mode="dark"] .cont { color: #04201e; } html[data-the
 .profile .ring { --size: 132px; background: conic-gradient(var(--teal) calc(var(--p) * 1%), var(--chip) 0); }
 .profile .ring-in { background: var(--card); color: var(--ink); align-items: center; padding-top: 0; font-size: 30px; }
 html[data-theme="edu"] body { background: var(--bg); }
+
+/* staff home */
+button.stat.click { cursor: pointer; text-align: inherit; font: inherit; color: inherit; border: none; width: 100%; transition: transform .15s; }
+button.stat.click:hover { transform: translateY(-2px); outline: 2px solid var(--teal); }
+.per-course { display: none; } .per-course.open { display: block; }
+.pc-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 14px; background: var(--chip); margin-bottom: 6px; }
+.pc-row b { background: var(--teal); color: #fff; border-radius: 999px; padding: 2px 12px; }

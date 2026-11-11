@@ -137,7 +137,7 @@ def student_required(view):
     @wraps(view)
     def wrapper(*a, **kw):
         if session.get("lecturer"):                    # the admin area and the student area are separate
-            return redirect(url_for("dashboard"))
+            return redirect(url_for("staff_home"))
         if not student():
             return redirect(url_for("start", next=request.path))
         if request.endpoint != "my_courses" and student_course_list() == []:     # first visit: choose the courses first
@@ -291,13 +291,13 @@ def handle_login(default_next):
         session["course"] = chosen
     if kind == "student":
         return redirect(request.args.get("next") or url_for("student_home"))
-    return redirect(request.args.get("next") or url_for("dashboard"))
+    return redirect(request.args.get("next") or url_for("staff_home"))
 
 
 @app.route("/start", methods=["GET", "POST"])
 def start():
     if session.get("lecturer"):
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("staff_home"))
     if request.method == "POST":
         if request.form.get("guest"):                  # guest: no account needed, a temporary code is made
             import secrets
@@ -354,7 +354,7 @@ def choose_course(code):
         session["course"] = code
         session.pop("practice", None)
     if session.get("lecturer"):
-        return redirect(request.args.get("next") or url_for("dashboard"))
+        return redirect(request.args.get("next") or url_for("staff_home"))
     return redirect(request.args.get("next") or url_for("student_home" if student() else "start"))
 
 
@@ -367,7 +367,7 @@ def logout():
 @app.route("/")
 def home():
     if session.get("lecturer"):
-        return redirect(url_for("dashboard"))
+        return redirect(url_for("staff_home"))
     return redirect(url_for("student_home") if student() else url_for("start"))
 
 
@@ -606,6 +606,46 @@ def lecturer_login():
         if r:
             return r
     return render_template("lecturer_login.html")
+
+
+@app.route("/overview")
+@lecturer_required
+def staff_home():
+    """Home page of the admin (site-wide numbers) and of a doctor (his courses and students)."""
+    import datetime as _dt
+    visit("overview")
+    master = is_master()
+    courses = [c for c in config.list_courses() if can_manage(c["code"])]
+    ar = lang() == "ar"
+    title = {c["code"]: (c["name_ar"] or c["name_en"]) if ar else c["name_en"] for c in config.list_courses()}
+    rows = students_for_admin()
+    per_course = Counter(c[0] for r in rows for c in r["courses"])
+    by_course = [{"code": c["code"], "title": title[c["code"]], "n": per_course.get(c["code"], 0)} for c in courses]
+    mine = {c["code"] for c in courses}
+    visits = read_sheet("Visits") if master else [v for v in read_sheet("Visits") if v.get("course") in mine]
+    days = [str(v.get("time", ""))[:10] for v in visits]
+    td = _dt.date.today()
+    start = td - _dt.timedelta(days=(td.weekday() + 2) % 7)          # week starts on Saturday
+    cnt = Counter(days)
+    wk = [{"day": (start + _dt.timedelta(days=i)).day, "n": cnt.get((start + _dt.timedelta(days=i)).isoformat(), 0),
+           "today": start + _dt.timedelta(days=i) == td} for i in range(7)]
+    wmax = max([w["n"] for w in wk] + [1])
+    for w in wk:
+        w["h"] = round(100 * w["n"] / wmax)
+    exams = [e for e in read_sheet("Exams") if master or e.get("course") in mine]
+    qs = [q for q in read_sheet("Questions") if master or q.get("course") in mine]
+    docs = doctors.list_doctors()
+    stats = {"courses": len(courses), "students": len(rows), "visits": len(visits),
+             "visitors": len({v.get("student_code") for v in visits if v.get("student_code")}),
+             "doctors": len(docs), "exams": len(exams), "asked": len(qs)}
+    team = [{"name": d["name"], "courses": courses_of(d["id"]) or "–"} for d in docs] if master else []
+    recent = sorted(rows, key=lambda r: str(r.get("created", "")), reverse=True)[:5]
+    hour = _dt.datetime.now().hour
+    greet = "gm" if hour < 12 else "ga" if hour < 18 else "ge"
+    name = tr("role_admin", lang()) if master else session.get("admin_name") or tr("role_doctor", lang())
+    return render_template("staff_home.html", stats=stats, week=wk, week_total=sum(w["n"] for w in wk), master=master,
+                           by_course=by_course, team=team, recent=recent, greet=greet, name=name,
+                           today=td.isoformat(), courses=courses)
 
 
 @app.route("/dashboard")

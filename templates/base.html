@@ -27,6 +27,7 @@
     <nav>
       {% set path = request.path %}
       {% if is_lecturer %}
+      <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
       <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
       <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
       <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
