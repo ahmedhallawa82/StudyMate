@@ -19,7 +19,7 @@
 {% else %}
 <div class="card st-pick fade" style="--i:2">
   <label for="stLecture">📖 {{ t('st_lecture') }}</label>
-  <select id="stLecture" onchange="location.href='{{ url_for('studio') }}?lecture=' + this.value + '&tool=' + (window.studioTool ? window.studioTool() : 'report')">
+  <select id="stLecture" onchange="location.href='{{ url_for('studio') }}?lecture=' + this.value + '&tool=' + (window.studioTool ? window.studioTool() : 'quiz')">
     <option value="all"{{ ' selected' if not lecture }}>{{ t('st_all') }}</option>
     {% for l in lectures %}<option value="{{ l.n }}"{{ ' selected' if l.n == lecture }}>{{ t('lecture') }} {{ l.n }}: {{ l.title }} ({{ l.slides }})</option>{% endfor %}
   </select>
@@ -27,12 +27,19 @@
 </div>
 
 <div class="st-tiles fade" style="--i:3" role="tablist">
-  {% for id, name, sub, d in tools %}
+  {% for id, name, sub, d in tools if id in ('quiz', 'mind', 'slides') %}
   <button type="button" class="st-tile{{ ' on' if id == tool }}" role="tab" data-tool="{{ id }}" aria-selected="{{ 'true' if id == tool else 'false' }}">
     <span class="st-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d }}"/></svg></span>
     <b>{{ t(name) }}</b>
     <small>{{ t(sub) }}</small>
   </button>
+  {% endfor %}
+  {% for href, ic, name, sub in [(url_for('exams'), '📝', t('nav_exams'), t('tile_exams')), (url_for('progress'), '📈', t('nav_progress'), t('tile_progress')), (url_for('materials'), '📚', t('nav_materials'), t('tile_materials'))] %}
+  <a class="st-tile st-link" href="{{ href }}">
+    <span class="st-ic st-emoji">{{ ic }}</span>
+    <b>{{ name }}</b>
+    <small>{{ sub }}</small>
+  </a>
   {% endfor %}
 </div>
 
@@ -120,11 +127,14 @@
     <p class="muted">{{ t('st_slides_note') }}</p>
     {% if not pptx_ok %}<p class="flash">{{ t('st_pptx_missing') }}</p>{% endif %}
     <h3>{{ t('st_deck_preview') }}</h3>
-    <ol class="st-deck" dir="ltr">
-      <li><b>{{ kit.title or course }}</b><small>{{ kit.info.slides }} · {{ kit.info.terms }} · {{ kit.info.minutes }} min</small></li>
-      {% for i in range(0, kit.summary|length, 3) %}<li><b>Key ideas {{ (i // 3) + 1 }}</b><small>{{ kit.summary[i:i+3]|map(attribute='text')|map('truncate', 70)|join(' · ') }}</small></li>{% endfor %}
-      {% for i in range(0, [kit.terms|length, 12]|min, 4) %}<li><b>Key terms {{ (i // 4) + 1 }}</b><small>{{ kit.terms[i:i+4]|map(attribute='term')|join(', ') }}</small></li>{% endfor %}
-    </ol>
+    <div class="st-slides" dir="ltr">
+      <div class="st-sl title"><div class="bar"><h4>{{ kit.title or course }}</h4><span>{{ course }}</span></div>
+        <p>{{ kit.info.slides }} slides · {{ kit.info.terms }} key terms · about {{ kit.info.minutes }} min</p></div>
+      {% for i in range(0, kit.summary|length, 3) %}<div class="st-sl"><div class="bar"><b>Key ideas</b></div>
+        <ul>{% for c in kit.summary[i:i+3] %}<li>{{ c.text }} <small>(slide {{ c.slide }})</small></li>{% endfor %}</ul></div>{% endfor %}
+      {% for i in range(0, [kit.terms|length, 12]|min, 4) %}<div class="st-sl"><div class="bar"><b>Key terms</b></div>
+        <ul>{% for d in kit.terms[i:i+4] %}<li><b>{{ d.term }}</b>: {{ d.definition }}</li>{% endfor %}</ul></div>{% endfor %}
+    </div>
   </div>
 
   <!-- Listen -->

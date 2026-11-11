@@ -2,7 +2,7 @@
 (function () {
   var D = JSON.parse(document.getElementById('studioData').textContent);
   var K = D.kit, U = D.ui;
-  var cur = D.tool || 'report';
+  var cur = D.tool || 'quiz';
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var fmt = function (s, o) { return s.replace(/\{(\w+)\}/g, function (_, k) { return o[k]; }); };
@@ -14,13 +14,13 @@
   /* ---------- tabs ---------- */
   function show(tool) {
     cur = tool;
-    $$('.st-tile').forEach(function (b) { var on = b.dataset.tool === tool; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
+    $$('.st-tile[data-tool]').forEach(function (b) { var on = b.dataset.tool === tool; b.classList.toggle('on', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); });
     $$('.st-pane').forEach(function (p) { p.hidden = p.dataset.pane !== tool; });
     var u = new URL(location.href); u.searchParams.set('tool', tool); history.replaceState(null, '', u);
     if (tool === 'info') drawInfographic();
     if (tool !== 'listen') stopSpeak();
   }
-  $$('.st-tile').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.tool); }); });
+  $$('.st-tile[data-tool]').forEach(function (b) { b.addEventListener('click', function () { show(b.dataset.tool); }); });
 
   /* ---------- flashcards ---------- */
   var deck, known, firstTry, flipped, total;

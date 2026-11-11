@@ -136,6 +136,10 @@ def test_admin_pages(client, admin):
     assert client.get("/evaluation").status_code == 302         # evaluation is for the admin only
     assert admin.get("/dashboard").status_code == 200
     assert admin.get("/admin").status_code == 200
+    assert admin.get("/evaluation").status_code == 302                  # hidden until the models password is typed
+    admin.post("/models/unlock", data={"pw": "wrong"})
+    assert admin.get("/evaluation").status_code == 302
+    admin.post("/models/unlock", data={"pw": config.LECTURER_PASSWORD})
     assert admin.get("/evaluation").status_code == 200
     assert admin.get("/dashboard/logs.xlsx").status_code == 200
 
@@ -150,7 +154,7 @@ def test_admin_and_student_areas_are_separate():
         r = c.get(page)
         assert r.status_code == 302 and "/overview" in r.headers["Location"]
     html = c.get("/dashboard").get_data(as_text=True)
-    assert "/practice" not in html and "/progress" not in html and "/evaluation" in html
+    assert "/practice" not in html and "/progress" not in html and "/evaluation" not in html
     # leaving Admin brings back the student side (needs a new sign-in)
     r = c.get("/lecturer/logout")
     assert "/start" in r.headers["Location"]
@@ -190,6 +194,7 @@ def test_add_course_from_pdfs(client, admin):
         client.get("/course/TST9")
         r = client.get("/ask", query_string={"q": "what is a model-based reflex agent"})
         assert r.status_code == 200 and "Lecture 2 · Slide" in r.get_data(as_text=True)
+        admin.post("/models/unlock", data={"pw": config.LECTURER_PASSWORD})
         assert client.get("/practice").status_code == 200 and admin.get("/evaluation").status_code == 200
         # progress of the new course is separate from the first course
         assert client.get("/progress").status_code == 200
@@ -1056,3 +1061,42 @@ def test_delete_account_master_is_refused():
 def test_timezone_is_cairo():
     import time
     assert config.TIMEZONE == "Africa/Cairo" or time.tzname
+
+
+# ---------------- help page, hidden models page, studio hub
+def test_help_page_and_staff_can_add_questions(client, tmp_path, monkeypatch):
+    import app as A
+    from core import faq, doctors
+    admin = A.app.test_client()
+    with admin.session_transaction() as s:                                   # signed in as the main admin (its password may have changed)
+        s["lecturer"], s["admin_id"], s["admin_name"] = True, doctors.MASTER, "Admin"
+    monkeypatch.setattr(faq, "FILE", lambda: tmp_path / "faq.json")
+    page = client.get("/help").get_data(as_text=True)
+    assert "TF-IDF" in page and "BM25" in page and "faq-add" not in page and 'name="q_en"' not in page
+    admin.post("/help", data={"action": "add", "q_en": "How do I join?", "a_en": "Register first.", "q_ar": "", "a_ar": ""})
+    assert "How do I join?" in client.get("/help").get_data(as_text=True)
+    admin.post("/help", data={"action": "add", "q_en": "Hacked", "a_en": "x"})
+    fid = faq.items("en")[0]["id"]
+    client.post("/help", data={"action": "delete", "id": fid})                       # a student cannot delete
+    assert len(faq.items("en")) == 2
+    admin.post("/help", data={"action": "delete", "id": fid})
+    assert len(faq.items("en")) == 1
+
+
+def test_models_password_can_be_separate(admin, tmp_path, monkeypatch):
+    from core import modelspw
+    monkeypatch.setattr(modelspw, "FILE", lambda: tmp_path / "models_auth.json")
+    monkeypatch.setenv("STUDYMATE_MODELS_PASSWORD", "from-env")
+    assert modelspw.verify("from-env") and not modelspw.verify("nope")
+    assert modelspw.change("wrong", "new-secret") == "pw_old_wrong"
+    assert modelspw.change("from-env", "new-secret") == ""
+    assert modelspw.verify("new-secret") and not modelspw.verify("from-env")
+
+
+def test_studio_shelf_and_no_home_tiles(client):
+    page = client.get("/studio").get_data(as_text=True)
+    assert 'data-tool="quiz"' in page and 'data-tool="mind"' in page and 'data-tool="slides"' in page
+    assert 'data-tool="listen"' not in page and 'data-tool="flash"' not in page and 'data-tool="report"' not in page
+    assert 'href="/exams"' in page and 'href="/progress"' in page and 'href="/materials"' in page
+    assert "st-hub" not in page and 'href="/my-courses"' in page and 'href="/help"' in page
+    assert 'class="tiles"' not in client.get("/home").get_data(as_text=True)

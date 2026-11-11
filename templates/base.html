@@ -30,29 +30,28 @@
       <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
       <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
       <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
-      {% if is_master_user %}
-      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}" title="{{ t('nav_eval') }}" data-tip="{{ t('tip_nav_eval') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
-      {% endif %}
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
       <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}" data-tip="{{ t('tip_nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
       <a href="{{ url_for('badges_admin') }}" class="{{ 'active' if path.startswith('/badges-admin') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_badges_admin') }}"><span class="ni">🏅</span><span class="nl">{{ t('nav_badges') }}</span></a>
       <a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">💬</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>
+      <a href="{{ url_for('help_page') }}" class="{{ 'active' if path.startswith('/help') }}" title="{{ t('nav_help') }}" data-tip="{{ t('tip_nav_help') }}"><span class="ni">❓</span><span class="nl">{{ t('nav_help') }}</span></a>
       <span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}" data-tip="{{ t('tip_nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a class="exit-link" href="{{ url_for('lecturer_logout') }}"><span>{{ t('back_students') }}</span><b dir="auto">{{ me_name }}</b></a></span>
       {% elif student_code %}
       {% if not first_visit %}
       <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
       <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}" data-tip="{{ t('tip_nav_ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
       <a href="{{ url_for('studio') }}" class="{{ 'active' if path.startswith(('/studio', '/practice', '/progress', '/exams', '/materials')) }}" title="{{ t('nav_studio') }}" data-tip="{{ t('tip_nav_studio') }}"><span class="ni">🎓</span><span class="nl">{{ t('nav_studio') }}</span></a>
+      {% if student_code and not is_lecturer %}<a href="{{ url_for('my_courses') }}" class="{{ 'active' if path.startswith('/my-courses') }}" title="{{ t('my_courses') }}" data-tip="{{ t('tip_my_courses') }}"><span class="ni">🎒</span><span class="nl">{{ t('my_courses') }}</span></a>{% endif %}
       {% if me_key %}<a href="{{ url_for('badges_page') }}" class="{{ 'active' if path.startswith('/badges') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_nav_badges') }}"><span class="ni">🏅</span><span class="nl">{{ t('nav_badges') }}</span>{% if badge_new %}<span class="badge nav-badge">{{ badge_new if badge_new < 10 else '9+' }}</span>{% endif %}</a>{% endif %}
       {% if me_key %}<a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">💬</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>{% endif %}
       {% endif %}
+      <a href="{{ url_for('help_page') }}" class="{{ 'active' if path.startswith('/help') }}" title="{{ t('nav_help') }}" data-tip="{{ t('tip_nav_help') }}"><span class="ni">❓</span><span class="nl">{{ t('nav_help') }}</span></a>
       {% if me_key %}<span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}" data-tip="{{ t('tip_nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
       {% else %}<span class="chip"><span class="avatar">{{ (student_name or student_code)[:1]|upper }}</span>{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>{% endif %}
       {% endif %}
     </nav>
     <div class="tools">
       {% if not is_master_user %}<button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>{% endif %}
-      {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
       {% if me_key %}
       <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
       <div class="bell" id="bell">
@@ -72,13 +71,8 @@
 </header>
 <main>
   {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
-  {% if student_code and not is_lecturer and path.startswith(('/studio', '/practice', '/progress', '/exams', '/materials')) %}
-  <nav class="st-hub" aria-label="{{ t('nav_studio') }}">
-    <a href="{{ url_for('studio') }}" class="{{ 'on' if path.startswith(('/studio', '/practice')) }}">🎓 {{ t('hub_tools') }}</a>
-    <a href="{{ url_for('exams') }}" class="{{ 'on' if path.startswith('/exams') }}">📝 {{ t('nav_exams') }}</a>
-    <a href="{{ url_for('progress') }}" class="{{ 'on' if path.startswith('/progress') }}">📈 {{ t('nav_progress') }}</a>
-    <a href="{{ url_for('materials') }}" class="{{ 'on' if path.startswith('/materials') }}">📚 {{ t('nav_materials') }}</a>
-  </nav>
+  {% if student_code and not is_lecturer and path.startswith(('/practice', '/progress', '/exams', '/materials')) %}
+  <a class="st-back" href="{{ url_for('studio') }}">← {{ t('nav_studio') }}</a>
   {% endif %}
   {% block content %}{% endblock %}
 </main>

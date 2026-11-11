@@ -468,7 +468,7 @@ def info_cards(passages, defs, kws, topic_names):
 
 
 # ------------------------------------------------------------------ the whole kit for one lecture (or all)
-def build(passages, topics_df, glossary, lecture=None, lang="en", seed=0, n_summary=8):
+def build(passages, topics_df, glossary, lecture=None, lang="en", seed=0, n_summary=8, course_title=""):
     allp = prepare(passages)
     df, n_docs = _df_table(allp)
     sel = allp if not lecture else allp[allp["lecture"] == int(lecture)]
@@ -483,7 +483,7 @@ def build(passages, topics_df, glossary, lecture=None, lang="en", seed=0, n_summ
     title = str(sel["lecture_title"].iloc[0]) if lecture else ""
     return {"lecture": int(lecture) if lecture else None, "title": title, "summary": summ, "terms": defs, "keywords": kws,
             "cards": flashcards(defs, summ, seed, vocab), "quiz": quiz(defs, summ, kws, seed, words=keywords(sel, df, n_docs, top=40) + keywords(allp, df, n_docs, top=60), vocab=vocab), "info": info_cards(sel, defs, kws, tp),
-            "map": concept_map(sel, topics_df, df, n_docs, title or "Course", lang, defs=defs), "notes": listen_notes(title, summ, defs)}
+            "map": concept_map(sel, topics_df, df, n_docs, title or course_title or "Course", lang, defs=defs), "notes": listen_notes(title, summ, defs)}
 
 
 def listen_notes(title, summary, defs):

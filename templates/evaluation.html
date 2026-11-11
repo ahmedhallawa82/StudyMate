@@ -1,12 +1,22 @@
 {% extends "base.html" %}
 {% from "_ui.html" import page_head %}
-{% block title %}{{ t('nav_eval') }}{% endblock %}
+{% block title %}{{ t('mdl_title') }}{% endblock %}
 {% block content %}
-{{ page_head('🧮', t('nav_eval'), t('eval_sub')) }}
+{{ page_head('🧮', t('mdl_title'), t('mdl_sub')) }}
+<form method="post" action="{{ url_for('models_lock') }}" style="margin:0 0 14px"><button class="btn ghost" type="submit">🔒 {{ t('mdl_lock') }}</button></form>
 {% if not r %}
 <div class="card">{{ t('no_eval_course') if auto else t('ev_none') }}</div>
 {% else %}
 {% set best = r.models.logreg if r.best_model == 'Logistic Regression' else r.models.nb %}
+<div class="card" style="margin-bottom:16px">
+  <h2>{{ t('mdl_overview') }}</h2>
+  <table>
+    <tr><th>{{ t('mdl_model') }}</th><th>{{ t('mdl_for') }}</th><th class="num">{{ t('ev_acc') }} / Top-1</th><th class="num">F1 / Top-3</th></tr>
+    {% for k, m in r.models.items() %}<tr><td>{{ m.name }}{% if m.name == r.best_model %} <span class="tag green">{{ t('ev_used') }}</span>{% endif %}</td><td>{{ t('mdl_topic') }}</td><td class="num">{{ m.accuracy }}</td><td class="num">{{ m.macro_f1 }}</td></tr>{% endfor %}
+    {% for k, m in r.search.methods.items() %}<tr><td>{{ m.name }}</td><td>{{ t('mdl_search') }}</td><td class="num">{{ m.top1 }}</td><td class="num">{{ m.top3 }}</td></tr>{% endfor %}
+    <tr><td>{{ t('mdl_off') }}</td><td>{{ t('mdl_off_for') }}</td><td class="num">{{ r.offtopic.rejected }}/{{ r.offtopic.total }}</td><td class="num">≥ {{ r.offtopic.threshold }}</td></tr>
+  </table>
+</div>
 <div class="grid-4" style="margin-bottom:16px">
   <div class="kpi"><div class="v">{{ (best.accuracy * 100)|round(1) }}%</div><div class="l">{{ t('ev_topic_acc', model=r.best_model, n=r.n_test) }}</div></div>
   <div class="kpi"><div class="v">{{ (r.search.methods.tfidf.top1 * 100)|round|int }}%</div><div class="l">{{ t('ev_top1') }}</div></div>
@@ -97,4 +107,16 @@
     </table></details>
 </div>
 {% endif %}
+
+<div class="card">
+  <h2>{{ t('mdl_pw_title') }}</h2>
+  <p class="muted small">{{ t('mdl_pw_sub') }}</p>
+  <form method="post" action="{{ url_for('models_password') }}">
+    <div class="grid-2" style="gap:10px">
+      <div><label for="mold">{{ t('mdl_pw_old') }}</label><input id="mold" type="password" name="old" autocomplete="off" required></div>
+      <div><label for="mnew">{{ t('mdl_pw_new') }}</label><input id="mnew" type="password" name="new" autocomplete="new-password" minlength="6" required></div>
+    </div>
+    <p><button class="btn" type="submit">{{ t('mdl_pw_save') }}</button></p>
+  </form>
+</div>
 {% endblock %}

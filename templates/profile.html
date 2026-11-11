@@ -52,6 +52,16 @@
         <p><button class="btn" type="submit">{{ t('prof_change') }}</button></p>
       </form>
     </div>
+    {% if is_master_user %}
+    <div class="card fade" style="--i:4">
+      <h2>🔒 {{ t('mdl_title') }}</h2>
+      <p class="muted small">{{ t('mdl_unlock_sub') }}</p>
+      <form method="post" action="{{ url_for('models_unlock') }}">
+        <label for="mpw">{{ t('mdl_pw') }}</label><input id="mpw" type="password" name="pw" autocomplete="off" required>
+        <p><button class="btn" type="submit">{{ t('mdl_open') }}</button></p>
+      </form>
+    </div>
+    {% endif %}
     {% if not is_master_user %}
     <div class="card del-card fade" style="--i:4">
       <details>

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('faq_title') }}{% endblock %}
+{% block content %}
+{{ page_head('❓', t('faq_title'), t('help_sub')) }}
+
+<div class="faq">
+  <details class="card faq-item" open>
+    <summary>{{ t('mh_title') }}</summary>
+    <div class="faq-a">
+      <div class="mh-card">
+  <p class="muted small">{{ t('mh_intro') }}</p>
+  <div class="mh-grid">
+    {% for id, name, d, h in [('tfidf', 'TF-IDF', 'mh_tfidf_d', 'mh_tfidf_h'), ('bm25', 'BM25', 'mh_bm25_d', 'mh_bm25_h'), ('hybrid', t('m_hybrid'), 'mh_hybrid_d', 'mh_hybrid_h'), ('lsa', t('m_lsa'), 'mh_lsa_d', 'mh_lsa_h')] %}
+    <div class="mh-item">
+      <b>{{ name }}</b>
+      <p>{{ t(d) }}</p>
+      <p class="mh-hint">💡 {{ t(h) }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted small" style="margin:12px 0 0">{{ t('mh_tip') }}</p>
+</div>
+    </div>
+  </details>
+
+  {% for f in faq_items %}
+  <details class="card faq-item">
+    <summary>{{ f.q }}</summary>
+    <div class="faq-a"><p style="white-space:pre-line">{{ f.a }}</p>
+      {% if staff %}<form method="post" onsubmit="return confirm('{{ t('faq_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ f.id }}"><button class="btn ghost" type="submit">🗑 {{ t('faq_del') }}</button></form>{% endif %}
+    </div>
+  </details>
+  {% endfor %}
+</div>
+
+{% if staff %}
+<div class="card" style="margin-top:18px">
+  <h2>➕ {{ t('faq_add') }}</h2>
+  <p class="muted small">{{ t('faq_add_sub') }}</p>
+  <form method="post">
+    <input type="hidden" name="action" value="add">
+    <div class="grid-2" style="gap:14px">
+      <div><label for="qen">{{ t('faq_q_en') }}</label><input id="qen" name="q_en" maxlength="300" dir="ltr">
+        <label for="aen">{{ t('faq_a_en') }}</label><textarea id="aen" name="a_en" rows="4" maxlength="1500" dir="ltr"></textarea></div>
+      <div><label for="qar">{{ t('faq_q_ar') }}</label><input id="qar" name="q_ar" maxlength="300" dir="rtl">
+        <label for="aar">{{ t('faq_a_ar') }}</label><textarea id="aar" name="a_ar" rows="4" maxlength="1500" dir="rtl"></textarea></div>
+    </div>
+    <p><button class="btn" type="submit">{{ t('faq_save') }}</button></p>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

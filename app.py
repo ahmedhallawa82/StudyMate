@@ -17,6 +17,7 @@ import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
+from core import faq, modelspw
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -775,12 +776,60 @@ def progress():
     return render_template("progress.html", items=items, nxt=nxt, stats=stats)
 
 
-# ------------------------------------------------------------------ Evaluation
+# ------------------------------------------------------------------ Help / questions
+@app.route("/help", methods=["GET", "POST"])
+def help_page():
+    staff = bool(session.get("lecturer"))
+    if not (staff or session.get("student_code")):
+        return redirect(url_for("start", next=request.path))
+    if request.method == "POST":
+        if staff:
+            if request.form.get("action") == "delete":
+                faq.delete(request.form.get("id", ""))
+            elif request.form.get("action") == "add":
+                f = request.form
+                if not faq.add(f.get("q_en", ""), f.get("a_en", ""), f.get("q_ar", ""), f.get("a_ar", "")):
+                    flash_t("faq_need_both")
+        return redirect(url_for("help_page"))
+    return render_template("help.html", faq_items=faq.items(lang()), staff=staff, method=session.get("method", "tfidf"))
+
+
+# ------------------------------------------------------------------ AI models (hidden; main admin + a password)
+@app.route("/models/unlock", methods=["POST"])
+@lecturer_required
+def models_unlock():
+    if not is_master():
+        return redirect(url_for("profile"))
+    if modelspw.verify(request.form.get("pw", "")):
+        session["models_ok"] = True
+        return redirect(url_for("evaluation"))
+    flash_t("mdl_wrong")
+    return redirect(url_for("profile"))
+
+
+@app.route("/models/lock", methods=["POST"])
+@lecturer_required
+def models_lock():
+    session.pop("models_ok", None)
+    return redirect(url_for("profile"))
+
+
+@app.route("/models/password", methods=["POST"])
+@lecturer_required
+def models_password():
+    if is_master() and session.get("models_ok"):
+        err = modelspw.change(request.form.get("old", ""), request.form.get("new", ""))
+        flash_t(err or "mdl_pw_changed", n=modelspw.MIN_LEN)
+    return redirect(url_for("evaluation"))
+
+
 @app.route("/evaluation")
 @lecturer_required
 def evaluation():
-    if not is_master() or not can_manage(course_code()):          # the evaluation page is for the main admin only
+    if not is_master() or not can_manage(course_code()):          # main admin only, and only after the models password
         return redirect(url_for("admin"))
+    if not session.get("models_ok"):
+        return redirect(url_for("profile"))
     visit("evaluation")
     P = config.course_paths(course_code())
     path = P.reports / "metrics.json"
@@ -1471,7 +1520,7 @@ def studio_kit(lecture, seed=0, n=8):
             _STUDIO_CACHE.clear()
         passages = pd.read_csv(P.passages).fillna("")
         gl = pd.read_csv(P.glossary) if P.glossary.exists() else None
-        _STUDIO_CACHE[key] = (STU.lectures_of(passages), STU.build(passages, S()["topics"], gl, lecture=lecture, lang=lang(), seed=seed, n_summary=n))
+        _STUDIO_CACHE[key] = (STU.lectures_of(passages), STU.build(passages, S()["topics"], gl, lecture=lecture, lang=lang(), seed=seed, n_summary=n, course_title=course_title()))
     return _STUDIO_CACHE[key]
 
 
@@ -1494,9 +1543,9 @@ def studio():
         pptx_ok = True
     except Exception:
         pptx_ok = False
-    tool = request.args.get("tool", "report")
+    tool = request.args.get("tool", "quiz")
     return render_template("studio.html", lectures=lectures, kit=kit, lecture=lecture, seed=seed, n=n, pptx_ok=pptx_ok,
-                           tool=tool if tool in ("report", "flash", "quiz", "table", "mind", "info", "slides", "listen") else "report")
+                           tool=tool if tool in ("quiz", "mind", "slides") else "quiz")
 
 
 @app.route("/studio/terms.xlsx")

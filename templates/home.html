@@ -50,12 +50,6 @@
       {% else %}<p class="muted">🎉 {{ t('home_all_topics') }}</p>{% endif %}
     </div>
 
-    <div class="tiles">
-      <a class="tile fade" style="--i:7" href="{{ url_for('ask') }}"><span class="ti">🔎</span><b>{{ t('nav_ask') }}</b><small>{{ t('tile_ask') }}</small></a>
-      <a class="tile fade" style="--i:8" href="{{ url_for('practice') }}"><span class="ti">✏️</span><b>{{ t('nav_practice') }}</b><small>{{ t('tile_practice') }}</small></a>
-      <a class="tile fade" style="--i:9" href="{{ url_for('exams') }}"><span class="ti">📝</span><b>{{ t('nav_exams') }}</b><small>{{ t('tile_exams') if exam_ready else t('exam_none') }}</small></a>
-      <a class="tile fade" style="--i:10" href="{{ url_for('materials') }}"><span class="ti">📚</span><b>{{ t('nav_materials') }}</b><small>{{ t('tile_materials') }}</small></a>
-    </div>
   </section>
 
   <aside class="col-side">
