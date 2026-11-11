@@ -16,7 +16,7 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    from core import notify, schedule, profiles, support, badges, catalog, custom_badges, adminpw
+    from core import notify, schedule, profiles, support, badges, catalog, custom_badges, adminpw, chat
     d = tmp_path_factory.mktemp("stu")
     f = d / "students.json"
     students.FILE = lambda: f
@@ -28,6 +28,7 @@ def _students_file(tmp_path_factory):
     badges.FILE = lambda: d / "badges.json"
     custom_badges.FILE = lambda: d / "custom_badges.json"
     adminpw.FILE = lambda: d / "admin_auth.json"
+    chat.FILE = lambda: d / "chat.json"
     catalog.FILE = lambda: d / "course_codes.json"
 
 
@@ -916,3 +917,36 @@ def test_true_false_questions_have_their_own_time_and_settings_only_hold_two_tim
     assert EX.is_tf(tf) and not EX.is_tf(mc)
     st = {**EX.DEFAULTS, "min_mcq": 1.0, "min_tf": 0.5}
     assert EX._seconds(tf, st) == 30 and EX._seconds(mc, st) == 60
+
+
+def test_chat_between_people_by_username_with_privacy_and_notification():
+    import app as A
+    from core import chat, doctors, notify
+    did, pw = doctors.add("Dr Chat")
+    a, b, d = A.app.test_client(), A.app.test_client(), A.app.test_client()
+    as_student(a, "CHATA"); as_student(b, "CHATB"); d.post("/lecturer", data={"password": pw})
+    from core import students
+    ua = students.find("chata@test.com"); ub = students.find("chatb@test.com")
+    ka, kb = "s:" + ua["code"], "s:" + ub["code"]
+    # start by username (e-mail does not work), then send both ways
+    assert "chat" in a.post("/chat", data={"username": "chatb@test.com"}).headers["Location"] and kb not in a.post("/chat", data={"username": "chatb@test.com"}).headers["Location"]
+    r = a.post("/chat", data={"username": ub["username"]})
+    assert r.status_code == 302 and "with=" in r.headers["Location"]
+    assert a.post("/chat/send", data={"with": kb, "text": "hello <b>x</b>"}).get_json()["ok"]
+    assert chat.unread_total(kb) == 1 and chat.unread_total(ka) == 0
+    assert any("CHATA" in n["title"].upper() or "Test" in n["title"] for n in notify.for_user(kb))   # told once
+    page = b.get("/chat?with=" + ka).get_data(as_text=True)
+    assert "hello &lt;b&gt;x&lt;/b&gt;" in page and chat.unread_total(kb) == 0      # escaped, and read now
+    assert b.post("/chat/send", data={"with": ka, "text": "hi back"}).get_json()["ok"]
+    j = a.get(f"/chat/poll?with={kb}&after=0").get_json()
+    assert [m["text"] for m in j["msgs"]] == ["hello <b>x</b>", "hi back"] and j["msgs"][1]["mine"] is False
+    # a third person never sees their messages; nobody can write to himself or to a missing user
+    assert chat.messages("s:S9999", ka) == []
+    assert a.post("/chat/send", data={"with": ka, "text": "x"}).status_code == 400
+    assert a.post("/chat/send", data={"with": "s:NOPE", "text": "x"}).status_code == 400
+    # the doctor can write to a student and the student answers him
+    assert d.post("/chat/send", data={"with": ka, "text": "Dr here"}).get_json()["ok"]
+    assert "Dr here" in a.get("/chat?with=d:" + did).get_data(as_text=True)
+    # guests have no chat
+    g = A.app.test_client()
+    assert g.get("/chat").status_code == 302

@@ -17,7 +17,7 @@
     {% for r in rows %}<tr data-q="{{ (r.first ~ ' ' ~ r.last ~ ' ' ~ r.username ~ ' ' ~ r.email)|lower }}">
       <td><b>{{ r.first }} {{ r.last }}</b></td><td dir="ltr">{{ r.username }}</td><td dir="ltr" class="mail">{{ r.email }}</td>
       <td>{% for c in r.courses %}<span class="tag">{{ c[1] }}{% if master and c[2] %} · {{ c[2] }}{% endif %}</span> {% endfor %}</td>
-      <td><a class="btn small" href="mailto:{{ r.email }}?subject={{ ('StudyMate - ' ~ r.courses[0][1])|urlencode }}">✉ {{ t('students_message') }}</a></td></tr>{% endfor %}
+      <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 's:' ~ r.code}) }}">💬 {{ t('students_message') }}</a></td></tr>{% endfor %}
   </table></div>
   {% else %}<p class="muted">{{ t('students_none') }}</p>{% endif %}
 </div>

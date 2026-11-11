@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -268,7 +268,7 @@ def user_key():
 def _me_context():
     key = user_key()
     if not key:
-        return {"me_key": None, "me_avatar": None, "me_name": "", "me_role": "", "notifs": [], "unread": 0, "badge_new": 0}
+        return {"me_key": None, "me_avatar": None, "me_name": "", "me_role": "", "notifs": [], "unread": 0, "badge_new": 0, "chat_unread": 0}
     pkey = profiles.safe(key)
     if key.startswith("s:"):
         st = students.get(key[2:]) or {}
@@ -279,7 +279,8 @@ def _me_context():
         name, role = session.get("admin_name", ""), tr("role_doctor", lang())
     return {"me_key": key, "me_avatar": url_for("avatar", key=pkey) + "?v=" + str(int(profiles.avatar_path(key).stat().st_mtime)) if profiles.avatar_path(key) else None,
             "me_name": name, "me_role": role, "notifs": notify.for_user(key, 6), "unread": notify.unread_count(key),
-            "badge_new": (badges.unseen_count(key[2:]) + custom_badges.unseen_count(key[2:])) if key.startswith("s:") else 0}
+            "badge_new": (badges.unseen_count(key[2:]) + custom_badges.unseen_count(key[2:])) if key.startswith("s:") else 0,
+            "chat_unread": chat.unread_total(key)}
 
 
 @app.context_processor
@@ -1556,6 +1557,111 @@ def badges_admin():
                       "got": [{"code": a["student"], "name": names.get(a["student"], a["student"])} for a in got]})
     return render_template("badges_admin.html", rows=rows, cards=cards, popular=popular, students=[{"code": s["code"], "name": names[s["code"]]} for s in sorted(aud, key=lambda x: x["code"])],
                            total_earned=sum(r["total"] for r in rows), master=is_master())
+
+
+# ------------------------------------------------------------------ Chat (direct messages on the site)
+def person(key):
+    """{key, name, username, role, avatar} for a user key; None when that account no longer exists."""
+    if not key or ":" not in key:
+        return None
+    kind, ident = key.split(":", 1)
+    av = lambda: (url_for("avatar", key=profiles.safe(key)) + "?v=" + str(int(profiles.avatar_path(key).stat().st_mtime))) if profiles.avatar_path(key) else None
+    if kind == "s":
+        st = students.get(ident)
+        return {"key": key, "name": f"{st['first']} {st['last']}".strip(), "username": st["username"], "role": tr("role_student", lang()), "avatar": av()} if st else None
+    if ident == doctors.MASTER:
+        return {"key": key, "name": profiles.get(profiles.safe(key)).get("name") or tr("role_admin", lang()), "username": "admin", "role": tr("role_admin", lang()), "avatar": av()}
+    d = doctors.get(ident)
+    return {"key": key, "name": d["name"], "username": doctors.username_of(d), "role": tr("role_doctor", lang()), "avatar": av()} if d else None
+
+
+def find_person(username):
+    """A student, doctor or the admin by username (never by e-mail)."""
+    u = (username or "").strip().lstrip("@").lower()
+    if not u:
+        return None
+    if u == "admin":
+        return person("d:" + doctors.MASTER)
+    for st in students.list_students():
+        if st["username"].lower() == u:
+            return person("s:" + st["code"])
+    for d in doctors.list_doctors():
+        if doctors.username_of(d).lower() == u:
+            return person("d:" + d["id"])
+    return None
+
+
+def chat_suggestions(me):
+    """People this user most likely wants to write to: his doctors (student) or his students (doctor)."""
+    out = []
+    if me.startswith("s:"):
+        owners = student_owners(me[2:])
+        out = [person("d:" + o) for o in sorted(owners)] + ([person("d:" + doctors.MASTER)] if not owners else [])
+    elif me == "d:" + doctors.MASTER:
+        out = [person("s:" + s["code"]) for s in students.list_students()[:30]]
+    else:
+        out = [person("s:" + s["code"]) for s in students_for_admin()]
+    return [p for p in out if p and p["key"] != me]
+
+
+def _msg_json(m, me):
+    return {"id": m["id"], "mine": m["from"] == me, "text": m["text"], "time": m["time"]}
+
+
+@app.route("/chat", methods=["GET", "POST"])
+def chat_page():
+    me = user_key()
+    if not me:
+        return redirect(url_for("start", next=request.path))
+    if request.method == "POST":                                  # start a conversation by username
+        p = find_person(request.form.get("username"))
+        if not p or p["key"] == me:
+            flash_t("chat_not_found")
+            return redirect(url_for("chat_page"))
+        return redirect(url_for("chat_page", **{"with": p["key"]}))
+    visit("chat")
+    threads = []
+    for t in chat.threads_for(me):
+        p = person(t["with"])
+        if p:
+            threads.append({**p, "last": t["last"]["text"][:60], "time": t["last"]["time"], "unread": t["unread"]})
+    cur = person(request.args.get("with"))
+    if cur and cur["key"] == me:
+        cur = None
+    msgs = []
+    if cur:
+        chat.mark_read(me, cur["key"])
+        msgs = [_msg_json(m, me) for m in chat.messages(me, cur["key"])]
+    known = {t["key"] for t in threads}
+    return render_template("chat.html", threads=threads, cur=cur, msgs=msgs, suggestions=[p for p in chat_suggestions(me) if p["key"] not in known][:12])
+
+
+@app.route("/chat/send", methods=["POST"])
+def chat_send():
+    me = user_key()
+    to = request.form.get("with", "")
+    if not me or not person(to):
+        return jsonify(ok=False, error="user"), 400
+    unread_before = next((t["unread"] for t in chat.threads_for(to) if t["with"] == me), 0)
+    msg, err = chat.send(me, to, request.form.get("text", ""))
+    if err:
+        return jsonify(ok=False, error=err), 429 if err == "rate" else 400
+    if unread_before == 0:                                         # one notification until he opens the conversation
+        mine = person(me)
+        notify.push([to], "chat", tr("chat_new_title", lang(), name=mine["name"]), tr("chat_new_body", lang()), url_for("chat_page", **{"with": me}))
+    return jsonify(ok=True, msg=_msg_json(msg, me))
+
+
+@app.route("/chat/poll")
+def chat_poll():
+    me = user_key()
+    if not me:
+        return jsonify(ok=False), 401
+    with_key = request.args.get("with", "")
+    new = [_msg_json(m, me) for m in chat.messages(me, with_key, int(request.args.get("after", 0) or 0))] if person(with_key) else []
+    if new:
+        chat.mark_read(me, with_key)
+    return jsonify(ok=True, msgs=new, unread=chat.unread_total(me))
 
 
 @app.route("/students")
