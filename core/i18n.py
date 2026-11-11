@@ -491,6 +491,7 @@ T = {
     "chat_not_found": ("No user with that username.", "مفيش مستخدم بالاسم ده."),
     "chat_rate": ("You are sending too fast. Wait a moment.", "بتبعت بسرعة. استنى لحظة."),
     "chat_new_title": ("New message from {name}", "رسالة جديدة من {name}"), "chat_new_body": ("Open the chat to read it.", "افتح المحادثة عشان تقراها."),
+    "login_required": ("Please sign in to enter.", "سجّل دخول عشان تدخل."),
     "ex_tab_q": ("Questions", "الأسئلة"), "ex_tab_s": ("Settings", "الإعدادات"), "ex_tab_r": ("Results", "النتائج"),
     "ex_total": ("Questions", "أسئلة"), "ex_en": ("English", "إنجليزي"), "ex_ar": ("Arabic", "عربي"), "ex_mcq": ("Multiple choice", "اختيار"),
     "ex_essay": ("Essay", "مقالي"), "ex_ready": ("Ready (with answers)", "جاهز بإجاباته"),

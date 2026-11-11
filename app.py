@@ -450,8 +450,23 @@ def logout():
     return redirect(url_for("start"))
 
 
+def _opened_from_outside():
+    """True when this page was opened by a typed address, a bookmark or a link from another site (not by a click inside StudyMate)."""
+    site = request.headers.get("Sec-Fetch-Site")
+    if site:
+        return site != "same-origin"
+    ref = request.headers.get("Referer", "")
+    return not ref.startswith(request.host_url)
+
+
 @app.route("/")
 def home():
+    if _opened_from_outside() and (session.get("lecturer") or student()):
+        keep = {k: session[k] for k in ("lang", "theme", "mode") if k in session}          # a shared link always asks for a sign-in
+        session.clear()
+        session.update(keep)
+        flash_t("login_required")
+        return redirect(url_for("start"))
     if session.get("lecturer"):
         return redirect(url_for("staff_home"))
     return redirect(url_for("student_home") if student() else url_for("start"))

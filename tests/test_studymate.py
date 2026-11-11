@@ -538,7 +538,7 @@ def test_staff_home_admin_and_doctor(admin):
     r = admin.get("/overview")
     html = r.get_data(as_text=True)
     assert r.status_code == 200 and "per-course" in html and "👨‍🏫" in html          # admin: doctors / students / traffic / courses
-    assert admin.get("/").headers["Location"].endswith("/overview")
+    assert admin.get("/", headers={"Sec-Fetch-Site": "same-origin"}).headers["Location"].endswith("/overview")
     did, code = doctors.add("Dr Home")
     try:
         d = A.app.test_client()
@@ -950,3 +950,19 @@ def test_chat_between_people_by_username_with_privacy_and_notification():
     # guests have no chat
     g = A.app.test_client()
     assert g.get("/chat").status_code == 302
+
+
+def test_opening_the_site_link_from_outside_always_asks_for_a_sign_in():
+    import app as A
+    c = A.app.test_client(); as_student(c, "LINK1")
+    # a click inside the site (the logo) keeps the session
+    assert c.get("/", headers={"Sec-Fetch-Site": "same-origin"}).headers["Location"].endswith("/home")
+    # a typed address / shared link signs out and shows the start page with the message
+    r = c.get("/", headers={"Sec-Fetch-Site": "none"})
+    assert r.status_code == 302 and "/start" in r.headers["Location"]
+    assert c.get("/home").status_code == 302                    # really signed out
+    assert "sign in to enter" in c.get("/start").get_data(as_text=True)
+    # same without the modern header: no Referer = from outside, own Referer = inside
+    as_student(c, "LINK1")
+    assert c.get("/", headers={"Referer": "http://localhost/home"}).headers["Location"].endswith("/home")
+    assert "/start" in c.get("/").headers["Location"]
