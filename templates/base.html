@@ -71,7 +71,6 @@
   {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
   {% block content %}{% endblock %}
 </main>
-<footer>{{ t('footer', course=course) }}</footer>
 <div class="modal" id="supportModal" hidden role="dialog" aria-modal="true" aria-labelledby="supTitle">
   <div class="modal-box">
     <button type="button" class="modal-x" data-close aria-label="{{ t('close') }}">×</button>

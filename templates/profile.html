@@ -39,10 +39,8 @@
         <p><button class="btn" type="submit">{{ t('prof_save') }}</button></p>
       </form>
     </div>
-    <div class="card fade" style="--i:3">
+    {% if not is_master_user %}<div class="card fade" style="--i:3">
       <h2>{{ t('prof_password') }}</h2>
-      {% if is_master_user %}<p class="muted">{{ t('prof_master_pw') }}</p>
-      {% else %}
       <form method="post">
         <input type="hidden" name="action" value="password">
         <label for="old">{{ t('prof_old') }}</label><input id="old" type="password" name="old" autocomplete="current-password" required>
@@ -53,8 +51,7 @@
         {% set targets = "new,confirm" %}{% include "_passgen.html" %}
         <p><button class="btn" type="submit">{{ t('prof_change') }}</button></p>
       </form>
-      {% endif %}
-    </div>
+    </div>{% endif %}
   </section>
 </div>
 {% endblock %}
