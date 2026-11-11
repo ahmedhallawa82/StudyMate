@@ -360,7 +360,7 @@ def test_doctor_changes_password_and_sheet_rows(admin, tmp_path, monkeypatch):
     d = A.app.test_client()
     d.post("/lecturer", data={"password": first[4]})
     page = d.get("/admin").get_data(as_text=True)
-    assert "Doctors sheet" not in page and "Change my password" in page
+    assert "Doctors sheet" not in page and "Change my password" not in page      # the password lives in the profile page
     d.post("/admin", data={"action": "change_password", "old": "wrong", "new": "MyNewPass9", "confirm": "MyNewPass9"})
     assert pushed[-1][0][5] == ""                                   # wrong old password: nothing changed
     d.post("/admin", data={"action": "change_password", "old": first[4], "new": "short", "confirm": "short"})
@@ -370,7 +370,7 @@ def test_doctor_changes_password_and_sheet_rows(admin, tmp_path, monkeypatch):
     # new password works, the system one no longer does
     assert doctors.check("MyNewPass9") == did and doctors.check(first[4]) is None
     n = A.app.test_client(); n.post("/lecturer", data={"password": "MyNewPass9"})
-    assert n.get("/admin").status_code == 200 and "Change my password" in n.get("/admin").get_data(as_text=True)
+    assert n.get("/admin").status_code == 200 and "Change password" in n.get("/profile").get_data(as_text=True)
     # the admin makes a new password -> the doctor's own one is cleared
     admin.post("/admin", data={"action": "reset_doctor", "doctor": did})
     assert pushed[-1][0][5] == "" and doctors.check("MyNewPass9") is None

@@ -11,7 +11,6 @@
   {% if not no_course %}<button type="button" role="tab" data-tab="lectures">① {{ t('adm_tab_lec') }}</button>{% endif %}
   <button type="button" role="tab" data-tab="courses">{{ '②' if not no_course else '①' }} {{ t('adm_tab_courses') }}</button>
   {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">③ {{ t('maintenance') }}</button>{% endif %}
-  {% if admin_role == 'doctor' %}<button type="button" role="tab" data-tab="account">④ {{ t('adm_tab_account') }}</button>{% endif %}
 </nav>
 
 <!-- ① Lectures -->
@@ -221,23 +220,6 @@
         {{ t('nf_threshold') }}: <b>{{ threshold }}</b></p>
     </div>
 
-</section>
-{% endif %}
-
-<!-- ④ Account -->
-{% if admin_role == 'doctor' %}
-<section class="adm-pane" id="pane-account">
-    
-    <div class="card">
-      <h3>{{ t('pw_title') }}</h3>
-      <p class="muted small">{{ t('pw_note', n=pw_min) }}</p>
-      <form method="post" autocomplete="off"><input type="hidden" name="action" value="change_password">
-        <input type="password" name="old" placeholder="{{ t('pw_old') }}" required dir="ltr" autocomplete="current-password"><p></p>
-        <input type="password" name="new" placeholder="{{ t('pw_new') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
-        <input type="password" name="confirm" placeholder="{{ t('pw_confirm') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
-        <button class="btn teal" type="submit">{{ t('pw_btn') }}</button></form>
-    </div>
-    
 </section>
 {% endif %}
 
