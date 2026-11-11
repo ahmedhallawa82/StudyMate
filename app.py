@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -274,7 +274,7 @@ def _me_context():
         name, role = session.get("admin_name", ""), tr("role_doctor", lang())
     return {"me_key": key, "me_avatar": url_for("avatar", key=pkey) + "?v=" + str(int(profiles.avatar_path(key).stat().st_mtime)) if profiles.avatar_path(key) else None,
             "me_name": name, "me_role": role, "notifs": notify.for_user(key, 6), "unread": notify.unread_count(key),
-            "badge_new": badges.unseen_count(key[2:]) if key.startswith("s:") else 0}
+            "badge_new": (badges.unseen_count(key[2:]) + custom_badges.unseen_count(key[2:])) if key.startswith("s:") else 0}
 
 
 @app.context_processor
@@ -462,6 +462,26 @@ def _streak(days):
         n += 1
         cur -= timedelta(days=1)
     return n
+
+
+def _course_owner_map():
+    return {c["code"]: c["meta"].get("owner") for c in config.list_courses()}
+
+
+def student_owners(code):
+    """Doctor ids whose courses this student is registered in (their custom badges reach him)."""
+    st = students.get(code) or {}
+    om = _course_owner_map()
+    return {om[c] for c in st.get("courses", []) if om.get(c)}
+
+
+def _special_cards(code):
+    out = []
+    for b in custom_badges.for_student(code, student_owners(code)):
+        out.append({"id": b["id"], "group": "special", "icon": b["icon"], "name": b["name"], "desc": b["desc"], "target": 1,
+                    "value": int(b["earned"]), "earned": b["earned"], "when": b["when"], "pct": 100 if b["earned"] else 0,
+                    "note": b["note"], "new": b["new"]})
+    return out
 
 
 GROUP_ORDER = badges.GROUPS
@@ -703,14 +723,19 @@ def badges_page():
     code = student()
     fresh = badges.unseen_ids(code)
     badges.mark_seen(code)
+    special = _special_cards(code)
+    custom_badges.mark_seen(code)
     groups = []
     for g in GROUP_ORDER:
         items = [dict(b, new=b["id"] in fresh) for b in allb if b["group"] == g]
         groups.append({"id": g, "name": badges.GROUP_NAMES[g][1 if lang() == "ar" else 0], "items": items,
                        "got": sum(b["earned"] for b in items)})
-    done = [b for b in allb if b["earned"]]
+    if special:
+        groups.append({"id": "special", "name": tr("bg_special", lang()), "items": special, "got": sum(b["earned"] for b in special)})
+    everything = allb + special
+    done = [b for b in everything if b["earned"]]
     todo = sorted([b for b in allb if not b["earned"] and b["value"]], key=lambda b: -b["pct"])
-    return render_template("badges.html", groups=groups, total=len(allb), got=len(done), nxt=todo[0] if todo else None,
+    return render_template("badges.html", groups=groups, total=len(everything), got=len(done), nxt=todo[0] if todo else None,
                            latest=sorted(done, key=lambda b: b["when"])[-1] if done else None)
 
 
@@ -1214,6 +1239,9 @@ def admin():
                 flash_t("bad_confirm")
             else:
                 remove_course_files(code)
+                if request.form.get("purge_logs") and is_master():
+                    from core.logger import delete_course_rows
+                    flash_t("logs_purged", n=delete_course_rows(code))
                 session["course"] = config.default_course()
                 sync_sheet()
                 flash_t("course_deleted", code=code)
@@ -1417,6 +1445,97 @@ def students_for_admin():
         if mine:
             rows.append({**s, "courses": mine})
     return rows
+
+
+# ------------------------------------------------------------------ Badges: admin / doctor
+def badge_audience():
+    """The students this admin sees: all of them for the main admin, only the students of his own courses for a doctor."""
+    if is_master():
+        return students.list_students()
+    return [dict(s) for s in students_for_admin()]
+
+
+def _name_of(st):
+    return f"{st['first']} {st['last']}".strip()
+
+
+def _auto_badges_by_student(codes):
+    """{student code: [earned auto badges]}, from the logs (read once for everybody)."""
+    from collections import defaultdict
+    grouped = {n: defaultdict(list) for n in ("Questions", "Answers", "Exams")}
+    for n in grouped:
+        for r in read_sheet(n):
+            grouped[n][r.get("student_code")].append(r)
+    topics_of = {}
+    for c in config.list_courses():
+        try:
+            topics_of[c["code"]] = list(load_topics(c["code"]).topic)
+        except Exception:
+            pass
+    return {c: [b for b in badges.compute(grouped["Questions"][c], grouped["Answers"][c], grouped["Exams"][c], topics_of, config.GREEN_FROM, lang()) if b["earned"]]
+            for c in codes}
+
+
+@app.route("/badges-admin", methods=["GET", "POST"])
+@lecturer_required
+def badges_admin():
+    me_key = custom_badges.MASTER if is_master() else admin_id()
+    aud = badge_audience()
+    aud_codes = {s["code"] for s in aud}
+    mine = lambda: [b for b in custom_badges.defs() if is_master() or b["owner"] == me_key]
+    if request.method == "POST":
+        act = request.form.get("action")
+        link = url_for("badges_page")
+        if act == "create_badge":
+            b = custom_badges.create(request.form.get("name"), request.form.get("icon"), request.form.get("desc"), me_key)
+            if b:
+                # tell every student the badge can reach how to get it
+                notify.push(["s:" + c for c in aud_codes], "badge", f"🏅 {b['name']} · " + tr("bg_available", "en") + " / " + tr("bg_available", "ar"),
+                            (b["desc"] or ""), link)
+                flash_t("bg_created", name=b["name"], n=len(aud_codes))
+            else:
+                flash_t("bg_need_name")
+        elif act == "award_badge":
+            b = custom_badges.get(request.form.get("badge", ""))
+            if not b or not (is_master() or b["owner"] == me_key):
+                flash_t("bg_not_yours")
+            else:
+                picked = aud_codes if request.form.get("all_students") else {c for c in request.form.getlist("students") if c in aud_codes}
+                note = request.form.get("note", "")
+                new = custom_badges.award(b["id"], sorted(picked), me_key, note)
+                notify.push(["s:" + c for c in new], "badge", f"🏅 {b['name']} · " + tr("bg_got_it", "en") + " / " + tr("bg_got_it", "ar"),
+                            (note.strip() or b["desc"] or ""), link)
+                flash_t("bg_awarded", name=b["name"], n=len(new))
+        elif act == "revoke_badge":
+            b = custom_badges.get(request.form.get("badge", ""))
+            if b and (is_master() or b["owner"] == me_key) and request.form.get("student") in aud_codes:
+                custom_badges.revoke(b["id"], request.form.get("student"))
+        elif act == "delete_badge":
+            if custom_badges.delete(request.form.get("badge", ""), me_key, is_master()):
+                flash_t("bg_deleted")
+        return redirect(url_for("badges_admin"))
+    visit("badges_admin")
+    auto = _auto_badges_by_student(aud_codes)
+    names = {s["code"]: _name_of(s) for s in aud}
+    awards = [a for a in custom_badges.awards() if a["student"] in aud_codes]
+    defs_all = {b["id"]: b for b in custom_badges.defs()}
+    rows = []
+    for s in sorted(aud, key=lambda x: x["code"]):
+        cust = [defs_all[a["badge"]] for a in awards if a["student"] == s["code"] and a["badge"] in defs_all]
+        rows.append({"code": s["code"], "name": names[s["code"]], "auto": auto.get(s["code"], []), "custom": cust,
+                     "total": len(auto.get(s["code"], [])) + len(cust)})
+    pop = {}
+    for lst in auto.values():
+        for b in lst:
+            pop.setdefault(b["id"], {"icon": b["icon"], "name": b["name"], "n": 0})["n"] += 1
+    popular = sorted(pop.values(), key=lambda x: -x["n"])[:8]
+    cards = []
+    for b in mine():
+        got = [a for a in awards if a["badge"] == b["id"]]
+        cards.append({**b, "n": len(got), "owner_name": tr("role_admin", lang()) if b["owner"] == custom_badges.MASTER else (doctors.get(b["owner"]) or {}).get("name", b["owner"]),
+                      "got": [{"code": a["student"], "name": names.get(a["student"], a["student"])} for a in got]})
+    return render_template("badges_admin.html", rows=rows, cards=cards, popular=popular, students=[{"code": s["code"], "name": names[s["code"]]} for s in sorted(aud, key=lambda x: x["code"])],
+                           total_earned=sum(r["total"] for r in rows), master=is_master())
 
 
 @app.route("/students")

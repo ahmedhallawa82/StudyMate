@@ -209,6 +209,7 @@
       <form method="post">
         <input type="hidden" name="action" value="delete_course">
         <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off">
+        {% if admin_role == 'master' %}<p class="small"><label><input type="checkbox" name="purge_logs" value="1"> {{ t('purge_logs') }}</label></p>{% endif %}
         <p></p><button class="btn red" type="submit">{{ t('delete_btn') }}</button>
       </form>
     </div>

@@ -38,6 +38,12 @@ def _open(path):
     return wb
 
 
+def _next_id(ws):
+    """One more than the biggest id in column A (rows can be deleted, so max_row is not safe any more)."""
+    ids = [r[0] for r in ws.iter_rows(min_row=2, max_col=1, values_only=True) if isinstance(r[0], (int, float))]
+    return int(max(ids)) + 1 if ids else 1
+
+
 _CACHE = {}          # path -> (mtime_ns, {sheet: [row dicts]})  (re-read only when the file changes)
 _Q = queue.Queue()   # page-visit rows waiting to be written by the background thread
 _worker = None
@@ -61,7 +67,7 @@ def _writer():
                     wb = _open(path)
                     for sheet, record in items:
                         ws = wb[sheet]
-                        rec = {"id": ws.max_row, "time": record.pop("_time"), **record}
+                        rec = {"id": _next_id(ws), "time": record.pop("_time"), **record}
                         ws.append([rec.get(c, "") for c in SHEETS[sheet]])
                     wb.save(path)
                     _CACHE.pop(path, None)
@@ -98,7 +104,7 @@ def log_to_excel(sheet: str, record: dict, update_id: int = None, path=None) -> 
                     break
             row_id = update_id
         else:
-            row_id = ws.max_row  # header is row 1 -> first record gets id 1
+            row_id = _next_id(ws)  # first record gets id 1
             rec = {"id": row_id, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), **record}
             ws.append([rec.get(c, "") for c in cols])
         wb.save(path)
@@ -138,3 +144,27 @@ def ensure_workbook(path=None):
     path = path or config.LOGS_XLSX
     with _lock:
         _open(path).save(path)
+
+
+def delete_course_rows(code: str, path=None) -> int:
+    """Remove every logged row of one course (questions, answers, visits, feedback, exams). Rows with no course belong to the first one."""
+    path = path or config.LOGS_XLSX
+    if not path.exists():
+        return 0
+    if _worker is not None:
+        _Q.join()
+    removed = 0
+    with _lock:
+        wb = _open(path)
+        for name, cols in SHEETS.items():
+            if "course" not in cols:
+                continue
+            ws, ci = wb[name], cols.index("course")
+            gone = [i for i, r in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2)
+                    if ((r[ci] if len(r) > ci else None) or config.DEFAULT_COURSE) == code]
+            for i in reversed(gone):
+                ws.delete_rows(i)
+            removed += len(gone)
+        wb.save(path)
+        _CACHE.pop(path, None)
+    return removed

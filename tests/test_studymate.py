@@ -16,7 +16,7 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    from core import notify, schedule, profiles, support, badges, catalog
+    from core import notify, schedule, profiles, support, badges, catalog, custom_badges
     d = tmp_path_factory.mktemp("stu")
     f = d / "students.json"
     students.FILE = lambda: f
@@ -26,6 +26,7 @@ def _students_file(tmp_path_factory):
     profiles.DIR = lambda: d / "avatars"
     support.FILE = lambda: d / "support.json"
     badges.FILE = lambda: d / "badges.json"
+    custom_badges.FILE = lambda: d / "custom_badges.json"
     catalog.FILE = lambda: d / "course_codes.json"
 
 
@@ -671,7 +672,8 @@ def test_forgot_password_mails_a_strong_password_that_works_at_once(monkeypatch)
     to, subj, text, html = sent[0]
     pw = re.search(r"password: (\S+)|المؤقتة: (\S+)", text)
     pw = next(g for g in pw.groups() if g)
-    assert passgen.check(pw) and pw in html and "<table" in html and to == "Forgetful@test.com"
+    import html as _h
+    assert passgen.check(pw) and _h.escape(pw) in html and "<table" in html and to == "Forgetful@test.com"     # '&' is escaped in HTML
     d = A.app.test_client().post("/start", data={"username": "forgetful@test.com", "password": pw})
     assert d.status_code == 302                                     # the mailed password opens the site at once (even after the lock)
     assert A.app.test_client().post("/start", data={"username": "forgetful@test.com", "password": "secret1"}).status_code == 200  # old one is dead
@@ -700,7 +702,7 @@ def test_admin_resets_a_password_from_the_support_inbox_and_it_works_at_once():
     assert 'name="action" value="reset"' in page                 # the message links to a real account
     r = adm.post("/support-inbox", data={"action": "reset", "who": "", "who2": "locked@test.com"})
     html = r.get_data(as_text=True)
-    pw = re.search(r'id="newPw"[^>]*>([^<]+)<', html).group(1)
+    pw = __import__("html").unescape(re.search(r'id="newPw"[^>]*>([^<]+)<', html).group(1))
     assert passgen.check(pw) and r.headers["Cache-Control"] == "no-store"
     assert A.app.test_client().post("/start", data={"username": "locked@test.com", "password": pw}).status_code == 302
     assert A.app.test_client().post("/start", data={"username": "locked@test.com", "password": "secret1"}).status_code == 200
@@ -810,3 +812,66 @@ def test_any_course_can_be_deleted_even_all_and_the_codes_list_feeds_the_dropdow
     assert st.get("/ask", query_string={"q": "what is a model-based reflex agent"}).status_code == 200 and st.get("/home").status_code == 200
     admin.post("/admin", data=mk("AUTO"), content_type="multipart/form-data")           # same code again: refused, nothing breaks
     assert len(config.list_courses()) == 1
+
+
+def test_delete_course_rows_removes_only_that_course_and_ids_stay_unique(tmp_path):
+    from core import logger
+    f = tmp_path / "logs.xlsx"
+    for course in ("AI", "X1", "AI", "X1"):
+        logger.log_to_excel("Questions", {"student_code": "S1", "question": "q", "course": course}, path=f)
+    logger.log_to_excel("Answers", {"student_code": "S1", "course": ""}, path=f)           # old row without a course = the first course
+    assert logger.delete_course_rows("X1", path=f) == 2
+    assert logger.delete_course_rows("AI", path=f) == 3
+    rows = logger.read_sheet("Questions", path=f)
+    assert rows == [] and logger.read_sheet("Answers", path=f) == []
+    a = logger.log_to_excel("Questions", {"student_code": "S1", "question": "n", "course": "X1"}, path=f)
+    b = logger.log_to_excel("Questions", {"student_code": "S1", "question": "m", "course": "X1"}, path=f)
+    assert (a, b) == (1, 2)
+
+
+def test_admin_badges_doctor_scope_notifications_and_student_view(tmp_path):
+    from core import custom_badges, doctors, notify
+    import app as A
+    A.app.config["TESTING"] = True
+    # a doctor and his course
+    did, _pw = doctors.add("Dr Scope")
+    cb = custom_badges
+    b = cb.create("Star", "⭐", "Answer in class", did)
+    assert b and b["owner"] == did
+    assert cb.create("", "x", "y", did) is None
+    new = cb.award(b["id"], ["S1", "S2"], did, "well done")
+    assert set(new) == {"S1", "S2"} and cb.award(b["id"], ["S1"], did, "") == []
+    assert cb.unseen_count("S1") == 1
+    assert cb.for_student("S9", set()) == []                 # not his student: invisible
+    assert [x["id"] for x in cb.for_student("S9", {did})] == [b["id"]]
+    cb.mark_seen("S1"); assert cb.unseen_count("S1") == 0
+    assert cb.delete(b["id"], "someone-else", False) is False
+    assert cb.delete(b["id"], did, False) is True
+
+
+def test_admin_badges_page_notifies_students_and_hides_them_from_other_doctors(client, monkeypatch, tmp_path):
+    import app as A
+    from core import doctors, notify
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    did, pw = doctors.add("Dr Nobody")                # owns no course -> sees no students
+    master, doc = A.app.test_client(), A.app.test_client()
+    master.post("/lecturer", data={"username": "admin", "password": config.LECTURER_PASSWORD})
+    doc.post("/lecturer", data={"password": pw})
+    with client.session_transaction() as ss:
+        code = ss["student_code"]                     # whoever the shared client is signed in as
+    page = master.get("/badges-admin").get_data(as_text=True)
+    assert code in page                                # master sees every student
+    assert code not in doc.get("/badges-admin").get_data(as_text=True)   # a doctor with no courses sees none
+    r = master.post("/badges-admin", data={"action": "create_badge", "name": "Hero", "icon": "🦸", "desc": "Help a friend"})
+    assert r.status_code == 302
+    mine = [n for n in notify.for_user("s:" + code) if "Hero" in n["title"]]
+    assert mine and "Help a friend" in mine[0]["body"]       # students are told how to earn it
+    bid = master.get("/badges-admin").get_data(as_text=True).split('name="badge" value="')[1].split('"')[0]
+    # a doctor cannot give (or delete) the master's badge
+    doc.post("/badges-admin", data={"action": "award_badge", "badge": bid, "all_students": "1"})
+    doc.post("/badges-admin", data={"action": "delete_badge", "badge": bid})
+    from core import custom_badges
+    assert custom_badges.get(bid) and not custom_badges.awards()
+    master.post("/badges-admin", data={"action": "award_badge", "badge": bid, "students": code, "note": "Great"})
+    assert "Hero" in client.get("/badges").get_data(as_text=True)
+    assert custom_badges.unseen_count(code) == 0       # opening the page marks it seen
