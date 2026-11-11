@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ t('support_inbox') }}{% endblock %}
+{% block content %}
+<div class="page-head fade" style="--i:0"><div class="pic">🛟</div><div><h1>{{ t('support_inbox') }}</h1></div></div>
+<div class="card fade" style="--i:1">
+  {% for m in items %}
+  <div class="sup-item {{ m.status }}">
+    <div class="sup-top"><b>{{ m.name or '—' }}</b> <small class="muted" dir="ltr">{{ m.contact }}{% if m.ident %} · @{{ m.ident }}{% endif %} · {{ m.time }}</small>
+      <span class="pill">{{ t('sup_done') if m.status == 'done' else t('sup_open') }}</span></div>
+    <p>{{ m.message }}</p>
+    <form method="post"><input type="hidden" name="id" value="{{ m.id }}"><input type="hidden" name="status" value="{{ 'open' if m.status == 'done' else 'done' }}">
+      <button class="btn small ghost" type="submit">{{ t('sup_reopen') if m.status == 'done' else t('sup_mark_done') }}</button></form>
+  </div>
+  {% else %}<p class="muted">{{ t('sup_none') }}</p>{% endfor %}
+</div>
+{% endblock %}

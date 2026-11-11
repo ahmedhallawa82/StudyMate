@@ -9,12 +9,12 @@ from collections import Counter, defaultdict
 from functools import wraps
 
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
 from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -255,7 +255,7 @@ def inject():
                         for c in visible_courses() if session.get("lecturer") or student_course_list() is None
                         or c["code"] in student_course_list()],
             "admin_role": ("master" if is_master() else "doctor") if session.get("lecturer") else None,
-            "admin_name": session.get("admin_name", ""), **_me_context()}
+            "admin_name": session.get("admin_name", ""), "login_alert": getattr(g, "login_alert", None), "support_open": support.open_count() if session.get("lecturer") and is_master() else 0, **_me_context()}
 
 
 # ------------------------------------------------------------------ student login (code only, no names)
@@ -297,19 +297,26 @@ def try_login(ident, pw):
 
 
 def handle_login(default_next):
-    """Shared by /start and /lecturer. Returns a redirect on success, else None (a message was flashed)."""
+    """Shared by /start and /lecturer. Returns a redirect on success, else None (a message was flashed).
+    The typed username/e-mail and password are compared with the stored accounts (students, doctors, admin).
+    Each typed name gets 5 tries; from the 2nd wrong one a pop-up asks the person to contact support."""
     import time
-    ip = request.remote_addr or "?"
-    if _locked(ip):
-        flash_t("too_many_tries")
+    key = _key()
+    if _locked(key):
+        g.login_alert = {"kind": "locked", "left": 0, "ident": key}
         return None
     got = try_login(request.form.get("username", ""), request.form.get("password", ""))
     if not got:
-        n, t0 = _FAILS.get(ip, (0, time.time()))
-        _FAILS[ip] = (n + 1, t0)
+        n, t0 = _FAILS.get(key, (0, time.time()))
+        n += 1
+        _FAILS[key] = (n, t0)
+        if n >= MAX_TRIES:
+            g.login_alert = {"kind": "locked", "left": 0, "ident": key}
+        elif n >= 2:
+            g.login_alert = {"kind": "help", "left": MAX_TRIES - n, "ident": key}
         flash_t("wrong_login")
         return None
-    _FAILS.pop(ip, None)
+    _FAILS.pop(key, None)
     kind, who, name = got
     chosen = request.form.get("course")
     sign_in_as(kind, who, name, request.form.get("remember"))
@@ -614,16 +621,21 @@ def evaluation():
 
 
 # ------------------------------------------------------------------ Lecturer: login, dashboard, admin
-_FAILS = {}                                         # ip -> (count, first_time): a short lock after 5 wrong tries
+_FAILS = {}                                         # typed username/e-mail -> (count, first_time)
+MAX_TRIES, LOCK_SECONDS = 5, 900
 
 
-def _locked(ip):
+def _key():
+    return (request.form.get("username", "") or "admin").strip().lower()[:80]
+
+
+def _locked(key):
     import time
-    n, t0 = _FAILS.get(ip, (0, 0))
-    if n >= 5 and time.time() - t0 < 300:
+    n, t0 = _FAILS.get(key, (0, 0))
+    if n >= MAX_TRIES and time.time() - t0 < LOCK_SECONDS:
         return True
-    if n >= 5:
-        _FAILS.pop(ip, None)
+    if n >= MAX_TRIES:
+        _FAILS.pop(key, None)
     return False
 
 
@@ -1515,7 +1527,31 @@ def lecturer_logout():
 
 load_state()
 
+# ------------------------------------------------------------------ support messages
+@app.route("/support", methods=["POST"])
+def support_send():
+    f = request.form
+    me = (session.get("student_code") or session.get("admin_name") or "")
+    rec = support.add(f.get("name"), f.get("contact"), f.get("message"), ident=f.get("ident") or me,
+                      ip=request.remote_addr or "?")
+    if rec:
+        notify.push(["d:" + doctors.MASTER], "support", tr("n_support", lang()), (rec["message"][:120]), url_for("support_inbox"))
+    return jsonify(ok=bool(rec))
+
+
+@app.route("/support-inbox", methods=["GET", "POST"])
+@lecturer_required
+def support_inbox():
+    if not is_master():
+        return redirect(url_for("staff_home"))
+    if request.method == "POST":
+        support.set_status(request.form.get("id", ""), request.form.get("status", "done"))
+        return redirect(url_for("support_inbox"))
+    return render_template("support_inbox.html", items=support.all_messages())
+
+
 if __name__ == "__main__":
     import os
     # locally: http://127.0.0.1:5000 ; on a server (Hugging Face) HOST/PORT come from the environment
     app.run(debug=False, host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", 5000)))
+

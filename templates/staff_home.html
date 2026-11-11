@@ -10,6 +10,7 @@
   <div class="edu-actions">
     <a class="btn teal" href="{{ url_for('dashboard') }}">📊 {{ t('nav_dashboard') }}</a>
     <a class="btn ghost" href="{{ url_for('admin') }}">🛠️ {{ t('nav_content') }}</a>
+    {% if master %}<a class="btn ghost" href="{{ url_for('support_inbox') }}">🛟 {{ t('support_inbox') }}{% if support_open %}<span class="sup-count">{{ support_open }}</span>{% endif %}</a>{% endif %}
   </div>
 </div>
 

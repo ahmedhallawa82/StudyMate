@@ -16,7 +16,7 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    from core import notify, schedule, profiles
+    from core import notify, schedule, profiles, support
     d = tmp_path_factory.mktemp("stu")
     f = d / "students.json"
     students.FILE = lambda: f
@@ -24,6 +24,7 @@ def _students_file(tmp_path_factory):
     schedule.FILE = lambda: d / "schedule.json"
     profiles.FILE = lambda: d / "profiles.json"
     profiles.DIR = lambda: d / "avatars"
+    support.FILE = lambda: d / "support.json"
 
 
 def as_student(c, name):
@@ -611,3 +612,25 @@ def test_semantic_and_hybrid_search_keep_the_not_found_gate():
         assert found and hits and hits[0]["score"] > 0
         found, hits = eng.search("how to bake a chocolate cake", method=m)
         assert not found and hits == []
+
+
+def test_wrong_passwords_popup_lock_and_support_messages():
+    import app as A
+    c = A.app.test_client()
+    html = c.post("/start", data={"username": "nobody1@test.com", "password": "bad"}).get_data(as_text=True)
+    assert 'role="alertdialog"' not in html                      # 1st wrong try: only the normal message
+    html = c.post("/start", data={"username": "nobody1@test.com", "password": "bad"}).get_data(as_text=True)
+    assert 'role="alertdialog"' in html and "contact support" in html.lower()
+    for _ in range(2):
+        c.post("/start", data={"username": "nobody1@test.com", "password": "bad"})
+    html = c.post("/start", data={"username": "nobody1@test.com", "password": "bad"}).get_data(as_text=True)
+    html = c.post("/start", data={"username": "nobody1@test.com", "password": "bad"}).get_data(as_text=True)
+    assert "No attempts left" in html                    # locked even for the right password later
+    ar = A.app.test_client().post("/start?lang=ar", data={"username": "x9@test.com", "password": "b"}, follow_redirects=True)
+    assert 'id="supportBtn"' in ar.get_data(as_text=True)
+    # send a support message, the admin reads it
+    r = c.post("/support", data={"name": "Sara", "contact": "s@x.com", "message": "I cannot sign in"})
+    assert r.get_json()["ok"] is True
+    admin = A.app.test_client()
+    admin.post("/lecturer", data={"username": "admin", "password": config.LECTURER_PASSWORD})
+    assert "I cannot sign in" in admin.get("/support-inbox").get_data(as_text=True)

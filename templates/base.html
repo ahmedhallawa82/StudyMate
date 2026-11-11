@@ -48,6 +48,7 @@
       {% endif %}
     </nav>
     <div class="tools">
+      <button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" aria-label="{{ t('sup_title') }}">🛟</button>
       {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
       {% if me_key %}
       <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
@@ -71,6 +72,55 @@
   {% block content %}{% endblock %}
 </main>
 <footer>{{ t('footer', course=course) }}</footer>
+<div class="modal" id="supportModal" hidden role="dialog" aria-modal="true" aria-labelledby="supTitle">
+  <div class="modal-box">
+    <button type="button" class="modal-x" data-close aria-label="{{ t('close') }}">×</button>
+    <h3 id="supTitle">🛟 {{ t('sup_title') }}</h3>
+    <p class="muted">{{ t('sup_intro') }}</p>
+    <form id="supportForm">
+      <input type="hidden" name="ident" value="{{ login_alert.ident if login_alert else '' }}">
+      <label class="small" for="supName">{{ t('sup_name') }}</label>
+      <input id="supName" type="text" name="name" maxlength="80" value="{{ student_name or admin_name }}">
+      <label class="small" for="supContact">{{ t('sup_contact') }}</label>
+      <input id="supContact" type="text" name="contact" maxlength="120" dir="ltr">
+      <label class="small" for="supMsg">{{ t('sup_message') }}</label>
+      <textarea id="supMsg" name="message" maxlength="2000" required></textarea>
+      <button class="btn teal" type="submit">{{ t('sup_send') }}</button>
+    </form>
+    <p id="supDone" class="ok-msg" hidden>✅ {{ t('sup_sent') }}</p>
+    <p id="supFail" class="err-msg" hidden>{{ t('sup_fail') }}</p>
+  </div>
+</div>
+{% if login_alert %}
+<div class="modal" id="alertModal" role="alertdialog" aria-modal="true" aria-labelledby="alTitle">
+  <div class="modal-box">
+    <button type="button" class="modal-x" data-close aria-label="{{ t('close') }}">×</button>
+    <h3 id="alTitle">{{ t('al_locked_t') if login_alert.kind == 'locked' else t('al_help_t') }}</h3>
+    <p>{{ t('al_locked') if login_alert.kind == 'locked' else t('al_help', left=login_alert.left) }}</p>
+    <div class="modal-actions"><button type="button" class="btn teal" id="alertSupport">🛟 {{ t('sup_title') }}</button><button type="button" class="btn ghost" data-close>{{ t('close') }}</button></div>
+  </div>
+</div>
+{% endif %}
+<script>
+(function () {
+  function show(m) { if (m) { m.hidden = false; m.classList.add('show'); } }
+  function hide(m) { if (m) { m.classList.remove('show'); m.hidden = true; } }
+  var sm = document.getElementById('supportModal'), am = document.getElementById('alertModal');
+  document.getElementById('supportBtn').onclick = function () { hide(am); show(sm); };
+  var as = document.getElementById('alertSupport'); if (as) as.onclick = function () { hide(am); show(sm); };
+  document.querySelectorAll('.modal [data-close]').forEach(function (b) { b.onclick = function () { hide(b.closest('.modal')); }; });
+  document.querySelectorAll('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) hide(m); }); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { hide(sm); hide(am); } });
+  document.getElementById('supportForm').onsubmit = function (e) {
+    e.preventDefault();
+    fetch('{{ url_for("support_send") }}', {method: 'POST', body: new FormData(e.target)}).then(function (r) { return r.json(); }).then(function (j) {
+      document.getElementById('supDone').hidden = !j.ok; document.getElementById('supFail').hidden = !!j.ok;
+      if (j.ok) { e.target.querySelector('textarea').value = ''; }
+    }).catch(function () { document.getElementById('supFail').hidden = false; });
+  };
+})();
+</script>
+
 <script>
 (function () {
   var btn = document.getElementById('modeBtn'), L = {light: '{{ t("mode_light") }}', dark: '{{ t("mode_dark") }}'};
