@@ -49,11 +49,11 @@ h1 { margin: 0; }
 h2.sec { font-size: 17px; margin: 6px 0 10px; color: var(--teal-dark); }
 
 /* quick tiles */
-.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px; }
+.tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 18px; }
 .tile { display: flex; flex-direction: column; gap: 4px; background: var(--card); border-radius: 18px; padding: 18px; text-decoration: none; color: var(--ink);
         box-shadow: 0 4px 18px rgba(49,46,129,.08); transition: transform .2s ease, box-shadow .2s ease; border: 1.5px solid transparent; }
 .tile:hover { transform: translateY(-4px); border-color: var(--teal); box-shadow: 0 12px 28px rgba(79,70,229,.2); }
-.tile .ti { font-size: 28px; } .tile b { font-size: 16px; } .tile small { color: var(--muted); }
+.tile { padding: 16px 12px; align-items: center; text-align: center; } .tile .ti { font-size: 28px; } .tile b { font-size: 15px; overflow-wrap: anywhere; } .tile small { color: var(--muted); }
 .next-card { background: linear-gradient(160deg, var(--teal-soft), var(--card)); }
 .row-link { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; font-size: 14px; }
 .row-q { padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--line); }
@@ -71,8 +71,8 @@ h2.sec { font-size: 17px; margin: 6px 0 10px; color: var(--teal-dark); }
 @keyframes up { to { opacity: 1; transform: none; } }
 .fill { transition: width 1s cubic-bezier(.2,.8,.2,1); }
 @media (prefers-reduced-motion: reduce) { .fade { animation: none; opacity: 1; transform: none; } .ring, .fill { transition: none; } }
-@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } .tiles { grid-template-columns: 1fr 1fr; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
-@media (max-width: 520px) { .stats, .tiles { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } .tiles { gap: 8px; } .tile { padding: 12px 6px; } .tile .ti { font-size: 22px; } .tile b { font-size: 13px; } .tile small { display: none; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
+@media (max-width: 520px) { .stats { grid-template-columns: 1fr; } .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } .tile { padding: 10px 2px; } .tile b { font-size: 11px; } }
 
 /* ---- whole site: page headers, cards, tables, forms ---- */
 .page-head { display: flex; align-items: center; gap: 16px; margin: 4px 0 18px; }
