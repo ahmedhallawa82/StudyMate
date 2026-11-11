@@ -134,6 +134,43 @@ def _letter_index(s):
     return _AR_LETTER_IDX.get(s)
 
 
+# page headers / footers / section titles that PDFs repeat between questions: they must not stick to a question
+_NOISE = re.compile(r"^\s*(?:Page\s+\d+\s*(?:/|of)\s*\d+|Lecture\s+\d+\s*[:：].*|Multiple[- ]Choice Questions.*|Essay Questions.*|"
+                    r".*[—-]\s*Question Bank|QUESTION BANK|الدرس\s+\d+.*|المحاضرة\s+\d+.*|صفحة\s+\d+.*)$", re.I)
+_KEYPAIR = re.compile(r"(?:^|[\s,;،])(?:Q|س)?\s*(\d{1,4})\s*[.):\-–=]\s*\(?([A-Ha-hأابجدهوزح]ـ?)\)?(?=$|[\s,;،])")
+
+
+def parse_key(text):
+    """An answer-key-only file ('1-A  2-C ...' or one 'Q1. B' per line) -> {number: option index}."""
+    key, bad = {}, 0
+    for line in text.split("\n"):
+        if not line.strip():
+            continue
+        pairs = _KEYPAIR.findall(line)
+        rest = _KEYPAIR.sub(" ", line)
+        if pairs and not re.search(r"[A-Za-z\u0600-\u06ff0-9]", rest):
+            for n, l in pairs:
+                i = _letter_index(l)
+                if i is not None:
+                    key[int(n)] = i
+        else:
+            bad += 1
+    return key if len(key) >= 3 and bad <= max(5, len(key)) else {}
+
+
+def apply_key(code, key):
+    """Set the correct option of already uploaded multiple-choice questions. Returns how many were set."""
+    bank = load_bank(code)
+    done = 0
+    for n, idx in key.items():
+        q = bank["questions"].get(str(n))
+        if q and q["type"] == "mcq" and any(idx < len(q.get(l, {}).get("options", [])) for l in ("en", "ar")):
+            q["answer"] = idx
+            done += 1
+    save_bank(code, bank)
+    return done
+
+
 def parse_text(text):
     """[{n, lang, type, q, options, answer, model, keywords}] from free text in the format above."""
     items, cur, field, last_n = [], None, None, 0
@@ -156,6 +193,9 @@ def parse_text(text):
 
     for line in text.split("\n"):
         if not line.strip():
+            continue
+        if _NOISE.match(line):
+            field = None
             continue
         m = _Q.match(line)
         if m and (_QPREFIX.match(line) or int(m.group(1)) in (last_n + 1, last_n) or cur is None and last_n == 0):
@@ -233,6 +273,11 @@ def parse_file(filename, data):
     else:
         return [], "unsupported"
     best = max((parse_text(t) for t in texts), key=len, default=[])
+    if not best:
+        for t in texts:
+            k = parse_key(t)
+            if k:
+                return [], k
     return best, ""
 
 

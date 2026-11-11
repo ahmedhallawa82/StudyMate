@@ -995,9 +995,12 @@ def exams_manage():
             tot = {"added": 0, "updated": 0}
             for f in files:
                 try:
-                    items, _ = EX.parse_file(f.filename, f.read())
+                    items, extra = EX.parse_file(f.filename, f.read())
                 except Exception:
-                    items = []
+                    items, extra = [], ""
+                if not items and isinstance(extra, dict) and action == "upload_qa":      # a file with only the answer key
+                    flash_t("exam_key_ok", name=f.filename, n=EX.apply_key(code, extra))
+                    continue
                 if not items:
                     flash_t("exam_file_empty", name=f.filename)
                     continue
