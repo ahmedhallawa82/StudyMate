@@ -9,11 +9,11 @@
     {% if unread %}<form method="post" action="{{ url_for('notifications_read') }}" class="inline"><button class="btn ghost small" type="submit">{{ t('notif_mark_all') }}</button></form>{% endif %}
   </div>
   {% for n in items %}
-  <a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or '#' }}">
+  <{{ 'a' if n.link else 'div' }} class="notif-row{{ ' unread' if n.unread }}"{% if n.link %} href="{{ n.link }}"{% endif %}>
     <span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋', 'badge': '🏅'}.get(n.kind, '🔔') }}</span>
     <span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span>
     {% if n.unread %}<span class="n-new">{{ t('notif_new') }}</span>{% endif %}
-  </a>
+  </{{ 'a' if n.link else 'div' }}>
   {% else %}<p class="muted">{{ t('notif_none') }}</p>{% endfor %}
 </div>
 {% endblock %}

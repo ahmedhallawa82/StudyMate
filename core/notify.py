@@ -50,7 +50,8 @@ def push(to, kind, title, body="", link=""):
 
 
 def for_user(key, limit=30):
-    rows = [dict(r, unread=key not in r["read"]) for r in _load() if key in r["to"]]
+    # a notification never opens a student's exam attempt (privacy), also for ones saved before this rule
+    rows = [dict(r, unread=key not in r["read"], link="" if "/exams/attempt/" in (r.get("link") or "") else r.get("link", "")) for r in _load() if key in r["to"]]
     return rows[::-1][:limit]
 
 

@@ -1672,8 +1672,7 @@ def exams_submit():
     me0 = students.get(student()) or {}
     cc = course_code()
     notify.push(["d:" + (course_owner(cc) or doctors.MASTER)], "exam", tr("n_done_title", lang(), course=cc),
-                tr("n_done_body", lang(), name=(me0.get("first", "") + " " + me0.get("last", "")).strip() or student(), score="%g" % att["score"], max=att["max"], pct=att["pct"]),
-                url_for("exams_attempt", aid=att["id"]))
+                tr("n_done_body", lang(), name=(me0.get("first", "") + " " + me0.get("last", "")).strip() or student(), score="%g" % att["score"], max=att["max"], pct=att["pct"]))   # no link: the doctor sees the message only, not the student's answers
     log("Exams", {"student_code": student(), "attempt_id": att["id"], "n_questions": att["max"], "correct": att["score"],
                   "score_pct": att["pct"], "duration_sec": att["duration"], "lang": att["lang"],
                   "wrong": ",".join(d["id"] for d in att["details"] if d["score"] < 1)})

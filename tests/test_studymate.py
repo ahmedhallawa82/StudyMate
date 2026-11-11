@@ -899,3 +899,11 @@ def test_catalog_sync_adds_codes_and_fills_names():
     rows = {r["code"]: r for r in catalog.load()}
     assert n == 2 and rows["AUTO"]["name_en"] == "Automotive" and rows["NEW1"]["name_en"] == "New"
     assert catalog.sync([{"code": "AUTO", "name_en": "Other", "name_ar": ""}]) == 0 and catalog.load()[0]["name_en"] == "Automotive"
+
+
+def test_exam_notification_has_no_link_to_the_student_attempt():
+    from core import notify
+    notify.push(["d:master"], "exam", "Exam finished", "Sara scored 2/10", "/exams/attempt/abc123")
+    notify.push(["d:master"], "student", "New student", "Sara registered", "/students")
+    rows = {r["title"]: r for r in notify.for_user("d:master")}
+    assert rows["Exam finished"]["link"] == "" and rows["New student"]["link"] == "/students"
