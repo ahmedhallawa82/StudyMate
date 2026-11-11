@@ -11,6 +11,8 @@ SHEETS = {
     "Answers": ["id", "time", "student_code", "question_id", "topic", "correct", "hints_used", "mastery_after", "course"],
     "Visits": ["id", "time", "student_code", "page", "course"],
     "Feedback": ["id", "time", "student_code", "question_log_id", "helpful", "comment", "course"],
+    "Students": ["id", "time", "student_code", "first_name", "last_name", "email"],
+    "Exams": ["id", "time", "student_code", "attempt_id", "n_questions", "correct", "score_pct", "duration_sec", "lang", "wrong", "course"],
 }
 _lock = threading.Lock()
 

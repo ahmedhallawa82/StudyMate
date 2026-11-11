@@ -25,8 +25,8 @@
       <p class="muted small">{{ t('sheet_note') }}</p>
       <div class="table-wrap"><table>
         <tr>{% for h in sheet.header %}<th>{{ h }}</th>{% endfor %}</tr>
-        {% for r in sheet.rows %}<tr><td>{{ r[0] }}</td><td dir="ltr">{{ r[1] or '—' }}</td><td dir="ltr"><code>{{ r[2] }}</code></td><td dir="ltr">{% if r[3] %}<code>{{ r[3] }}</code>{% else %}—{% endif %}</td></tr>
-        {% else %}<tr><td colspan="4" class="muted small">{{ t('sheet_empty') }}</td></tr>{% endfor %}
+        {% for r in sheet.rows %}<tr><td>{{ r[0] }}</td><td dir="ltr">{{ r[1] or '—' }}</td><td dir="ltr">{{ r[2] }}</td><td dir="ltr">{{ r[3] or '—' }}</td><td dir="ltr"><code>{{ r[4] }}</code></td><td dir="ltr">{% if r[5] %}<code>{{ r[5] }}</code>{% else %}—{% endif %}</td></tr>
+        {% else %}<tr><td colspan="6" class="muted small">{{ t('sheet_empty') }}</td></tr>{% endfor %}
       </table></div>
       {% if not sheet.google %}
       {% elif sheet.enabled %}
@@ -113,7 +113,7 @@
       <h3>{{ t('doctors') }}</h3>
       <p class="muted small">{{ t('doctors_note') }}</p>
       <ul class="topics">
-        {% for d in doctors %}<li><span>{{ d.name }} <span class="small muted" dir="ltr">({{ d.id }})</span></span>
+        {% for d in doctors %}<li><span>{{ d.name }} <span class="small muted" dir="ltr">({{ d.username }}{% if d.email %} · {{ d.email }}{% endif %})</span></span>
           <span class="pct" style="display:flex;gap:4px;align-items:center">{{ doctor_courses[d.id] }} {{ t('courses') }}
             <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_reset_doctor') }}')"><input type="hidden" name="action" value="reset_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn ghost" style="padding:2px 8px" type="submit">{{ t('new_code') }}</button></form>
             <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_doctor') }}')"><input type="hidden" name="action" value="delete_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn red" style="padding:2px 8px" type="submit">✕</button></form>
@@ -121,7 +121,12 @@
       </ul>
       <form method="post"><input type="hidden" name="action" value="add_doctor">
         <input type="text" name="doctor_name" placeholder="{{ t('doctor_name_ph') }}" required maxlength="60">
+        <p></p><input type="text" name="doctor_email" placeholder="{{ t('doctor_email_ph') }}" maxlength="120" dir="ltr">
         <p></p><button class="btn teal" type="submit">{{ t('add_doctor') }}</button></form>
+      <p class="small" style="margin-top:10px"><b>{{ t('export_doctors') }}:</b>
+        <a href="{{ url_for('export_doctors', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_doctors', fmt='csv') }}">CSV</a><br>
+        <b>{{ t('export_students') }}:</b>
+        <a href="{{ url_for('export_students', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_students', fmt='csv') }}">CSV</a></p>
     </div>
     {% if not no_course %}
     <div class="card panel">

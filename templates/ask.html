@@ -24,7 +24,7 @@
           <span class="score">{{ t('similarity') }} {{ h.score }}</span>
           <div class="src">{{ t('lecture') }} {{ h.lecture }} · {{ t('slide') }} {{ h.slide }}
             <span class="tag">{{ names.get(h.topic, h.topic) }}</span></div>
-          <div dir="auto" style="text-align:start">{{ h.html }}</div>
+          <div dir="auto" style="text-align:start" data-tr>{{ h.html }}</div>
         </div>
         {% endfor %}
         <div class="muted small" id="helpful">{{ t('was_helpful') }}

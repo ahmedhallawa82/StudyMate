@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ t('exams_title') }}{% endblock %}
+{% block content %}
+<style>
+  .exam-bar { position: sticky; top: 0; z-index: 5; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
+              background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 18px; margin-bottom: 14px; }
+  .exam-bar .timer { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; direction: ltr; }
+  .exam-bar .timer.low { color: #c0392b; }
+  .qcard .opt { display: block; padding: 8px 12px; margin: 6px 0; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }
+  .qcard .opt:hover { border-color: var(--teal); }
+  .qcard textarea { width: 100%; min-height: 110px; }
+</style>
+<form method="post" action="{{ url_for('exams_submit') }}" id="examForm">
+  <div class="exam-bar">
+    <div><b style="font-size:18px">{{ course }}</b><br><span class="small muted">{{ t('exam_questions') }}: {{ qs|length }}</span></div>
+    <div class="small"><span id="unans"></span> <span id="saved" class="muted"></span></div>
+    <div style="text-align:center"><div class="small muted">{{ t('exam_time_left') }}</div><div class="timer" id="timer">--:--</div></div>
+  </div>
+  {% for q in qs %}
+  <div class="card qcard" dir="{{ 'rtl' if q.lang == 'ar' else 'ltr' }}">
+    <p><b>{{ q.i }}.</b> {{ q.q }}</p>
+    {% if q.type == 'mcq' %}
+      {% for o in q.options %}<label class="opt"><input type="radio" name="q_{{ q.id }}" value="{{ loop.index0 }}" {{ 'checked' if q.value|string == loop.index0|string }}> {{ (['أ','ب','ج','د','هـ','و','ز','ح'] if q.lang == 'ar' else ['A','B','C','D','E','F','G','H'])[loop.index0] }}) {{ o }}</label>{% endfor %}
+    {% else %}
+      <textarea name="q_{{ q.id }}" placeholder="{{ t('exam_answer_ph') }}" dir="auto">{{ q.value }}</textarea>
+    {% endif %}
+  </div>
+  {% endfor %}
+  <p><button class="btn green" type="submit" id="submitBtn">{{ t('exam_submit') }}</button></p>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var form = document.getElementById('examForm'), left = {{ remaining }}, timer = document.getElementById('timer'), done = false;
+  var unans = document.getElementById('unans'), saved = document.getElementById('saved');
+  var MSG_UN = "{{ t('exam_unanswered', n='__N__') }}", MSG_SAVED = "{{ t('exam_saved') }}", MSG_UP = "{{ t('exam_time_up') }}", MSG_CONFIRM = "{{ t('exam_confirm') }}";
+  function answers() {
+    var a = {};
+    form.querySelectorAll('.qcard').forEach(function (c) {
+      var r = c.querySelector('input[type=radio]:checked'), t = c.querySelector('textarea'), el = c.querySelector('[name]');
+      var id = el.name.slice(2); var v = r ? r.value : (t ? t.value : ''); if (v !== '') a[id] = v;
+    });
+    return a;
+  }
+  function count() { var n = form.querySelectorAll('.qcard').length - Object.keys(answers()).length; unans.textContent = n ? MSG_UN.replace('__N__', n) : ''; }
+  function save() { fetch('{{ url_for("exams_save") }}', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({answers: answers()})})
+    .then(function () { saved.textContent = '✓ ' + MSG_SAVED; }).catch(function () {}); }
+  var t0; form.addEventListener('input', function () { count(); clearTimeout(t0); t0 = setTimeout(save, 800); });
+  setInterval(save, 30000); count();
+  function paint() { var m = Math.floor(left / 60), s = left % 60; timer.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s; timer.className = 'timer' + (left <= 60 ? ' low' : ''); }
+  paint();
+  setInterval(function () { if (done) return; left -= 1; if (left <= 0) { done = true; timer.textContent = MSG_UP; form.submit(); return; } paint(); }, 1000);
+  form.addEventListener('submit', function (e) { if (!done) { if (!confirm(MSG_CONFIRM)) { e.preventDefault(); return; } done = true; } });
+})();
+</script>
+{% endblock %}

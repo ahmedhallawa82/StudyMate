@@ -39,15 +39,20 @@ def _rand(n):
     return "".join(secrets.choice(_ALPHABET) for _ in range(n))
 
 
+def username_of(d):
+    return d.get("username") or ("dr" + d["id"].lower())
+
+
 def list_doctors():
-    return [{"id": d["id"], "name": d["name"], "created": d.get("created", "")} for d in _load()]
+    return [{"id": d["id"], "name": d["name"], "email": d.get("email", ""), "username": username_of(d),
+             "created": d.get("created", "")} for d in _load()]
 
 
 def get(doctor_id):
     return next((d for d in list_doctors() if d["id"] == doctor_id), None)
 
 
-def add(name):
+def add(name, email=""):
     """Returns (doctor_id, password)."""
     with _lock:
         rows = _load()
@@ -56,7 +61,7 @@ def add(name):
         while did in ids:
             did = _rand(4)
         pw = f"{did}-{_rand(8)}"
-        rows.append({"id": did, "name": name.strip()[:60] or did, "hash": generate_password_hash(pw),
+        rows.append({"id": did, "name": name.strip()[:60] or did, "email": (email or "").strip()[:120], "hash": generate_password_hash(pw),
                      "created": datetime.now().strftime("%Y-%m-%d"), "initial": pw, "new": ""})
         _save(rows)
     return did, pw
@@ -80,12 +85,14 @@ def remove(doctor_id):
         _save([d for d in _load() if d["id"] != doctor_id])
 
 
-def check(password):
-    """The doctor id whose password this is, else None."""
+def check(password, username=None):
+    """The doctor id whose password this is, else None. With a username only that doctor is tried."""
     pw = (password or "").strip()
     if not pw:
         return None
     rows = _load()
+    if username:
+        rows = [d for d in rows if username_of(d).lower() == username.strip().lower()]
     head = pw.upper().split("-", 1)[0]                     # system passwords start with the doctor id: try him first
     rows.sort(key=lambda d: d["id"] != head)
     for d in rows:
@@ -113,5 +120,6 @@ def change_password(doctor_id, old, new, master_password=""):
 
 
 def sheet_rows(courses_of):
-    """[[name, courses, system password, doctor's own password]] – courses_of(doctor_id) -> 'AI, MAM336'."""
-    return [[d["name"], courses_of(d["id"]), d.get("initial", ""), d.get("new", "")] for d in _load()]
+    """[[name, e-mail, username, courses, system password, doctor's own password]] – courses_of(doctor_id) -> 'AI, MAM336'."""
+    return [[d["name"], d.get("email", ""), username_of(d), courses_of(d["id"]), d.get("initial", ""), d.get("new", "")]
+            for d in _load()]

@@ -22,14 +22,21 @@
       </div>
     </div>
     {% endif %}
-    <label class="small" for="code">{{ t('student_code') }}</label>
-    <input type="text" id="code" name="code" placeholder="{{ t('code_ph') }}" autofocus maxlength="20" dir="ltr">
-    <p class="muted small">{{ t('privacy') }}</p>
+    <label class="small" for="username">{{ t('username_or_email') }}</label>
+    <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
+    <p style="margin:8px 0 0"></p>
+    <label class="small" for="password">{{ t('password') }}</label>
+    <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password" required>
+    <p class="small"><label><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></p>
+    <p class="muted small">{{ t('login_hint') }}</p>
     <div class="actions" style="align-items:center">
-      <button class="btn" type="submit">{{ t('start_btn') }}</button>
+      <button class="btn" type="submit">{{ t('login_btn') }}</button>
       <span class="muted small">{{ t('or') }}</span>
       <button class="btn ghost" type="submit" name="guest" value="1" formnovalidate>{{ t('guest_btn') }}</button>
     </div>
+    <p class="small" style="margin-top:10px">{{ t('no_account') }} <a href="{{ url_for('register') }}">{{ t('register_link') }}</a>
+      · <a href="{{ url_for('forgot') }}">{{ t('forgot_link') }}</a></p>
+    <p class="muted small">{{ t('privacy') }}</p>
     <p class="muted small" style="margin-top:8px">{{ t('guest_note') }}</p>
   </form>
 </div>

@@ -14,7 +14,8 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync
+from core import doctors, sheet_sync, students, mailer
+from core import exams as EX
 from core import mastery as M
 from core.classifier import TopicClassifier, KIND_NAME
 from core.logger import log_to_excel, read_sheet, ensure_workbook
@@ -24,6 +25,8 @@ from core.i18n import tr
 
 app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
+from datetime import timedelta
+app.permanent_session_lifetime = timedelta(days=30)      # "remember me"
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB PDFs
 
 STATE = {}          # course code -> loaded models and data
@@ -204,7 +207,7 @@ def inject():
     args = request.args.to_dict()
     args["lang"] = "en" if l == "ar" else "ar"
     from urllib.parse import urlencode
-    return {"lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(),
+    return {"lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(), "student_name": session.get("student_name", ""),
             "is_lecturer": session.get("lecturer"), "names": S()["names_ar" if l == "ar" else "names"],
             "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
@@ -214,25 +217,115 @@ def inject():
 
 
 # ------------------------------------------------------------------ student login (code only, no names)
+def sign_in_as(kind, who, name, remember):
+    """Put the person in the session (student, doctor or admin)."""
+    course = session.get("course")
+    lang_ = session.get("lang")
+    theme_ = session.get("theme")
+    session.clear()
+    for k, v in (("course", course), ("lang", lang_), ("theme", theme_)):
+        if v:
+            session[k] = v
+    session.permanent = bool(remember)
+    if kind == "student":
+        session["student_code"], session["student_name"] = who["code"], who["first"]
+    else:
+        session["lecturer"] = True
+        session["admin_id"], session["admin_name"] = who, name
+
+
+def try_login(ident, pw):
+    """(kind, who, name) for admin / doctor / student, else None."""
+    import hmac
+    ident, pw = (ident or "").strip(), (pw or "").strip()
+    if not pw:
+        return None
+    if ident.lower() in ("admin", ""):
+        if hmac.compare_digest(pw, config.LECTURER_PASSWORD):
+            return "admin", doctors.MASTER, ""
+    if "@" not in ident:                                   # doctors sign in with their username (or the password alone)
+        did = doctors.check(pw, username=ident or None)
+        if did:
+            return "doctor", did, doctors.get(did)["name"]
+    if ident:
+        st = students.check(ident, pw)
+        if st:
+            return "student", st, ""
+    return None
+
+
+def handle_login(default_next):
+    """Shared by /start and /lecturer. Returns a redirect on success, else None (a message was flashed)."""
+    import time
+    ip = request.remote_addr or "?"
+    if _locked(ip):
+        flash_t("too_many_tries")
+        return None
+    got = try_login(request.form.get("username", ""), request.form.get("password", ""))
+    if not got:
+        n, t0 = _FAILS.get(ip, (0, time.time()))
+        _FAILS[ip] = (n + 1, t0)
+        flash_t("wrong_login")
+        return None
+    _FAILS.pop(ip, None)
+    kind, who, name = got
+    chosen = request.form.get("course")
+    sign_in_as(kind, who, name, request.form.get("remember"))
+    if chosen in course_codes() and kind == "student":
+        session["course"] = chosen
+    if kind == "student":
+        return redirect(request.args.get("next") or url_for("ask"))
+    return redirect(request.args.get("next") or url_for("dashboard"))
+
+
 @app.route("/start", methods=["GET", "POST"])
 def start():
     if session.get("lecturer"):
         return redirect(url_for("dashboard"))
     if request.method == "POST":
-        code = re.sub(r"[^A-Za-z0-9_-]", "", request.form.get("code", "")).upper()[:20]
-        if request.form.get("guest"):                  # guest: no code needed, a temporary one is made
+        if request.form.get("guest"):                  # guest: no account needed, a temporary code is made
             import secrets
             code = "GUEST-" + secrets.token_hex(2).upper()
-        if not code:
-            flash_t("enter_code")
-        else:
-            session["student_code"] = code
+            sign_in_as("student", {"code": code, "first": code}, "", False)
             chosen = request.form.get("course")
             if chosen in course_codes():
                 session["course"] = chosen
-            session.pop("practice", None)
             return redirect(request.args.get("next") or url_for("ask"))
+        r = handle_login(None)
+        if r:
+            return r
     return render_template("start.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        f = request.form
+        if f.get("password") != f.get("confirm"):
+            flash_t("pw_mismatch")
+        else:
+            st, err = students.register(f.get("first"), f.get("last"), f.get("email"), f.get("password", ""))
+            if err:
+                flash_t(err, n=students.MIN_LEN)
+            else:
+                log_to_excel("Students", {"student_code": st["code"], "first_name": st["first"],
+                                          "last_name": st["last"], "email": st["email"]})
+                sign_in_as("student", st, "", f.get("remember"))
+                return redirect(url_for("ask"))
+    return render_template("register.html")
+
+
+@app.route("/forgot", methods=["GET", "POST"])
+def forgot():
+    sent = False
+    if request.method == "POST":
+        st, pw = students.reset_password(request.form.get("email", ""))
+        if st:
+            body = (f"Hello {st['first']},\n\nYour new StudyMate password is: {pw}\n"
+                    f"Sign in with your e-mail and this password, it is better to change it afterwards.")
+            mailer.send(st["email"], "StudyMate - new password", body)
+        sent = True                                   # same answer whether the e-mail exists or not
+    return render_template("forgot.html", sent=sent, mail_on=mailer.enabled())
 
 
 @app.route("/course/<code>")
@@ -435,29 +528,9 @@ def _locked(ip):
 @app.route("/lecturer", methods=["GET", "POST"])
 def lecturer_login():
     if request.method == "POST":
-        import time, hmac
-        ip = request.remote_addr or "?"
-        if _locked(ip):
-            flash_t("too_many_tries")
-            return render_template("lecturer_login.html")
-        pw = request.form.get("password", "").strip()
-        who, name = None, ""
-        if hmac.compare_digest(pw, config.LECTURER_PASSWORD):
-            who, name = doctors.MASTER, ""
-        else:
-            did = doctors.check(pw)
-            if did:
-                who, name = did, doctors.get(did)["name"]
-        if who:
-            _FAILS.pop(ip, None)
-            session["lecturer"] = True
-            session["admin_id"], session["admin_name"] = who, name
-            session.pop("student_code", None)            # an admin is not a student: leave the student area first
-            session.pop("practice", None)
-            return redirect(request.args.get("next") or url_for("dashboard"))
-        n, t0 = _FAILS.get(ip, (0, time.time()))
-        _FAILS[ip] = (n + 1, t0)
-        flash_t("wrong_password")
+        r = handle_login(None)
+        if r:
+            return r
     return render_template("lecturer_login.html")
 
 
@@ -571,13 +644,23 @@ def admin():
                 return redirect(url_for("admin"))
             if action == "add_doctor":
                 name = request.form.get("doctor_name", "").strip()
+                email = request.form.get("doctor_email", "").strip()
                 if name:
-                    did, new_code = doctors.add(name)
+                    did, new_code = doctors.add(name, email)
                     flash_t("doctor_added", name=name, code=new_code)
+                    flash(f"{tr('doctor_username', lang())}: {doctors.get(did)['username']}")
+                    if email and mailer.send(email, "StudyMate - your doctor account",
+                                             f"Hello {name},\n\nUsername: {doctors.get(did)['username']}\n"
+                                             f"Password: {new_code}\n\nSign in at the site's login page and change the password from the Admin page."):
+                        flash_t("doctor_mailed", email=email)
             elif action == "reset_doctor":
                 new_code = doctors.reset(request.form.get("doctor", ""))
                 if new_code:
                     flash_t("doctor_reset", code=new_code)
+                    d = doctors.get(request.form.get("doctor", ""))
+                    if d and d["email"] and mailer.send(d["email"], "StudyMate - new password",
+                                                        f"Your new password: {new_code}\nUsername: {d['username']}"):
+                        flash_t("doctor_mailed", email=d["email"])
             elif action == "delete_doctor":
                 did = request.form.get("doctor", "")
                 doctors.remove(did)
@@ -731,6 +814,267 @@ def admin():
                            bank=len(S()["bank"]), threshold=S()["engine"].threshold,
                            model=KIND_NAME.get(S()["clf"].kind, S()["clf"].kind), lecture_dir=str(P.lectures.relative_to(config.BASE_DIR)),
                            sheet=sheet_view(), pw_min=doctors.MIN_LEN)
+
+
+def _table_response(rows, header, name, fmt):
+    import io
+    from flask import send_file, Response
+    df = pd.DataFrame(rows, columns=header)
+    if fmt == "csv":
+        return Response("\ufeff" + df.to_csv(index=False), mimetype="text/csv; charset=utf-8",
+                        headers={"Content-Disposition": f"attachment; filename={name}.csv"})
+    buf = io.BytesIO()
+    df.to_excel(buf, index=False, engine="openpyxl")
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name=f"{name}.xlsx")
+
+
+@app.route("/admin/doctors.<fmt>")
+@lecturer_required
+def export_doctors(fmt):
+    if not is_master() or fmt not in ("xlsx", "csv"):
+        return redirect(url_for("admin"))
+    return _table_response(doctors.sheet_rows(courses_of), sheet_sync.HEADER, "doctors", fmt)
+
+
+@app.route("/admin/students.<fmt>")
+@lecturer_required
+def export_students(fmt):
+    if not is_master() or fmt not in ("xlsx", "csv"):
+        return redirect(url_for("admin"))
+    rows = [[x["code"], x["first"], x["last"], x["email"], x["created"]] for x in students.list_students()]
+    return _table_response(rows, ["student_code", "first_name", "last_name", "email", "created"], "students", fmt)
+
+
+# ------------------------------------------------------------------ Materials (students can keep the lectures)
+@app.route("/materials")
+@student_required
+def materials():
+    visit("materials")
+    from core.passages import lecture_number
+    files = sorted(config.course_paths(course_code()).lectures.glob("*.pdf"), key=lambda f: (lecture_number(f.name) or 0, f.name))
+    return render_template("materials.html", files=[{"name": f.name, "mb": round(f.stat().st_size / 1048576, 1)} for f in files])
+
+
+@app.route("/materials/<path:name>")
+@student_required
+def material_file(name):
+    from flask import send_from_directory
+    folder = config.course_paths(course_code()).lectures
+    return send_from_directory(folder, name, as_attachment=True)
+
+
+@app.route("/materials.zip")
+@student_required
+def materials_zip():
+    import io, zipfile
+    from flask import send_file
+    folder = config.course_paths(course_code()).lectures
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
+        for f in sorted(folder.glob("*.pdf")):
+            z.write(f, f.name)
+    buf.seek(0)
+    return send_file(buf, as_attachment=True, download_name=f"{course_code()}_lectures.zip")
+
+
+# ------------------------------------------------------------------ Arabic translation of answers (on demand)
+_TR_CACHE = {}
+
+
+@app.route("/translate", methods=["POST"])
+def translate():
+    if not (student() or session.get("lecturer")):
+        return jsonify(ok=False), 401
+    text = ((request.get_json(silent=True) or {}).get("text") or "").strip()[:4000]
+    if not text:
+        return jsonify(ok=False)
+    if text not in _TR_CACHE:
+        try:
+            from deep_translator import GoogleTranslator
+            out = GoogleTranslator(source="en", target="ar").translate(text)
+            if not out:
+                return jsonify(ok=False)
+            if len(_TR_CACHE) > 3000:
+                _TR_CACHE.clear()
+            _TR_CACHE[text] = out
+        except Exception as e:
+            return jsonify(ok=False, error=type(e).__name__)
+    return jsonify(ok=True, text=_TR_CACHE[text])
+
+
+# ------------------------------------------------------------------ Exams (student)
+@app.route("/exams")
+@student_required
+def exams():
+    visit("exams")
+    code = course_code()
+    pool = EX.eligible(code)
+    n = len(pool)
+    mine = [a for a in EX.list_attempts(code, student()) if a["status"] == "done"]
+    return render_template("exams.html", n=n, choices=EX.count_choices(n), avg=round(EX.avg_minutes(code), 2),
+                           active=EX.active_attempt(code, student()), attempts=mine, exam_lang=lang())
+
+
+@app.route("/exams/start", methods=["POST"])
+@student_required
+def exams_start():
+    code = course_code()
+    if EX.active_attempt(code, student()):
+        return redirect(url_for("exams_take"))
+    pool = EX.eligible(code)
+    if not pool:
+        flash_t("exam_none")
+        return redirect(url_for("exams"))
+    try:
+        count = int(request.form.get("count") or request.form.get("custom") or 10)
+    except ValueError:
+        count = 10
+    EX.new_attempt(code, student(), lang(), count)
+    return redirect(url_for("exams_take"))
+
+
+@app.route("/exams/take")
+@student_required
+def exams_take():
+    att = EX.active_attempt(course_code(), student())
+    if not att:
+        return redirect(url_for("exams"))
+    import time as _t
+    return render_template("exam_take.html", att=att, qs=EX.view_questions(att),
+                           remaining=max(0, int(att["deadline"] - _t.time())))
+
+
+@app.route("/exams/save", methods=["POST"])
+@student_required
+def exams_save():
+    att = EX.active_attempt(course_code(), student())
+    if not att:
+        return jsonify(ok=False)
+    data = request.get_json(silent=True) or {}
+    att["answers"].update({k: str(v)[:4000] for k, v in (data.get("answers") or {}).items() if k in att["qids"]})
+    EX.save_attempt(att)
+    return jsonify(ok=True)
+
+
+@app.route("/exams/submit", methods=["POST"])
+@student_required
+def exams_submit():
+    att = EX.active_attempt(course_code(), student())
+    if not att:
+        return redirect(url_for("exams"))
+    import time as _t
+    sent = {k[2:]: v[:4000] for k, v in request.form.items() if k.startswith("q_")} if _t.time() <= att["deadline"] + 60 else {}
+    att = EX.finish(att, sent)
+    log("Exams", {"student_code": student(), "attempt_id": att["id"], "n_questions": att["max"], "correct": att["score"],
+                  "score_pct": att["pct"], "duration_sec": att["duration"], "lang": att["lang"],
+                  "wrong": ",".join(d["id"] for d in att["details"] if d["score"] < 1)})
+    return redirect(url_for("exams_result", aid=att["id"]))
+
+
+@app.route("/exams/result/<aid>")
+@student_required
+def exams_result(aid):
+    att = EX.load_attempt(course_code(), aid)
+    if not att or att["student"] != student() or att["status"] != "done":
+        return redirect(url_for("exams"))
+    return render_template("exam_result.html", att=att, doctor_view=False, letters=EX.LETTERS_AR if att["lang"] == "ar" else EX.LETTERS_EN)
+
+
+# ------------------------------------------------------------------ Exams (doctor)
+@app.route("/exams/manage", methods=["GET", "POST"])
+@lecturer_required
+def exams_manage():
+    code = course_code()
+    if not can_manage(code):
+        return redirect(url_for("admin"))
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action in ("upload_q", "upload_qa"):
+            files = [f for f in request.files.getlist("files") if f.filename]
+            tot = {"added": 0, "updated": 0}
+            for f in files:
+                try:
+                    items, _ = EX.parse_file(f.filename, f.read())
+                except Exception:
+                    items = []
+                if not items:
+                    flash_t("exam_file_empty", name=f.filename)
+                    continue
+                r = EX.add_items(code, items, with_answers=action == "upload_qa")
+                tot["added"] += r["added"]; tot["updated"] += r["updated"]
+                flash_t("exam_file_ok", name=f.filename, n=len(items), a=r["added"], u=r["updated"])
+            if not files:
+                flash_t("choose_pdf")
+        elif action == "settings":
+            try:
+                EX.save_settings(code, request.form.get("min_mcq", 1), request.form.get("min_essay", 5))
+                flash_t("exam_settings_saved")
+            except ValueError:
+                pass
+        elif action == "clear":
+            if request.form.get("confirm", "").strip().upper() == code:
+                EX.clear_bank(code)
+                flash_t("exam_bank_cleared")
+            else:
+                flash_t("bad_confirm")
+        return redirect(url_for("exams_manage"))
+    bank = EX.load_bank(code)
+    rows = []
+    for k in sorted(bank["questions"], key=int)[:60]:
+        q = bank["questions"][k]
+        side, _ = EX._pick_lang(q, lang())
+        rows.append({"n": k, "type": q["type"], "q": side["q"][:140], "en": "en" in q, "ar": "ar" in q, "graded": EX.is_graded(q)})
+    return render_template("exam_manage.html", sm=EX.summary(code), rows=rows, code=code,
+                           attempts=EX.list_attempts(code), shown=len(rows))
+
+
+@app.route("/exams/template.xlsx")
+@lecturer_required
+def exams_template():
+    from flask import Response
+    return Response(EX.template_xlsx(), mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment; filename=exam_template.xlsx"})
+
+
+@app.route("/exams/attempt/<aid>", methods=["GET", "POST"])
+@lecturer_required
+def exams_attempt(aid):
+    code = course_code()
+    att = EX.load_attempt(code, aid)
+    if not can_manage(code) or not att or att["status"] != "done":
+        return redirect(url_for("exams_manage"))
+    if request.method == "POST":
+        try:
+            sc = float(request.form.get("score", ""))
+            if sc in (0.0, 0.5, 1.0):
+                EX.override(att, request.form.get("qid", ""), sc)
+                flash_t("exam_mark_saved")
+        except ValueError:
+            pass
+        return redirect(url_for("exams_attempt", aid=aid))
+    return render_template("exam_result.html", att=att, doctor_view=True, letters=EX.LETTERS_AR if att["lang"] == "ar" else EX.LETTERS_EN)
+
+
+@app.route("/exams/attempts.<fmt>")
+@lecturer_required
+def exams_attempts_export(fmt):
+    code = course_code()
+    if not can_manage(code) or fmt not in ("xlsx", "csv"):
+        return redirect(url_for("exams_manage"))
+    rows = [[a["student"], datetime_str(a["started"]), a["lang"], a["max"], a["score"], a["pct"], a["duration"]]
+            for a in EX.list_attempts(code) if a["status"] == "done"]
+    return _table_response(rows, ["student_code", "started", "lang", "questions", "score", "percent", "seconds"], f"exam_{code}", fmt)
+
+
+@app.template_filter("datetime")
+def _dt_filter(ts):
+    return datetime_str(ts)
+
+
+def datetime_str(ts):
+    from datetime import datetime
+    return datetime.fromtimestamp(ts).strftime("%Y-%m-%d %H:%M")
 
 
 @app.route("/lecturer/logout")

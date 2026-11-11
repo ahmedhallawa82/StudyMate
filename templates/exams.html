@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}{{ t('exams_title') }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ t('exams_title') }} · {{ course }}</h2>
+  {% if active %}
+    <p>{{ t('exam_active_note') }}</p>
+    <p><a class="btn" href="{{ url_for('exams_take') }}">{{ t('exam_resume') }}</a></p>
+  {% elif n == 0 %}
+    <p class="muted">{{ t('exam_none') }}</p>
+  {% else %}
+    <p class="muted small">{{ t('exam_rules') }}</p>
+    <p>{{ t('exam_available', n=n) }}</p>
+    <form method="post" action="{{ url_for('exams_start') }}" id="startForm">
+      <p><b>{{ t('exam_choose_n') }}</b></p>
+      <div class="actions" style="flex-wrap:wrap">
+        {% for c in choices %}<label class="btn ghost" style="cursor:pointer"><input type="radio" name="count" value="{{ c }}" {{ 'checked' if loop.first }} style="display:none"> {{ c if c != n else t('exam_all') ~ ' (' ~ c ~ ')' }}</label>{% endfor %}
+      </div>
+      <p class="small">{{ t('exam_custom') }}: <input type="number" name="custom" id="custom" min="1" max="{{ n }}" style="width:90px" dir="ltr"></p>
+      <p class="small" id="est"></p>
+      <button class="btn" type="submit">{{ t('exam_start') }}</button>
+    </form>
+  {% endif %}
+</div>
+{% if attempts %}
+<div class="card">
+  <h3>{{ t('exam_previous') }}</h3>
+  <div class="table-wrap"><table>
+    {% for a in attempts %}<tr><td>{{ loop.index }}</td><td>{{ '%g'|format(a.score) }} / {{ a.max }} ({{ a.pct }}%)</td>
+      <td>{{ (a.duration // 60) }} {{ t('minutes') }}</td><td><a href="{{ url_for('exams_result', aid=a.id) }}">{{ t('exam_review') }}</a></td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var f = document.getElementById('startForm'); if (!f) return;
+  var avg = {{ avg }}, est = document.getElementById('est'), custom = document.getElementById('custom'), msg = "{{ t('exam_time_est', m='__M__') }}";
+  function count() { var c = parseInt(custom.value, 10); if (c > 0) return c; var r = f.querySelector('input[name=count]:checked'); return r ? parseInt(r.value, 10) : 10; }
+  function paint() {
+    f.querySelectorAll('input[name=count]').forEach(function (r) { r.parentNode.className = r.checked && !custom.value ? 'btn' : 'btn ghost'; });
+    est.textContent = msg.replace('__M__', Math.max(1, Math.round(count() * avg)));
+  }
+  f.addEventListener('change', paint); custom.addEventListener('input', paint); paint();
+  f.addEventListener('submit', function () { if (parseInt(custom.value, 10) > 0) f.querySelectorAll('input[name=count]').forEach(function (r) { r.disabled = true; }); else custom.disabled = true; });
+})();
+</script>
+{% endblock %}

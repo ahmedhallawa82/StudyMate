@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t('register_title') }}{% endblock %}
+{% block content %}
+<div class="center-box card" style="max-width:560px">
+  <h2>{{ t('register_title') }}</h2>
+  <form method="post">
+    <div class="grid-2" style="gap:10px">
+      <div><label class="small">{{ t('first_name') }}</label><input type="text" name="first" required maxlength="40" value="{{ request.form.first }}"></div>
+      <div><label class="small">{{ t('last_name') }}</label><input type="text" name="last" required maxlength="40" value="{{ request.form.last }}"></div>
+    </div>
+    <p style="margin:8px 0 0"></p>
+    <label class="small">{{ t('email') }}</label><input type="text" name="email" required dir="ltr" autocomplete="email" value="{{ request.form.email }}">
+    <p style="margin:8px 0 0"></p>
+    <label class="small">{{ t('password') }}</label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password">
+    <p style="margin:8px 0 0"></p>
+    <label class="small">{{ t('pw_confirm') }}</label><input type="password" name="confirm" required minlength="6" dir="ltr" autocomplete="new-password">
+    <p class="small"><label><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></p>
+    <p class="muted small">{{ t('privacy') }}</p>
+    <button class="btn" type="submit">{{ t('register_btn') }}</button>
+    <p class="small" style="margin-top:10px">{{ t('have_account') }} <a href="{{ url_for('start') }}">{{ t('login_btn') }}</a></p>
+  </form>
+</div>
+{% endblock %}

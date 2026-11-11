@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ t('forgot_title') }}{% endblock %}
+{% block content %}
+<div class="center-box card">
+  <h2>{{ t('forgot_title') }}</h2>
+  {% if sent %}
+    <p>{{ t('forgot_sent') }}</p>
+    {% if not mail_on %}<p class="muted small">{{ t('forgot_no_mail') }}</p>{% endif %}
+    <p><a class="btn ghost" href="{{ url_for('start') }}">{{ t('login_btn') }}</a></p>
+  {% else %}
+  <p class="muted">{{ t('forgot_note') }}</p>
+  <form method="post">
+    <input type="text" name="email" placeholder="{{ t('email') }}" required dir="ltr" autofocus>
+    <p></p><button class="btn" type="submit">{{ t('send_btn') }}</button>
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

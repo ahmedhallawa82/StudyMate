@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ t('materials_title') }}{% endblock %}
+{% block content %}
+<div class="card">
+  <h2>{{ t('materials_title') }} · {{ course }}</h2>
+  <p class="muted small">{{ t('materials_note') }}</p>
+  <p><a class="btn teal" href="{{ url_for('materials_zip') }}">{{ t('download_all') }}</a></p>
+  <ul class="topics">
+    {% for f in files %}<li><span dir="ltr">{{ f.name }}</span><span class="pct">{{ f.mb }} MB · <a href="{{ url_for('material_file', name=f.name) }}">{{ t('download') }}</a></span></li>{% endfor %}
+  </ul>
+</div>
+{% endblock %}

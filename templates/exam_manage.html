@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ t('exam_manage_title') }}{% endblock %}
+{% block content %}
+<div class="grid">
+<section>
+  <div class="card">
+    <h2>{{ t('exam_upload_title') }} · {{ course }}</h2>
+    <p class="muted small">{{ t('exam_upload_note') }}</p>
+    <form method="post" enctype="multipart/form-data">
+      <p><input type="file" name="files" accept=".pdf,.docx,.txt,.xlsx,.csv" multiple required></p>
+      <div class="actions">
+        <button class="btn" type="submit" name="action" value="upload_q">{{ t('exam_btn_q') }}</button>
+        <button class="btn teal" type="submit" name="action" value="upload_qa">{{ t('exam_btn_qa') }}</button>
+        <a class="btn ghost" href="{{ url_for('exams_template') }}">{{ t('exam_template') }}</a>
+      </div>
+    </form>
+    <p class="muted small"><b>{{ t('exam_format') }}:</b> {{ t('exam_format_note') }}</p>
+  </div>
+  <div class="card">
+    <h2>{{ t('exam_bank') }}</h2>
+    <p class="small">{{ t('exam_bank_stats', **sm) }}</p>
+    <div class="table-wrap"><table>
+      {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td><td>{{ t('exam_type_mcq') if r.type == 'mcq' else t('exam_type_essay') }}</td>
+        <td dir="ltr">{{ 'EN' if r.en }} {{ 'AR' if r.ar }}</td><td dir="auto">{{ r.q }}</td>
+        <td>{% if not r.graded %}<span style="color:#c0392b">{{ t('exam_no_answer') }}</span>{% endif %}</td></tr>{% endfor %}
+    </table></div>
+    {% if sm.total > shown %}<p class="muted small">{{ t('exam_shown_first', n=shown) }}</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>{{ t('exam_attempts') }}</h2>
+    {% if attempts %}
+    <p class="small"><a href="{{ url_for('exams_attempts_export', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('exams_attempts_export', fmt='csv') }}">CSV</a></p>
+    <div class="table-wrap"><table>
+      <tr><th>{{ t('exam_student') }}</th><th>{{ t('exam_date') }}</th><th>{{ t('exam_questions') }}</th><th>{{ t('exam_score') }}</th><th></th></tr>
+      {% for a in attempts %}<tr><td dir="ltr">{{ a.student }}</td><td dir="ltr">{{ a.started|datetime }}</td><td>{{ a.max if a.status == 'done' else '—' }}</td>
+        <td>{% if a.status == 'done' %}{{ '%g'|format(a.score) }} ({{ a.pct }}%){% else %}…{% endif %}</td>
+        <td>{% if a.status == 'done' %}<a href="{{ url_for('exams_attempt', aid=a.id) }}">{{ t('exam_open') }}</a>{% endif %}</td></tr>{% endfor %}
+    </table></div>
+    {% else %}<p class="muted small">{{ t('exam_no_attempts') }}</p>{% endif %}
+  </div>
+</section>
+<aside>
+  <div class="card panel">
+    <h3>{{ t('exam_settings') }}</h3>
+    <form method="post"><input type="hidden" name="action" value="settings">
+      <label class="small">{{ t('exam_min_mcq') }}</label><input type="number" step="0.1" min="0.2" name="min_mcq" value="{{ sm.settings.min_mcq }}" dir="ltr"><p></p>
+      <label class="small">{{ t('exam_min_essay') }}</label><input type="number" step="0.5" min="0.5" name="min_essay" value="{{ sm.settings.min_essay }}" dir="ltr"><p></p>
+      <button class="btn teal" type="submit">{{ t('save') }}</button></form>
+  </div>
+  <div class="card panel">
+    <h3>{{ t('exam_delete_bank') }}</h3>
+    <form method="post"><input type="hidden" name="action" value="clear">
+      <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off"><p></p>
+      <button class="btn red" type="submit">{{ t('delete_btn') }}</button></form>
+  </div>
+</aside>
+</div>
+{% endblock %}

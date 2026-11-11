@@ -12,13 +12,29 @@ from core.text import clean_slide_text
 from core.logger import log_to_excel, read_sheet
 
 
+@pytest.fixture(autouse=True, scope="module")
+def _students_file(tmp_path_factory):
+    """Student accounts of the tests live in a temp folder, never in data/students.json."""
+    from core import students
+    f = tmp_path_factory.mktemp("stu") / "students.json"
+    students.FILE = lambda: f
+
+
+def as_student(c, name):
+    """Register (or sign in) a test student and leave the client signed in."""
+    r = c.post("/register", data={"first": name, "last": "Test", "email": f"{name.lower()}@test.com",
+                                  "password": "secret1", "confirm": "secret1"})
+    if "Location" not in r.headers or "/register" in r.headers.get("Location", ""):
+        c.post("/start", data={"username": f"{name.lower()}@test.com", "password": "secret1"})
+
+
 @pytest.fixture(scope="module")
 def client(tmp_path_factory):
     config.LOGS_XLSX = tmp_path_factory.mktemp("logs") / "logs.xlsx"   # never touch the real logs
     import app as A
     A.app.config["TESTING"] = True
     c = A.app.test_client()
-    c.post("/start", data={"code": "TEST1"})
+    as_student(c, "TEST1")
     return c
 
 
@@ -114,7 +130,7 @@ def test_admin_pages(client, admin):
 def test_admin_and_student_areas_are_separate():
     import app as A
     c = A.app.test_client()
-    c.post("/start", data={"code": "SEP1"})
+    as_student(c, "SEP1")
     c.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
     # inside Admin: no student pages, no student navigation, not signed in as a student any more
     for page in ("/ask", "/practice", "/progress", "/start"):
@@ -126,7 +142,7 @@ def test_admin_and_student_areas_are_separate():
     r = c.get("/lecturer/logout")
     assert "/start" in r.headers["Location"]
     assert c.get("/ask").status_code == 302
-    assert c.post("/start", data={"code": "SEP1"}).status_code == 302
+    assert c.post("/start", data={"username": "sep1@test.com", "password": "secret1"}).status_code == 302
     assert c.get("/ask").status_code == 200
 
 
@@ -276,7 +292,7 @@ def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
         admin.post("/admin", data={"action": "delete_doctor", "doctor": did2})
         assert len(doctors.list_doctors()) == 1
         # students see all courses, with the live-search list
-        s = A.app.test_client(); s.post("/start", data={"code": "SRCH1"})
+        s = A.app.test_client(); as_student(s, "SRCH1")
         html = s.get("/ask").get_data(as_text=True)
         assert 'id="courseCombo"' in html and "DCT9" in html and "js/courses.js" in html
     finally:
@@ -294,23 +310,143 @@ def test_doctor_changes_password_and_sheet_rows(admin, tmp_path, monkeypatch):
     admin.post("/admin", data={"action": "add_doctor", "doctor_name": "Dr Sheet"})
     did = doctors.list_doctors()[0]["id"]
     first = pushed[-1][0]
-    assert first[0] == "Dr Sheet" and first[2].startswith(did + "-") and first[3] == ""
+    assert first[0] == "Dr Sheet" and first[4].startswith(did + "-") and first[5] == ""
     # the admin page shows the doctors sheet; a doctor never sees it
     assert "Doctors sheet" in admin.get("/admin").get_data(as_text=True)
     d = A.app.test_client()
-    d.post("/lecturer", data={"password": first[2]})
+    d.post("/lecturer", data={"password": first[4]})
     page = d.get("/admin").get_data(as_text=True)
     assert "Doctors sheet" not in page and "Change my password" in page
     d.post("/admin", data={"action": "change_password", "old": "wrong", "new": "MyNewPass9", "confirm": "MyNewPass9"})
-    assert pushed[-1][0][3] == ""                                   # wrong old password: nothing changed
-    d.post("/admin", data={"action": "change_password", "old": first[2], "new": "short", "confirm": "short"})
-    assert pushed[-1][0][3] == ""
-    d.post("/admin", data={"action": "change_password", "old": first[2], "new": "MyNewPass9", "confirm": "MyNewPass9"})
-    assert pushed[-1][0][3] == "MyNewPass9" and pushed[-1][0][2] == first[2]
+    assert pushed[-1][0][5] == ""                                   # wrong old password: nothing changed
+    d.post("/admin", data={"action": "change_password", "old": first[4], "new": "short", "confirm": "short"})
+    assert pushed[-1][0][5] == ""
+    d.post("/admin", data={"action": "change_password", "old": first[4], "new": "MyNewPass9", "confirm": "MyNewPass9"})
+    assert pushed[-1][0][5] == "MyNewPass9" and pushed[-1][0][4] == first[4]
     # new password works, the system one no longer does
-    assert doctors.check("MyNewPass9") == did and doctors.check(first[2]) is None
+    assert doctors.check("MyNewPass9") == did and doctors.check(first[4]) is None
     n = A.app.test_client(); n.post("/lecturer", data={"password": "MyNewPass9"})
     assert n.get("/admin").status_code == 200 and "Change my password" in n.get("/admin").get_data(as_text=True)
     # the admin makes a new password -> the doctor's own one is cleared
     admin.post("/admin", data={"action": "reset_doctor", "doctor": did})
-    assert pushed[-1][0][3] == "" and doctors.check("MyNewPass9") is None
+    assert pushed[-1][0][5] == "" and doctors.check("MyNewPass9") is None
+
+
+# ---------------- accounts: register, sign in with username/password, remember me, doctor username
+def test_register_login_and_students_sheet(tmp_path):
+    import app as A
+    from core import students
+    c = A.app.test_client()
+    bad = c.post("/register", data={"first": "A", "last": "B", "email": "nope", "password": "secret1", "confirm": "secret1"})
+    assert bad.status_code == 200 and "Location" not in bad.headers
+    ok = c.post("/register", data={"first": "Sara", "last": "Ali", "email": "Sara@Mail.com", "password": "secret1", "confirm": "secret1"})
+    assert ok.status_code == 302
+    dup = c.post("/register", data={"first": "S", "last": "A", "email": "sara@mail.com", "password": "secret1", "confirm": "secret1"})
+    assert dup.status_code == 200
+    s = students.find("sara@mail.com")
+    assert s["first"] == "Sara" and "secret1" not in json_text(students.FILE())          # only a hash is stored
+    rows = read_sheet("Students")
+    assert rows[-1]["email"] == "sara@mail.com" and "password" not in rows[-1]
+    c2 = A.app.test_client()
+    assert c2.post("/start", data={"username": "sara@mail.com", "password": "wrong"}).status_code == 200
+    r = c2.post("/start", data={"username": "sara@mail.com", "password": "secret1", "remember": "1"})
+    assert r.status_code == 302 and "/ask" in r.headers["Location"]
+    assert "Expires" in r.headers.get("Set-Cookie", "")                                   # remember me -> long cookie
+
+
+def json_text(path):
+    return path.read_text(encoding="utf-8")
+
+
+def test_admin_and_doctor_username_login(admin, tmp_path, monkeypatch):
+    import app as A
+    from core import doctors
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    a = A.app.test_client()
+    assert a.post("/start", data={"username": "admin", "password": "nope"}).status_code == 200
+    assert "/dashboard" in a.post("/start", data={"username": "admin", "password": config.LECTURER_PASSWORD}).headers["Location"]
+    admin.post("/admin", data={"action": "add_doctor", "doctor_name": "Dr Mail", "doctor_email": "dr@x.com"})
+    d = doctors.list_doctors()[0]
+    assert d["email"] == "dr@x.com" and d["username"].startswith("dr")
+    pw = doctors._load()[0]["initial"]
+    other = A.app.test_client()
+    assert other.post("/start", data={"username": "dr-wrong", "password": pw}).status_code == 200   # username must match
+    doc = A.app.test_client()
+    assert "/dashboard" in doc.post("/start", data={"username": d["username"], "password": pw}).headers["Location"]
+    page = doc.get("/admin").get_data(as_text=True)
+    assert "Doctor" in page and "Dr Mail" in page                                        # role chip shows who is signed in
+    assert "Admin" in admin.get("/admin").get_data(as_text=True)
+    # exports are for the main admin only
+    assert admin.get("/admin/doctors.csv").status_code == 200 and "dr@x.com" in admin.get("/admin/doctors.csv").get_data(as_text=True)
+    assert admin.get("/admin/doctors.xlsx").status_code == 200
+    assert doc.get("/admin/doctors.csv").status_code == 302
+
+
+def test_materials_zip(client):
+    r = client.get("/materials.zip")
+    assert r.status_code == 200 and r.data[:2] == b"PK"
+    assert client.get("/materials").status_code == 200
+
+
+# ---------------- exams
+EXAM_TEXT = """Q1. What does PEAS stand for?
+A) Performance, Environment, Actuators, Sensors
+B) Planning
+C) Policy
+D) None
+Answer: A
+Q2. Explain A* search.
+Answer: uses f(n)=g(n)+h(n)
+Keywords: f(n); g(n); admissible
+س1. ماذا تعني PEAS؟
+أ) الأداء والبيئة
+ب) التخطيط
+ج) السياسة
+د) لا شيء
+الإجابة: أ
+"""
+
+
+def test_exam_parser_pairs_languages():
+    from core import exams as EX
+    items = EX.parse_text(EXAM_TEXT)
+    assert [(i["n"], i["lang"], i["type"]) for i in items] == [(1, "en", "mcq"), (2, "en", "essay"), (1, "ar", "mcq")]
+    assert items[0]["answer"] == 0 and items[2]["answer"] == 0 and items[1]["keywords"] == ["f(n)", "g(n)", "admissible"]
+
+
+def test_exam_flow(admin, tmp_path, monkeypatch):
+    import io
+    import app as A
+    from core import exams as EX
+    monkeypatch.setattr(EX, "folder", lambda code: tmp_path / code / "exams")
+    up = {"action": "upload_qa", "files": (io.BytesIO(EXAM_TEXT.encode("utf-8")), "bank.txt")}
+    admin.post("/exams/manage", data=up, content_type="multipart/form-data")
+    sm = EX.summary(config.DEFAULT_COURSE)
+    assert sm["total"] == 2 and sm["en"] == 2 and sm["ar"] == 1 and sm["graded"] == 2
+    # questions only: a new question without answers is stored but cannot be used in an exam
+    admin.post("/exams/manage", data={"action": "upload_q", "files": (io.BytesIO(b"Q3. Define agent.\n"), "q.txt")}, content_type="multipart/form-data")
+    assert EX.summary(config.DEFAULT_COURSE)["total"] == 3 and len(EX.eligible(config.DEFAULT_COURSE)) == 2
+    s = A.app.test_client(); as_student(s, "EXAM1")
+    assert s.get("/exams").status_code == 200
+    assert s.post("/exams/start", data={"count": "2"}).status_code == 302
+    page = s.get("/exams/take?lang=ar").get_data(as_text=True)
+    assert "Answer:" not in page and "examForm" in page                                  # no answers while taking the exam
+    att = EX.active_attempt(config.DEFAULT_COURSE, "S0001") or EX.list_attempts(config.DEFAULT_COURSE)[0]
+    form = {}
+    for k in att["qids"]:
+        form[f"q_{k}"] = "0" if EX.load_bank(config.DEFAULT_COURSE)["questions"][k]["type"] == "mcq" else "it uses f(n) g(n) and an admissible heuristic"
+    r = s.post("/exams/submit", data=form)
+    assert r.status_code == 302 and "/exams/result/" in r.headers["Location"]
+    res = s.get(r.headers["Location"]).get_data(as_text=True)
+    assert "2 / 2" in res and "100%" in res
+    assert read_sheet("Exams")[-1]["score_pct"] == 100
+    # the doctor sees the attempt and can change an essay mark
+    assert att["id"] in admin.get("/exams/manage").get_data(as_text=True)
+    done = EX.load_attempt(config.DEFAULT_COURSE, att["id"])
+    essay = next((d for d in done["details"] if d["type"] == "essay"), None)
+    if essay:
+        admin.post(f"/exams/attempt/{att['id']}", data={"qid": essay["id"], "score": "0"})
+        assert EX.load_attempt(config.DEFAULT_COURSE, att["id"])["score"] < 2
+    # another student cannot open this result
+    o = A.app.test_client(); as_student(o, "EXAM2")
+    assert o.get(f"/exams/result/{att['id']}").headers["Location"].endswith("/exams")

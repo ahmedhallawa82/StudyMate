@@ -5,8 +5,10 @@
   <h2>{{ t('lecturer_area') }}</h2>
   <p class="muted">{{ t('lecturer_note') }}</p>
   <form method="post">
-    <input type="password" name="password" placeholder="{{ t('password') }}" autofocus required dir="ltr">
+    <input type="text" name="username" placeholder="{{ t('username_or_email') }} (admin)" autofocus dir="ltr" autocomplete="username" required>
     <p></p>
+    <input type="password" name="password" placeholder="{{ t('password') }}" required dir="ltr" autocomplete="current-password">
+    <p class="small"><label><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></p>
     <button class="btn teal" type="submit">{{ t('enter') }}</button>
   </form>
 </div>
