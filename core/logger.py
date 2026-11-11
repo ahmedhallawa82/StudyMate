@@ -168,3 +168,26 @@ def delete_course_rows(code: str, path=None) -> int:
         wb.save(path)
         _CACHE.pop(path, None)
     return removed
+
+
+def delete_student_rows(student_code: str, path=None) -> int:
+    """Remove every logged row of one student (questions, answers, visits, feedback, exams, registration)."""
+    path = path or config.LOGS_XLSX
+    if not path.exists():
+        return 0
+    if _worker is not None:
+        _Q.join()
+    removed = 0
+    with _lock:
+        wb = _open(path)
+        for name, cols in SHEETS.items():
+            if "student_code" not in cols:
+                continue
+            ws, ci = wb[name], cols.index("student_code")
+            gone = [i for i, r in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2) if (r[ci] if len(r) > ci else None) == student_code]
+            for i in reversed(gone):
+                ws.delete_rows(i)
+            removed += len(gone)
+        wb.save(path)
+        _CACHE.pop(path, None)
+    return removed

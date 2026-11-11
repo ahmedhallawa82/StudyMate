@@ -52,6 +52,19 @@
         <p><button class="btn" type="submit">{{ t('prof_change') }}</button></p>
       </form>
     </div>
+    {% if not is_master_user %}
+    <div class="card del-card fade" style="--i:4">
+      <details>
+        <summary>{{ t('del_title') }}</summary>
+        <p class="muted small" style="margin-top:12px">{{ t('del_sub') }} {% if is_staff %}{{ t('del_sub_doc') }}{% endif %}</p>
+        <form method="post" onsubmit="return confirm('{{ t('del_confirm') }}')">
+          <input type="hidden" name="action" value="delete_account">
+          <label for="delpw">{{ t('del_pw') }}</label><input id="delpw" type="password" name="pw" autocomplete="current-password" required>
+          <p><button class="btn red" type="submit">{{ t('del_btn') }}</button></p>
+        </form>
+      </details>
+    </div>
+    {% endif %}
   </section>
 </div>
 {% endblock %}

@@ -70,3 +70,15 @@ def update(key, **fields):
         d.setdefault(safe(key), {}).update({k: v for k, v in fields.items() if v is not None})
         FILE().parent.mkdir(parents=True, exist_ok=True)
         FILE().write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def delete(key):
+    """Forget a user's photo and profile details."""
+    try:
+        remove_avatar(key)
+    except OSError:
+        pass
+    with _lock:
+        d = _load()
+        if d.pop(safe(key), None) is not None:
+            FILE().write_text(json.dumps(d, ensure_ascii=False, indent=1), encoding="utf-8")

@@ -348,3 +348,20 @@ nav a { position: relative; }
 @media (max-width: 900px) { .st-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } .st-two { grid-template-columns: 1fr; } .st-opts { grid-template-columns: 1fr; } .st-stats b { font-size: 20px; } }
 @media print { body.st-printing header.top, body.st-printing .st-tiles, body.st-printing .st-pick, body.st-printing .course-pick, body.st-printing .st-head .actions, body.st-printing .st-seg, body.st-printing footer { display: none !important; }
   body.st-printing .st-pane[hidden] { display: none !important; } body.st-printing .card { box-shadow: none; border: 0; } }
+
+/* ---- Ask page: what the search methods do ---- */
+.mh-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 10px; }
+.mh-item { border: 1.5px solid var(--line); border-radius: 14px; padding: 14px 16px; background: var(--bg); }
+.mh-item.on { border-color: var(--teal); background: var(--teal-soft); }
+.mh-item b { color: var(--teal-dark); } .mh-item p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; }
+.mh-hint { color: var(--muted); font-size: 13px !important; }
+@media (max-width: 700px) { .mh-grid { grid-template-columns: 1fr; } }
+/* ---- exams: ready exam + create your own ---- */
+.ex-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.ex-opt { border: 1.5px solid var(--line); border-radius: 16px; padding: 18px 20px; background: var(--card); display: flex; flex-direction: column; gap: 6px; }
+.ex-opt.ready { border-color: var(--teal); background: var(--teal-soft); }
+.ex-opt h3 { margin: 0; font-size: 18px; } .ex-opt p { margin: 0; }
+@media (max-width: 800px) { .ex-opts { grid-template-columns: 1fr; } }
+/* ---- profile: delete the account ---- */
+.del-card { border: 1.5px solid #f1b5b2; } .del-card summary { cursor: pointer; font-weight: 700; color: #a03a36; }
+.del-card .btn.red { background: #d9534f; color: #fff; }

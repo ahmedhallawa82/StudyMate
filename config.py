@@ -1,7 +1,15 @@
 """Central settings for StudyMate (Project 1E - Course Study Assistant)."""
+import os
+import time
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
+
+# Every date and time on the site (today in the calendar, the greeting, log times) follows this time zone, not the server's.
+TIMEZONE = os.environ.get("STUDYMATE_TZ", "Africa/Cairo")
+os.environ["TZ"] = TIMEZONE
+if hasattr(time, "tzset"):
+    time.tzset()
 
 COURSE_CODE = "AI"
 COURSE_NAME = "Artificial Intelligence"

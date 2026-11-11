@@ -16,6 +16,7 @@ from werkzeug.utils import secure_filename
 import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
+from core import accountdel
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -960,6 +961,27 @@ def profile():
                         sync_sheet()
                     notify.push([key], "security", tr("n_pw_title", lang()), tr("n_pw_body", lang()), url_for("profile"))
                     flash_t("pw_changed")
+        elif action == "delete_account":
+            pw = request.form.get("pw", "")
+            if key == "d:" + doctors.MASTER:
+                flash_t("del_master")
+            else:
+                if is_staff:
+                    d = doctors.get(admin_id())
+                    ok = bool(d) and doctors.check(pw, doctors.username_of(d)) == d["id"]
+                else:
+                    ok = students.verify(key[2:], pw)
+                if not ok:
+                    flash_t("del_wrong_pw")
+                else:
+                    (accountdel.delete_doctor(admin_id()) if is_staff else accountdel.delete_student(key[2:]))
+                    if is_staff:
+                        sync_sheet()
+                    keep = {k: session.get(k) for k in ("course", "lang", "theme") if session.get(k)}
+                    session.clear()
+                    session.update(keep)
+                    flash_t("del_done")
+                    return redirect(url_for("start"))
         return redirect(url_for("profile"))
     if is_staff:
         if key == "d:" + doctors.MASTER:
@@ -1522,6 +1544,11 @@ def my_courses():
     have = [] if guest else (st["courses"] if st else [])
     if request.method == "POST":
         picked = [c for c in request.form.getlist("course") if c in course_codes()]
+        if not picked and not guest and have:                 # a student may remove every course
+            students.set_courses(me, [])
+            session.pop("practice", None)
+            flash_t("courses_removed_all")
+            return redirect(url_for("my_courses"))
         if not picked:
             flash_t("courses_pick_one")
         else:
@@ -1815,7 +1842,7 @@ def exams():
     stats = {"n": len(mine), "best": max((a["pct"] for a in mine), default=None),
              "avg": round(sum(a["pct"] for a in mine) / len(mine)) if mine else None,
              "last": mine[0]["pct"] if mine else None}
-    return render_template("exams.html", n=n, choices=EX.count_choices(n), avg=round(EX.avg_minutes(code), 2),
+    return render_template("exams.html", n=n, quick=min(10, n), choices=EX.count_choices(n), avg=round(EX.avg_minutes(code), 2),
                            active=EX.active_attempt(code, student()), attempts=rows, stats=stats, exam_lang=lang())
 
 

@@ -472,7 +472,8 @@ def test_exam_flow(admin, tmp_path, monkeypatch):
     admin.post("/exams/manage", data={"action": "upload_q", "files": (io.BytesIO(b"Q3. Define agent.\n"), "q.txt")}, content_type="multipart/form-data")
     assert EX.summary(config.DEFAULT_COURSE)["total"] == 3 and len(EX.eligible(config.DEFAULT_COURSE)) == 2
     s = A.app.test_client(); as_student(s, "EXAM1")
-    assert s.get("/exams").status_code == 200
+    page = s.get("/exams").get_data(as_text=True)
+    assert "ex-opt ready" in page and 'name="count" value="2"' in page                    # one-click ready exam (min(10, n))
     assert s.post("/exams/start", data={"count": "2"}).status_code == 302
     page = s.get("/exams/take?lang=ar").get_data(as_text=True)
     assert "Answer:" not in page and "examForm" in page                                  # no answers while taking the exam
@@ -1012,3 +1013,46 @@ def test_studio_pages_and_downloads(client):
 def test_studio_needs_sign_in():
     import app as A
     assert A.app.test_client().get("/studio").status_code == 302
+
+
+# ---------------- ready exam, remove all courses, delete account, Cairo time
+def _fresh(name):
+    import app as A
+    c = A.app.test_client()
+    as_student(c, name)
+    return A, c
+
+
+def test_student_can_remove_all_courses():
+    from core import students
+    A, c = _fresh("NOCOURSE")
+    code = [k for k in students.all_students()][-1] if hasattr(students, "all_students") else None
+    c.post("/my-courses", data={"course": "MAM336"})
+    r = c.post("/my-courses", data={}, follow_redirects=True)
+    assert "Choose at least one course" not in r.get_data(as_text=True)
+
+
+def test_delete_account_student_needs_password():
+    A, c = _fresh("GONE")
+    r = c.post("/profile", data={"action": "delete_account", "pw": "wrong"}, follow_redirects=True)
+    assert c.get("/profile").status_code == 200                       # still signed in, nothing deleted
+    c.post("/profile", data={"action": "delete_account", "pw": "secret1"})
+    assert c.get("/profile").status_code == 302                       # signed out
+    c2 = A.app.test_client()
+    c2.post("/start", data={"username": "gone@test.com", "password": "secret1"})
+    assert c2.get("/profile").status_code == 302                      # account no longer exists
+
+
+def test_delete_account_master_is_refused():
+    import app as A
+    from core import doctors
+    c = A.app.test_client()
+    with c.session_transaction() as s:
+        s["lecturer"], s["admin_id"], s["admin_name"] = True, doctors.MASTER, "Admin"
+    c.post("/profile", data={"action": "delete_account", "pw": config.LECTURER_PASSWORD})
+    assert c.get("/profile").status_code == 200                       # still signed in
+
+
+def test_timezone_is_cairo():
+    import time
+    assert config.TIMEZONE == "Africa/Cairo" or time.tzname

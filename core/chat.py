@@ -93,3 +93,11 @@ def threads_for(me):
 
 def unread_total(me):
     return sum(x["unread"] for x in threads_for(me))
+
+
+def purge(key):
+    """Delete every conversation this user is in."""
+    with _lock:
+        d = _read()
+        d["threads"] = {t: v for t, v in d["threads"].items() if key not in t.split("|")}
+        _write(d)

@@ -175,3 +175,10 @@ def mark_seen(code):
         if code in d:
             d[code]["seen"] = list(d[code]["notified"])
             _write(d)
+
+
+def purge(code):
+    with _lock:
+        d = _read()
+        if d.pop(code, None) is not None:
+            _write(d)

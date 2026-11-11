@@ -13,15 +13,27 @@
   {% else %}
     <p class="muted small">{{ t('exam_rules') }}</p>
     <p>{{ t('exam_available', n=n) }}</p>
-    <form method="post" action="{{ url_for('exams_start') }}" id="startForm">
-      <p><b>{{ t('exam_choose_n') }}</b></p>
-      <div class="actions" style="flex-wrap:wrap">
-        {% for c in choices %}<label class="btn ghost" style="cursor:pointer"><input type="radio" name="count" value="{{ c }}" {{ 'checked' if loop.first }} style="display:none"> {{ c if c != n else t('exam_all') ~ ' (' ~ c ~ ')' }}</label>{% endfor %}
+    <div class="ex-opts">
+      <div class="ex-opt ready">
+        <h3>⚡ {{ t('ex_ready_title') }}</h3>
+        <p class="muted small">{{ t('ex_ready_sub', n=quick) }}</p>
+        <p class="small">⏱ {{ t('ex_ready_time', m=[1, (quick * avg)|round|int]|max) }}</p>
+        <form method="post" action="{{ url_for('exams_start') }}"><input type="hidden" name="count" value="{{ quick }}"><button class="btn" type="submit">{{ t('ex_ready_btn') }}</button></form>
       </div>
-      <p class="small">{{ t('exam_custom') }}: <input type="number" name="custom" id="custom" min="1" max="{{ n }}" style="width:90px" dir="ltr"></p>
-      <p class="small" id="est"></p>
-      <button class="btn" type="submit">{{ t('exam_start') }}</button>
-    </form>
+      <div class="ex-opt">
+        <h3>🛠️ {{ t('ex_create_title') }}</h3>
+        <p class="muted small">{{ t('ex_create_sub') }}</p>
+        <form method="post" action="{{ url_for('exams_start') }}" id="startForm">
+          <p><b>{{ t('exam_choose_n') }}</b></p>
+          <div class="actions" style="flex-wrap:wrap">
+            {% for c in choices %}<label class="btn ghost" style="cursor:pointer"><input type="radio" name="count" value="{{ c }}" {{ 'checked' if loop.first }} style="display:none"> {{ c if c != n else t('exam_all') ~ ' (' ~ c ~ ')' }}</label>{% endfor %}
+          </div>
+          <p class="small">{{ t('exam_custom') }}: <input type="number" name="custom" id="custom" min="1" max="{{ n }}" style="width:90px" dir="ltr"></p>
+          <p class="small" id="est"></p>
+          <button class="btn" type="submit">{{ t('exam_start') }}</button>
+        </form>
+      </div>
+    </div>
   {% endif %}
 </div>
 {% if attempts %}

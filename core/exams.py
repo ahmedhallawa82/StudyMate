@@ -564,3 +564,18 @@ def override(att, qid, score):
     att["score"] = sum(d["score"] for d in att["details"])
     att["pct"] = round(100 * att["score"] / att["max"]) if att["max"] else 0
     save_attempt(att)
+
+
+def purge_student(student):
+    """Delete a student's exam attempts in every course."""
+    n = 0
+    for c in config.list_courses():
+        d = folder(c["code"]) / "attempts"
+        for f in d.glob("*.json") if d.exists() else []:
+            try:
+                if json.loads(f.read_text(encoding="utf-8")).get("student") == student:
+                    f.unlink()
+                    n += 1
+            except (OSError, ValueError):
+                continue
+    return n

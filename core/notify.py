@@ -66,3 +66,16 @@ def mark_read(key, nid=None):
             if key in r["to"] and key not in r["read"] and (nid is None or r["id"] == nid):
                 r["read"].append(key)
         _save(rows)
+
+
+def purge(key):
+    """Remove a user from every notification (and drop the ones nobody is left to read)."""
+    with _lock:
+        rows = list(_load())
+        out = []
+        for r in rows:
+            r["to"] = [k for k in r["to"] if k != key]
+            r["read"] = [k for k in r["read"] if k != key]
+            if r["to"]:
+                out.append(r)
+        _save(out)

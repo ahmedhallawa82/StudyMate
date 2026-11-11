@@ -60,7 +60,20 @@
   </section>
   <aside>{% include "_topics_panel.html" %}</aside>
 </div>
-<p class="muted small" style="margin-top:28px;border-top:1px solid var(--line);padding-top:12px">💡 {{ t('hint_method') }}</p>
+<section class="card mh-card fade" style="margin-top:28px">
+  <h3>💡 {{ t('mh_title') }}</h3>
+  <p class="muted small">{{ t('mh_intro') }}</p>
+  <div class="mh-grid">
+    {% for id, name, d, h in [('tfidf', 'TF-IDF', 'mh_tfidf_d', 'mh_tfidf_h'), ('bm25', 'BM25', 'mh_bm25_d', 'mh_bm25_h'), ('hybrid', t('m_hybrid'), 'mh_hybrid_d', 'mh_hybrid_h'), ('lsa', t('m_lsa'), 'mh_lsa_d', 'mh_lsa_h')] %}
+    <div class="mh-item{{ ' on' if method == id }}">
+      <b>{{ name }}</b>
+      <p>{{ t(d) }}</p>
+      <p class="mh-hint">💡 {{ t(h) }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted small" style="margin:12px 0 0">{{ t('mh_tip') }}</p>
+</section>
 {% endblock %}
 {% block scripts %}
 <script>

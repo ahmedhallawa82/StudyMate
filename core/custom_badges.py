@@ -122,3 +122,21 @@ def mark_seen(code):
                 ch = True
         if ch:
             _write(d)
+
+
+def purge_student(code):
+    """Remove the awards a student received."""
+    with _lock:
+        d = _read()
+        d["awards"] = [a for a in d["awards"] if a["student"] != code]
+        _write(d)
+
+
+def purge_owner(owner):
+    """Remove the badges (and their awards) a doctor made."""
+    with _lock:
+        d = _read()
+        gone = {b["id"] for b in d["defs"] if b["owner"] == owner}
+        d["defs"] = [b for b in d["defs"] if b["id"] not in gone]
+        d["awards"] = [a for a in d["awards"] if a["badge"] not in gone]
+        _write(d)

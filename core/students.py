@@ -180,3 +180,17 @@ def set_password(code, pw):
         me["hash"] = generate_password_hash(pw)
         _save(rows)
     return True
+
+
+def verify(code, password):
+    """True when `password` is this student's password."""
+    s = next((r for r in _load() if r["code"] == code), None)
+    return bool(s) and check_password_hash(s.get("hash", ""), password or "")
+
+
+def delete(code):
+    with _lock:
+        rows = _load()
+        keep = [s for s in rows if s["code"] != code]
+        _save(keep)
+        return len(keep) != len(rows)
