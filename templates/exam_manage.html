@@ -13,7 +13,7 @@
 <!-- ① Questions -->
 <section class="ex-pane" id="pane-questions" {{ 'hidden' if tab != 'questions' }}>
   <div class="ex-sum card fade" style="--i:2">
-    {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_essay', sm.essay), ('ex_ready', sm.graded)] %}
+    {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_ready', sm.graded)] if v or k == 'ex_total' %}
     <div><b>{{ v }}</b><small>{{ t(k) }}</small></div>{% endfor %}
   </div>
   {% if sm.graded %}<p class="ex-ready fade">✅ {{ t('ex_ready_msg', n=sm.graded) }}</p>{% endif %}
@@ -43,8 +43,8 @@
     <h2>{{ t('exam_bank') }}</h2>
     {% if not rows %}<p class="muted">{{ t('ex_bank_empty') }}</p>{% else %}
     <div class="table-wrap"><table>
-      {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td><td>{{ t('exam_type_mcq') if r.type == 'mcq' else t('exam_type_essay') }}</td>
-        <td dir="ltr">{{ 'EN' if r.en }} {{ 'AR' if r.ar }}</td><td dir="auto">{{ r.q }}</td>
+      {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td>{% if sm.mcq and sm.essay %}<td>{{ t('exam_type_mcq') if r.type == 'mcq' else t('exam_type_essay') }}</td>{% endif %}
+        {% if sm.en and sm.ar %}<td dir="ltr">{{ 'EN' if r.en }} {{ 'AR' if r.ar }}</td>{% endif %}<td dir="auto">{{ r.q }}</td>
         <td>{% if not r.graded %}<span style="color:#c0392b">{{ t('exam_no_answer') }}</span>{% endif %}</td></tr>{% endfor %}
     </table></div>
     {% if sm.total > shown %}<p class="muted small">{{ t('exam_shown_first', n=shown) }}</p>{% endif %}{% endif %}
@@ -66,11 +66,12 @@
     <form method="post" class="ex-set"><input type="hidden" name="action" value="settings"><input type="hidden" name="tab" value="settings">
       <h3>⏱ {{ t('exam_settings') }}</h3>
       <div class="ex-row"><label for="min_mcq">{{ t('exam_min_mcq') }}</label><input id="min_mcq" type="number" step="0.1" min="0.2" name="min_mcq" value="{{ sm.settings.min_mcq }}" dir="ltr"></div>
-      <div class="ex-row"><label for="min_essay">{{ t('exam_min_essay') }}</label><input id="min_essay" type="number" step="0.5" min="0.5" name="min_essay" value="{{ sm.settings.min_essay }}" dir="ltr"></div>
-      <h3>🎯 {{ t('ex_grading') }}</h3>
+      {% if sm.essay %}<div class="ex-row"><label for="min_essay">{{ t('exam_min_essay') }}</label><input id="min_essay" type="number" step="0.5" min="0.5" name="min_essay" value="{{ sm.settings.min_essay }}" dir="ltr"></div>{% else %}<input type="hidden" name="min_essay" value="{{ sm.settings.min_essay }}">{% endif %}
+      {% if sm.essay %}<h3>🎯 {{ t('ex_grading') }}</h3>
       <p class="muted small">{{ t('exam_sim_note') }}</p>
       <div class="ex-row"><label for="sim_full">{{ t('exam_sim_full') }}</label><input id="sim_full" type="number" step="0.05" min="0.1" max="0.95" name="sim_full" value="{{ sm.settings.sim_full }}" dir="ltr"></div>
       <div class="ex-row"><label for="sim_half">{{ t('exam_sim_half') }}</label><input id="sim_half" type="number" step="0.05" min="0.05" max="0.95" name="sim_half" value="{{ sm.settings.sim_half }}" dir="ltr"></div>
+      {% else %}<input type="hidden" name="sim_full" value="{{ sm.settings.sim_full }}"><input type="hidden" name="sim_half" value="{{ sm.settings.sim_half }}">{% endif %}
       <button class="btn teal" type="submit">{{ t('save') }}</button>
     </form>
   </div>
