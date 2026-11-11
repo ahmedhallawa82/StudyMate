@@ -27,6 +27,30 @@ def save(rows):
         f.write_text(json.dumps(rows, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def sync(courses):
+    """Put uploaded courses into the list: add the codes that are missing and fill names that are still empty.
+    courses: [{code, name_en, name_ar}]. Returns how many rows were added or completed."""
+    rows, n = load(), 0
+    for c in courses:
+        code = (c.get("code") or "").strip().upper()
+        if not code:
+            continue
+        r = next((x for x in rows if x["code"] == code), None)
+        if r is None:
+            rows.append({"code": code, "name_en": c.get("name_en", "") or "", "name_ar": c.get("name_ar", "") or ""})
+            n += 1
+        else:
+            ch = False
+            for k in ("name_en", "name_ar"):
+                if not r.get(k) and c.get(k):
+                    r[k] = c[k]
+                    ch = True
+            n += ch
+    if n:
+        save(rows)
+    return n
+
+
 def lookup(code):
     code = (code or "").strip().upper()
     return next((r for r in load() if r["code"] == code), None)

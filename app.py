@@ -74,6 +74,11 @@ def course_codes():
     return [c["code"] for c in config.list_courses()]
 
 
+def sync_codes_from_courses():
+    """Every uploaded course (its code and names) goes into the course-codes list."""
+    return catalog.sync([{"code": c["code"], "name_en": c["name_en"], "name_ar": c["name_ar"]} for c in config.list_courses()])
+
+
 def student_course_list():
     """Courses a signed-in student account is registered in; None for a guest (a guest may open any course)."""
     me = session.get("student_code")
@@ -1119,12 +1124,19 @@ def sheet_view():
 @app.route("/admin", methods=["GET", "POST"])
 @lecturer_required
 def admin():
+    if is_master() and request.method == "GET":                # complete the names of codes whose course is already uploaded
+        have = {r["code"] for r in catalog.load()}
+        catalog.sync([{"code": c["code"], "name_en": c["name_en"], "name_ar": c["name_ar"]} for c in config.list_courses() if c["code"] in have])
     code = course_code()
     P = config.course_paths(code)
     full = any(c["full"] for c in config.list_courses() if c["code"] == code)
     mine = can_manage(code)                                  # a doctor with no course yet can only add one
     if request.method == "POST":
         action = request.form.get("action")
+        if action == "import_codes":                          # bring the uploaded courses into the list
+            if is_master():
+                flash_t("codes_imported", n=sync_codes_from_courses())
+            return redirect(url_for("admin"))
         if action in ("upload_codes", "clear_codes"):        # the admin's list of course codes (Excel)
             if is_master():
                 if action == "clear_codes":
@@ -1230,6 +1242,8 @@ def admin():
                 load_state(rep["code"])
                 session["course"] = rep["code"]
                 session.pop("practice", None)
+                if catalog.load():                               # a codes list is in use: the new course shows up in it at once
+                    sync_codes_from_courses()
                 sync_sheet()
                 flash_t("course_created", name=request.form.get("name_en") or (listed or {}).get("name_en") or rep["code"], n=rep["slides"],
                         m=rep["lectures"], q=rep["questions"])

@@ -890,3 +890,12 @@ def test_main_admin_can_change_password_and_has_no_support_button():
     b = A.app.test_client()
     b.post("/lecturer", data={"username": "admin", "password": "NewAdmin#77"})
     assert b.get("/dashboard").status_code == 200
+
+
+def test_catalog_sync_adds_codes_and_fills_names():
+    from core import catalog
+    catalog.save([{"code": "AUTO", "name_en": "", "name_ar": ""}])
+    n = catalog.sync([{"code": "auto", "name_en": "Automotive", "name_ar": "سيارات"}, {"code": "new1", "name_en": "New", "name_ar": ""}])
+    rows = {r["code"]: r for r in catalog.load()}
+    assert n == 2 and rows["AUTO"]["name_en"] == "Automotive" and rows["NEW1"]["name_en"] == "New"
+    assert catalog.sync([{"code": "AUTO", "name_en": "Other", "name_ar": ""}]) == 0 and catalog.load()[0]["name_en"] == "Automotive"

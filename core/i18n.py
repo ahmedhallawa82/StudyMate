@@ -99,6 +99,8 @@ T = {
     "codes_upload": ("Upload the list", "ارفع القائمة"), "codes_template": ("Download the template", "حمّل نموذج الشيت"),
     "codes_clear": ("Clear the list", "امسح القائمة"), "codes_clear_q": ("Clear the whole list of codes?", "تمسح قائمة الأكواد كلها؟"),
     "codes_saved": ("Saved {n} course codes. Doctors can pick them now.", "اتحفظ {n} كود مادة. الدكاترة يقدروا يختاروا منهم دلوقتي."),
+    "codes_import": ("Add the uploaded courses to the list", "ضيف المواد المرفوعة للقائمة"),
+    "codes_imported": ("{n} course(s) added or completed from the uploaded courses.", "تم إضافة أو استكمال {n} مادة من المواد المرفوعة."),
     "codes_cleared": ("The list of codes was cleared.", "قائمة الأكواد اتمسحت."),
     "codes_bad": ("Could not read that sheet. Use an .xlsx with a Code column and a Course Name column.", "مقدرتش أقرا الشيت. استخدم ملف .xlsx فيه عمود Code وعمود Course Name."),
     "codes_in_use": ("In use", "مستخدم"), "codes_none": ("No list yet: doctors type the code by hand.", "لسه مفيش قائمة: الدكاترة بيكتبوا الكود بإيديهم."),
