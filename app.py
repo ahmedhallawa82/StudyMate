@@ -538,7 +538,7 @@ def sheet_view():
     if not is_master():
         return None
     return {"rows": doctors.sheet_rows(courses_of), "enabled": sheet_sync.enabled(), "status": sheet_sync.STATUS,
-            "email": sheet_sync.service_email(), "url": sheet_sync.sheet_url(), "header": sheet_sync.HEADER}
+            "google": sheet_sync.SHOW_GOOGLE or sheet_sync.enabled(), "email": sheet_sync.service_email(), "url": sheet_sync.sheet_url(), "header": sheet_sync.HEADER}
 
 
 @app.route("/admin", methods=["GET", "POST"])

@@ -28,7 +28,8 @@
         {% for r in sheet.rows %}<tr><td>{{ r[0] }}</td><td dir="ltr">{{ r[1] or '—' }}</td><td dir="ltr"><code>{{ r[2] }}</code></td><td dir="ltr">{% if r[3] %}<code>{{ r[3] }}</code>{% else %}—{% endif %}</td></tr>
         {% else %}<tr><td colspan="4" class="muted small">{{ t('sheet_empty') }}</td></tr>{% endfor %}
       </table></div>
-      {% if sheet.enabled %}
+      {% if not sheet.google %}
+      {% elif sheet.enabled %}
         <p class="small">{{ t('sheet_connected', email=sheet.email) }}
           {% if sheet.status.ok %} · {{ t('sheet_last_ok', time=sheet.status.time) }}{% elif sheet.status.ok == false %} · <span style="color:var(--red,#c0392b)">{{ t('sheet_last_err', time=sheet.status.time, err=sheet.status.error) }}</span>{% endif %}</p>
         <div class="actions">

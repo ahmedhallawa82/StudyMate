@@ -14,6 +14,8 @@ import config
 
 HEADER = ["اسم الدكتور", "المواد المسؤول عنها", "كلمة السر من النظام", "كلمة السر الجديدة (من الدكتور)"]
 SHEET_ID = os.environ.get("GOOGLE_SHEET_ID", "1yS6vzAKf4s_rAK7aN-o8NP9prge0SX2a1ofFTpJB4FU")
+# Google part of the Admin page is hidden until the key file exists or SHEET_SYNC=1 is set on the server.
+SHOW_GOOGLE = os.environ.get("SHEET_SYNC", "0") == "1"
 STATUS = {"ok": None, "time": "", "error": ""}
 _lock = threading.Lock()
 
