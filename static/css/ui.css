@@ -207,3 +207,6 @@ a.stat.click { text-decoration: none; color: inherit; cursor: pointer; transitio
 .ev-del { background: none; border: none; color: #ef4444; cursor: pointer; font: inherit; font-size: 12px; }
 @media (max-width: 1000px) { .cal-grid, .profile-grid { grid-template-columns: 1fr; } .chip .who-t small { display: none; } }
 html[data-mode="dark"] .n-ic.k-security { background: #4a1d1d; } html[data-mode="dark"] .n-ic.k-exam { background: #2e2550; } html[data-mode="dark"] .n-ic.k-student { background: #153a22; } html[data-mode="dark"] .n-ic.k-welcome { background: #4a3a12; }
+
+.course-chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 12px; } .course-chips .chip { padding: 6px 14px; border-radius: 999px; background: var(--card, #fff); color: var(--ink); text-decoration: none; font-size: .85rem; border: 1px solid var(--line, #dfe7e6); }
+.course-chips .chip.on { background: var(--teal); color: #fff; border-color: var(--teal); }

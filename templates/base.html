@@ -48,18 +48,6 @@
       {% endif %}
     </nav>
     <div class="tools">
-      {% if courses|length > 1 %}
-      <div class="combo" id="courseCombo" data-url="{{ url_for('choose_course', code='__C__') }}">
-        <button type="button" class="tool" aria-haspopup="listbox" aria-expanded="false" aria-label="{{ t('course_label') }}">{{ t('course_label') }} ▾</button>
-        <div class="combo-panel" hidden>
-          <input type="search" placeholder="{{ t('search_courses') }}" aria-label="{{ t('search_courses') }}" autocomplete="off">
-          <ul role="listbox">
-            {% for c in courses %}<li role="option" data-code="{{ c.code }}" data-q="{{ (c.code ~ ' ' ~ c.name_en ~ ' ' ~ c.name_ar)|lower }}" class="{{ 'on' if c.code == course_code }}">{{ c.title }} <small>{{ c.code }}</small></li>{% endfor %}
-          </ul>
-          <p class="small muted combo-none" hidden>{{ t('no_match') }}</p>
-        </div>
-      </div>
-      {% endif %}
       {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
       {% if me_key %}
       <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>

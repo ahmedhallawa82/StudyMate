@@ -327,7 +327,8 @@ def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
         assert "DCT9" not in html and 'href="/admin"' not in html
         s.post("/my-courses", data={"course": [config.DEFAULT_COURSE, "DCT9"]})
         html = s.get("/ask").get_data(as_text=True)
-        assert 'id="courseCombo"' in html and "DCT9" in html and "js/courses.js" in html
+        html = s.get("/home").get_data(as_text=True)
+        assert 'id="courseCombo"' not in html and "course-chips" in html and "DCT9" in html
         # each doctor sees the student only in his own course, the main admin in both
         p1 = d1.get("/students").get_data(as_text=True)
         assert "srch1@test.com" in p1 and "Doctor course" in p1 and "Artificial Intelligence" not in p1

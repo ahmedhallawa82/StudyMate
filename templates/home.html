@@ -2,6 +2,7 @@
 {% block title %}{{ t('nav_home') }}{% endblock %}
 {% block content %}
 {% set wdn = t('home_wd').split(',') %}
+{% if courses|length > 1 %}<div class="course-chips fade" style="--i:0">{% for c in courses %}<a class="chip {{ 'on' if c.code == course_code }}" href="{{ url_for('choose_course', code=c.code) }}">{{ c.title }}</a>{% endfor %}</div>{% endif %}
 <div class="edu-head fade" style="--i:0">
   <div>
     <div class="hero-date" id="today" data-iso="{{ today }}"></div>
