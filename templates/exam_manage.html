@@ -2,62 +2,135 @@
 {% from "_ui.html" import page_head %}
 {% block title %}{{ t('exam_manage_title') }}{% endblock %}
 {% block content %}
-{{ page_head('🧪', t('exam_manage_title'), t('exam_manage_sub')) }}
-<div class="grid">
-<section>
-  <div class="card">
-    <h2>{{ t('exam_upload_title') }} · {{ course }}</h2>
-    <p class="muted small">{{ t('exam_upload_note') }}</p>
-    <form method="post" enctype="multipart/form-data">
-      <p><input type="file" name="files" accept=".pdf,.docx,.txt,.xlsx,.csv" multiple required></p>
-      <div class="actions">
-        <button class="btn" type="submit" name="action" value="upload_q">{{ t('exam_btn_q') }}</button>
-        <button class="btn teal" type="submit" name="action" value="upload_qa">{{ t('exam_btn_qa') }}</button>
-        <a class="btn ghost" href="{{ url_for('exams_template') }}">{{ t('exam_template') }}</a>
-      </div>
-    </form>
-    <p class="muted small"><b>{{ t('exam_format') }}:</b> {{ t('exam_format_note') }}</p>
+{{ page_head('🧪', t('exam_manage_title') ~ ' · ' ~ course, t('exam_manage_sub')) }}
+
+<nav class="ex-tabs fade" role="tablist" style="--i:1">
+  <button type="button" role="tab" data-tab="questions" class="{{ 'on' if tab == 'questions' }}">① {{ t('ex_tab_q') }} {% if sm.graded %}<span class="ex-ok">✓</span>{% endif %}</button>
+  <button type="button" role="tab" data-tab="settings" class="{{ 'on' if tab == 'settings' }}">② {{ t('ex_tab_s') }}</button>
+  <button type="button" role="tab" data-tab="results" class="{{ 'on' if tab == 'results' }}">③ {{ t('ex_tab_r') }} <span class="pill">{{ stats.n }}</span></button>
+</nav>
+
+<!-- ① Questions -->
+<section class="ex-pane" id="pane-questions" {{ 'hidden' if tab != 'questions' }}>
+  <div class="ex-sum card fade" style="--i:2">
+    {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_essay', sm.essay), ('ex_ready', sm.graded)] %}
+    <div><b>{{ v }}</b><small>{{ t(k) }}</small></div>{% endfor %}
   </div>
-  <div class="card">
+  {% if sm.graded %}<p class="ex-ready fade">✅ {{ t('ex_ready_msg', n=sm.graded) }}</p>{% endif %}
+
+  <div class="card fade" style="--i:3">
+    <h2>{{ t('exam_upload_title') }}</h2>
+    {% if not sm.total %}<p class="muted">{{ t('ex_start') }}</p>{% endif %}
+    <form method="post" enctype="multipart/form-data" class="ex-up">
+      <input type="hidden" name="tab" value="questions">
+      <p class="ex-step"><b>1</b> {{ t('ex_step1') }}</p>
+      <p><input type="file" name="files" accept=".pdf,.docx,.txt,.xlsx,.csv" multiple required></p>
+      <p class="ex-step"><b>2</b> {{ t('ex_step2') }}</p>
+      <div class="actions">
+        <label class="ex-opt"><input type="radio" name="action" value="upload_q" checked> <span><b>{{ t('exam_btn_q') }}</b><small>{{ t('ex_opt_q') }}</small></span></label>
+        <label class="ex-opt"><input type="radio" name="action" value="upload_qa"> <span><b>{{ t('exam_btn_qa') }}</b><small>{{ t('ex_opt_qa') }}</small></span></label>
+      </div>
+      <p class="ex-step"><b>3</b> <button class="btn" type="submit">⬆️ {{ t('ex_upload') }}</button>
+        <a class="btn ghost small" href="{{ url_for('exams_template') }}">⬇️ {{ t('exam_template') }}</a></p>
+    </form>
+    <details class="ex-fmt"><summary>{{ t('ex_format_q') }}</summary>
+      <p class="muted small">{{ t('exam_upload_note') }}</p>
+      <p class="muted small"><b>{{ t('exam_format') }}:</b> {{ t('exam_format_note') }}</p>
+    </details>
+  </div>
+
+  <div class="card fade" style="--i:4">
     <h2>{{ t('exam_bank') }}</h2>
-    <p class="small">{{ t('exam_bank_stats', **sm) }}</p>
+    {% if not rows %}<p class="muted">{{ t('ex_bank_empty') }}</p>{% else %}
     <div class="table-wrap"><table>
       {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td><td>{{ t('exam_type_mcq') if r.type == 'mcq' else t('exam_type_essay') }}</td>
         <td dir="ltr">{{ 'EN' if r.en }} {{ 'AR' if r.ar }}</td><td dir="auto">{{ r.q }}</td>
         <td>{% if not r.graded %}<span style="color:#c0392b">{{ t('exam_no_answer') }}</span>{% endif %}</td></tr>{% endfor %}
     </table></div>
-    {% if sm.total > shown %}<p class="muted small">{{ t('exam_shown_first', n=shown) }}</p>{% endif %}
+    {% if sm.total > shown %}<p class="muted small">{{ t('exam_shown_first', n=shown) }}</p>{% endif %}{% endif %}
   </div>
-  <div class="card">
+
+  {% if sm.total %}<details class="card ex-danger fade" style="--i:5"><summary>🗑️ {{ t('exam_delete_bank') }}</summary>
+    <form method="post"><input type="hidden" name="action" value="clear"><input type="hidden" name="tab" value="questions">
+      <p class="muted small">{{ t('ex_delete_note', code=code) }}</p>
+      <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off" style="max-width:220px">
+      <button class="btn red small" type="submit">{{ t('delete_btn') }}</button></form>
+  </details>{% endif %}
+</section>
+
+<!-- ② Settings -->
+<section class="ex-pane" id="pane-settings" {{ 'hidden' if tab != 'settings' }}>
+  <div class="card fade" style="--i:2">
+    <h2>{{ t('ex_tab_s') }}</h2>
+    <p class="muted small">{{ t('ex_set_note') }}</p>
+    <form method="post" class="ex-set"><input type="hidden" name="action" value="settings"><input type="hidden" name="tab" value="settings">
+      <h3>⏱ {{ t('exam_settings') }}</h3>
+      <div class="ex-row"><label for="min_mcq">{{ t('exam_min_mcq') }}</label><input id="min_mcq" type="number" step="0.1" min="0.2" name="min_mcq" value="{{ sm.settings.min_mcq }}" dir="ltr"></div>
+      <div class="ex-row"><label for="min_essay">{{ t('exam_min_essay') }}</label><input id="min_essay" type="number" step="0.5" min="0.5" name="min_essay" value="{{ sm.settings.min_essay }}" dir="ltr"></div>
+      <h3>🎯 {{ t('ex_grading') }}</h3>
+      <p class="muted small">{{ t('exam_sim_note') }}</p>
+      <div class="ex-row"><label for="sim_full">{{ t('exam_sim_full') }}</label><input id="sim_full" type="number" step="0.05" min="0.1" max="0.95" name="sim_full" value="{{ sm.settings.sim_full }}" dir="ltr"></div>
+      <div class="ex-row"><label for="sim_half">{{ t('exam_sim_half') }}</label><input id="sim_half" type="number" step="0.05" min="0.05" max="0.95" name="sim_half" value="{{ sm.settings.sim_half }}" dir="ltr"></div>
+      <button class="btn teal" type="submit">{{ t('save') }}</button>
+    </form>
+  </div>
+</section>
+
+<!-- ③ Results -->
+<section class="ex-pane" id="pane-results" {{ 'hidden' if tab != 'results' }}>
+  <div class="ex-sum card fade" style="--i:2">
+    <div><b>{{ stats.n }}</b><small>{{ t('ex_attempts_n') }}</small></div>
+    <div><b>{{ stats.done }}</b><small>{{ t('ex_finished') }}</small></div>
+    <div><b>{{ stats.avg }}%</b><small>{{ t('ex_avg') }}</small></div>
+  </div>
+  <div class="card fade" style="--i:3">
     <h2>{{ t('exam_attempts') }}</h2>
     {% if attempts %}
-    <p class="small"><a href="{{ url_for('exams_attempts_export', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('exams_attempts_export', fmt='csv') }}">CSV</a></p>
-    <div class="table-wrap"><table>
+    <div class="actions" style="align-items:center;margin-bottom:10px">
+      <input type="text" id="exq" placeholder="{{ t('students_search') }}" style="max-width:260px">
+      <a class="btn ghost small" href="{{ url_for('exams_attempts_export', fmt='xlsx') }}">Excel</a>
+      <a class="btn ghost small" href="{{ url_for('exams_attempts_export', fmt='csv') }}">CSV</a>
+    </div>
+    <div class="table-wrap"><table id="exTbl">
       <tr><th>{{ t('exam_student') }}</th><th>{{ t('exam_date') }}</th><th>{{ t('exam_questions') }}</th><th>{{ t('exam_score') }}</th><th></th></tr>
       {% for a in attempts %}<tr><td dir="ltr">{{ a.student }}</td><td dir="ltr">{{ a.started|datetime }}</td><td>{{ a.max if a.status == 'done' else '—' }}</td>
         <td>{% if a.status == 'done' %}{{ '%g'|format(a.score) }} ({{ a.pct }}%){% else %}…{% endif %}</td>
         <td>{% if a.status == 'done' %}<a href="{{ url_for('exams_attempt', aid=a.id) }}">{{ t('exam_open') }}</a>{% endif %}</td></tr>{% endfor %}
     </table></div>
-    {% else %}<p class="muted small">{{ t('exam_no_attempts') }}</p>{% endif %}
+    {% else %}<p class="muted">{{ t('ex_no_attempts') }}</p>{% endif %}
   </div>
 </section>
-<aside>
-  <div class="card panel">
-    <h3>{{ t('exam_settings') }}</h3>
-    <form method="post"><input type="hidden" name="action" value="settings">
-      <label class="small">{{ t('exam_min_mcq') }}</label><input type="number" step="0.1" min="0.2" name="min_mcq" value="{{ sm.settings.min_mcq }}" dir="ltr"><p></p>
-      <label class="small">{{ t('exam_min_essay') }}</label><input type="number" step="0.5" min="0.5" name="min_essay" value="{{ sm.settings.min_essay }}" dir="ltr"><p></p>
-      <label class="small">{{ t('exam_sim_full') }}</label><input type="number" step="0.05" min="0.1" max="0.95" name="sim_full" value="{{ sm.settings.sim_full }}" dir="ltr"><p></p>
-      <label class="small">{{ t('exam_sim_half') }}</label><input type="number" step="0.05" min="0.05" max="0.95" name="sim_half" value="{{ sm.settings.sim_half }}" dir="ltr">
-      <p class="muted small">{{ t('exam_sim_note') }}</p>
-      <button class="btn teal" type="submit">{{ t('save') }}</button></form>
-  </div>
-  <div class="card panel">
-    <h3>{{ t('exam_delete_bank') }}</h3>
-    <form method="post"><input type="hidden" name="action" value="clear">
-      <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off"><p></p>
-      <button class="btn red" type="submit">{{ t('delete_btn') }}</button></form>
-  </div>
-</aside>
-</div>
+
+<style>
+.ex-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.ex-tabs button{border:1px solid var(--line,#d9e2e0);background:var(--card,#fff);border-radius:999px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer;color:inherit}
+.ex-tabs button.on{background:var(--teal,#0f8a82);color:#fff;border-color:transparent}
+.ex-ok{margin-inline-start:4px}
+.ex-sum{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
+.ex-sum div{flex:1;min-width:90px;text-align:center}.ex-sum b{display:block;font-size:1.5rem}.ex-sum small{color:var(--muted,#6b7a78)}
+.ex-ready{color:#13795b;font-weight:600;margin:10px 4px}
+.ex-step{margin:14px 0 6px}.ex-step b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--teal,#0f8a82);color:#fff;font-size:.8rem;margin-inline-end:6px}
+.ex-opt{flex:1;min-width:220px;display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line,#d9e2e0);border-radius:14px;padding:12px;cursor:pointer}
+.ex-opt:has(input:checked){border-color:var(--teal,#0f8a82);background:rgba(15,138,130,.08)}
+.ex-opt small{display:block;color:var(--muted,#6b7a78);font-weight:400}
+.ex-fmt{margin-top:14px}.ex-fmt summary{cursor:pointer;color:var(--teal,#0f8a82);font-weight:600}
+.ex-danger summary{cursor:pointer;font-weight:600}
+.ex-set h3{margin:18px 0 6px}.ex-row{display:flex;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap}.ex-row label{flex:1;min-width:220px}.ex-row input{width:110px}
+</style>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.ex-tabs button');
+  function show(name) {
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
+    document.querySelectorAll('.ex-pane').forEach(function (p) { p.hidden = p.id !== 'pane-' + name; });
+    try { history.replaceState(null, '', '?tab=' + name); } catch (e) {}
+  }
+  tabs.forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });
+  var q = document.getElementById('exq');
+  if (q) q.oninput = function () {
+    var v = q.value.toLowerCase();
+    document.querySelectorAll('#exTbl tr').forEach(function (r, i) { if (i) r.style.display = r.textContent.toLowerCase().indexOf(v) < 0 ? 'none' : ''; });
+  };
+})();
+</script>
 {% endblock %}

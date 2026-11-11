@@ -1731,15 +1731,19 @@ def exams_manage():
                 flash_t("exam_bank_cleared")
             else:
                 flash_t("bad_confirm")
-        return redirect(url_for("exams_manage"))
+        return redirect(url_for("exams_manage", tab=request.form.get("tab") or None))
     bank = EX.load_bank(code)
     rows = []
     for k in sorted(bank["questions"], key=int)[:60]:
         q = bank["questions"][k]
         side, _ = EX._pick_lang(q, lang())
         rows.append({"n": k, "type": q["type"], "q": side["q"][:140], "en": "en" in q, "ar": "ar" in q, "graded": EX.is_graded(q)})
-    return render_template("exam_manage.html", sm=EX.summary(code), rows=rows, code=code,
-                           attempts=EX.list_attempts(code), shown=len(rows))
+    attempts = EX.list_attempts(code)
+    done = [a for a in attempts if a["status"] == "done"]
+    stats = {"n": len(attempts), "done": len(done), "avg": round(sum(a["pct"] for a in done) / len(done)) if done else 0}
+    tab = request.args.get("tab", "questions")
+    return render_template("exam_manage.html", sm=EX.summary(code), rows=rows, code=code, attempts=attempts, shown=len(rows),
+                           stats=stats, tab=tab if tab in ("questions", "settings", "results") else "questions")
 
 
 @app.route("/exams/template.xlsx")
