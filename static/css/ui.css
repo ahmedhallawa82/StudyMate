@@ -72,3 +72,35 @@ h2.sec { font-size: 17px; margin: 6px 0 10px; color: var(--teal-dark); }
 @media (prefers-reduced-motion: reduce) { .fade { animation: none; opacity: 1; transform: none; } .ring, .fill { transition: none; } }
 @media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } .tiles { grid-template-columns: 1fr 1fr; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
 @media (max-width: 520px) { .stats, .tiles { grid-template-columns: 1fr; } }
+
+/* ---- whole site: page headers, cards, tables, forms ---- */
+.page-head { display: flex; align-items: center; gap: 16px; margin: 4px 0 18px; }
+.page-head .ph-ic { font-size: 28px; width: 56px; height: 56px; display: grid; place-items: center; border-radius: 18px; color: #fff;
+                    background: linear-gradient(135deg, #4338ca, #7c3aed); box-shadow: 0 8px 20px rgba(79,70,229,.3); flex: none; }
+.page-head h1 { font-size: 24px; color: var(--teal-dark); line-height: 1.2; }
+.page-head p { margin: 3px 0 0; color: var(--muted); font-size: 14px; }
+.kpi { border-radius: 18px !important; padding: 16px 18px !important; box-shadow: 0 4px 18px rgba(49,46,129,.08); transition: transform .2s ease; }
+.kpi:hover { transform: translateY(-3px); }
+.kpi .v { font-size: 28px; }
+.flash { border-radius: 14px; animation: up .4s ease both; }
+table { border-collapse: separate; border-spacing: 0; }
+th:first-child { border-start-start-radius: 10px; } th:last-child { border-start-end-radius: 10px; }
+tr:hover td { background: color-mix(in srgb, var(--teal) 5%, transparent); }
+input:focus, textarea:focus, select:focus { outline: none; border-color: var(--teal) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--teal) 22%, transparent); }
+.result { transition: transform .2s ease; } .result:hover { transform: translateY(-2px); }
+.tag { border-radius: 999px; }
+.center-box { animation: up .5s ease both; }
+.table-wrap { overflow-x: auto; }
+
+/* course cards (choose your courses) */
+.course-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; margin-bottom: 14px; }
+.ccard { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 20px 18px; cursor: pointer; border-radius: 18px; background: var(--card);
+         border: 2px solid transparent; box-shadow: 0 4px 18px rgba(49,46,129,.08); transition: transform .2s ease, border-color .2s, box-shadow .2s; }
+.ccard:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(79,70,229,.2); }
+.ccard input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
+.ccard b { font-size: 17px; color: var(--teal-dark); padding-inline-end: 34px; }
+.ccard .tick { position: absolute; top: 14px; inset-inline-end: 14px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+               background: var(--line); color: transparent; font-weight: 700; transition: all .2s; }
+.ccard:has(input:checked) { border-color: var(--teal); background: linear-gradient(160deg, var(--teal-soft), var(--card)); }
+.ccard:has(input:checked) .tick { background: var(--teal); color: #fff; transform: scale(1.1); }
+@media (max-width: 700px) { .page-head h1 { font-size: 20px; } .page-head .ph-ic { width: 46px; height: 46px; font-size: 22px; } }

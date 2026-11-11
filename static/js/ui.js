@@ -1,5 +1,11 @@
 /* Count-up numbers, progress rings and bars of the home page; the date in the interface language. */
 (function () {
+  // every card / KPI of every page fades in one after the other
+  var i = 1;
+  document.querySelectorAll('main .card, main .kpi, main .result').forEach(function (el) {
+    if (el.classList.contains('fade') || el.closest('.fade') || el.classList.contains('center-box')) return;
+    el.classList.add('fade'); el.style.setProperty('--i', Math.min(i++, 12));
+  });
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.querySelectorAll('[data-count]').forEach(function (el) {
     var to = parseInt(el.dataset.count, 10) || 0, t0 = null;

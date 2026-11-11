@@ -9,6 +9,9 @@
       <div><label class="small">{{ t('last_name') }}</label><input type="text" name="last" required maxlength="40" value="{{ request.form.last }}"></div>
     </div>
     <p style="margin:8px 0 0"></p>
+    <label class="small">{{ t('username') }}</label><input type="text" name="username" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" dir="ltr" autocomplete="username" value="{{ request.form.username }}">
+    <span class="muted small">{{ t('username_note') }}</span>
+    <p style="margin:8px 0 0"></p>
     <label class="small">{{ t('email') }}</label><input type="text" name="email" required dir="ltr" autocomplete="email" value="{{ request.form.email }}">
     <p style="margin:8px 0 0"></p>
     <label class="small">{{ t('password') }}</label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password">

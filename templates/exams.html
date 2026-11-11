@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% from "_ui.html" import page_head %}
 {% block title %}{{ t('exams_title') }}{% endblock %}
 {% block content %}
+{{ page_head('📝', t('nav_exams'), t('tile_exams')) }}
 <div class="card">
   <h2>{{ t('exams_title') }} · {{ course }}</h2>
   {% if active %}

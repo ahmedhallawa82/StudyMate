@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% from "_ui.html" import page_head %}
 {% block title %}{{ t('nav_progress') }}{% endblock %}
 {% block content %}
+{{ page_head('📈', t('nav_progress'), t('progress_sub')) }}
 <div class="grid-4" style="margin-bottom:16px">
   <div class="kpi"><div class="v">{{ stats.answered }}</div><div class="l">{{ t('practice_answers') }}</div></div>
   <div class="kpi"><div class="v">{{ stats.correct }}</div><div class="l">{{ t('correct') }}</div></div>

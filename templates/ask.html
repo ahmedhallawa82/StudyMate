@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% from "_ui.html" import page_head %}
 {% block title %}{{ t('nav_ask') }}{% endblock %}
 {% block content %}
+{{ page_head('🔎', t('nav_ask'), t('tile_ask')) }}
 <div class="grid">
   <section>
     <div class="card">

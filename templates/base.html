@@ -31,16 +31,18 @@
       <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}">{{ t('nav_content') }}</a>
       <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}">{{ t('nav_eval') }}</a>
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}">{{ t('nav_exams') }}</a>
+      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}">{{ t('nav_students') }}</a>
       <span class="chip">{% if admin_role == 'master' %}{{ t('role_admin') }}{% else %}{{ t('role_doctor') }} · {{ admin_name }}{% endif %}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
-      {% else %}
+      {% elif student_code %}
+      {% if not first_visit %}
       <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}">{{ t('nav_home') }}</a>
       <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}">{{ t('nav_ask') }}</a>
       <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}">{{ t('nav_practice') }}</a>
       <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}">{{ t('nav_progress') }}</a>
       <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}">{{ t('nav_exams') }}</a>
       <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}">{{ t('nav_materials') }}</a>
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') or path.startswith('/lecturer') }}">{{ t('nav_admin') }}</a>
-      {% if student_code %}<span class="chip">{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>{% endif %}
+      {% endif %}
+      <span class="chip">{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
       {% endif %}
     </nav>
     <div class="tools">
@@ -56,6 +58,7 @@
         </div>
       </div>
       {% endif %}
+      {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
       <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
       <a class="tool" href="{{ lang_url }}" title="{{ t('toggle_lang') }}">{{ t('lang_name') }}</a>
     </div>

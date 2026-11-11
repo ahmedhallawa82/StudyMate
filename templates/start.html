@@ -5,23 +5,6 @@
   <h2>{{ t('welcome') }}</h2>
   <p class="muted">{{ t('intro', course=course) }}</p>
   <form method="post">
-    {% if courses|length > 1 %}
-    <p class="small" style="margin-bottom:6px"><b>{{ t('choose_course') }}</b> — {{ t('course_cards_note') }}</p>
-    {% set cur = courses|selectattr('code', 'equalto', course_code)|first %}
-    <div class="pick" id="coursePick">
-      <input type="hidden" name="course" value="{{ course_code }}">
-      <input type="text" class="pick-input" role="combobox" aria-expanded="false" aria-autocomplete="list" autocomplete="off"
-             value="{{ cur.title if cur else '' }}" placeholder="{{ t('search_courses') }}" aria-label="{{ t('choose_course') }}">
-      <span class="pick-arrow" aria-hidden="true">▾</span>
-      <div class="combo-panel pick-panel" hidden>
-        <ul role="listbox">
-          {% for c in courses %}<li role="option" data-code="{{ c.code }}" data-title="{{ c.title }}" data-q="{{ (c.code ~ ' ' ~ c.name_en ~ ' ' ~ c.name_ar)|lower }}" class="{{ 'on' if c.code == course_code }}">
-            <span>{{ c.title }}<br><small>{{ t('n_lectures_slides', a=c.lectures, b=c.slides) }}</small></span><small>{{ c.code }}</small></li>{% endfor %}
-        </ul>
-        <p class="small muted combo-none" hidden>{{ t('no_match') }}</p>
-      </div>
-    </div>
-    {% endif %}
     <label class="small" for="username">{{ t('username_or_email') }}</label>
     <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
     <p style="margin:8px 0 0"></p>

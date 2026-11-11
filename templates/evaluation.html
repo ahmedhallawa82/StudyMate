@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% from "_ui.html" import page_head %}
 {% block title %}{{ t('nav_eval') }}{% endblock %}
 {% block content %}
+{{ page_head('🧮', t('nav_eval'), t('eval_sub')) }}
 {% if not r %}
 <div class="card">{{ t('no_eval_course') if auto else t('ev_none') }}</div>
 {% else %}

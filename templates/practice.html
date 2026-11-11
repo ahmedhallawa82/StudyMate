@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% from "_ui.html" import page_head %}
 {% block title %}{{ t('nav_practice') }}{% endblock %}
 {% block content %}
+{{ page_head('✏️', t('nav_practice'), t('tile_practice')) }}
 <div class="grid">
   <section>
     {% if last %}

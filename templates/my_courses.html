@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('my_courses') }}{% endblock %}
+{% block content %}
+{{ page_head('🎓', t('courses_first_title') if first else t('my_courses'), t('courses_first_sub') if first else t('courses_sub')) }}
+<form method="post">
+  <div class="course-grid">
+    {% for c in cards %}
+    <label class="ccard fade" style="--i:{{ loop.index }}">
+      <input type="checkbox" name="course" value="{{ c.code }}" {{ 'checked' if c.checked }}>
+      <span class="tick">✓</span>
+      <b>{{ c.title }}</b>
+      <small dir="ltr">{{ c.code }}</small>
+      {% if c.doctor %}<span class="small">👨‍🏫 {{ c.doctor }}</span>{% endif %}
+      <span class="small muted">{{ t('n_lectures_slides', a=c.lectures, b=c.slides) }}</span>
+    </label>
+    {% endfor %}
+  </div>
+  <p class="muted small">{{ t('courses_note') }}{% if guest %} {{ t('courses_guest_note') }}{% endif %}</p>
+  <button class="btn" type="submit">{{ t('courses_save') }}</button>
+</form>
+{% endblock %}

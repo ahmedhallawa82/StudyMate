@@ -71,8 +71,21 @@ def course_codes():
     return [c["code"] for c in config.list_courses()]
 
 
+def student_course_list():
+    """Courses a signed-in student account is registered in; None for a guest (a guest may open any course)."""
+    me = session.get("student_code")
+    if not me or me.startswith("GUEST-"):
+        return None
+    st = students.get(me)
+    return [c for c in (st["courses"] if st else []) if c in course_codes()]
+
+
 def course_code():
     c = session.get("course")
+    if not session.get("lecturer"):
+        mine = student_course_list()
+        if mine:
+            return c if c in mine else mine[0]
     if session.get("lecturer") and not is_master():            # a doctor works only on his own courses
         own = [x["code"] for x in visible_courses()]
         if own:
@@ -127,6 +140,8 @@ def student_required(view):
             return redirect(url_for("dashboard"))
         if not student():
             return redirect(url_for("start", next=request.path))
+        if request.endpoint != "my_courses" and student_course_list() == []:     # first visit: choose the courses first
+            return redirect(url_for("my_courses"))
         return view(*a, **kw)
     return wrapper
 
@@ -211,7 +226,8 @@ def inject():
             "is_lecturer": session.get("lecturer"), "names": S()["names_ar" if l == "ar" else "names"],
             "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
-                        for c in visible_courses()],
+                        for c in visible_courses() if session.get("lecturer") or student_course_list() is None
+                        or c["code"] in student_course_list()],
             "admin_role": ("master" if is_master() else "doctor") if session.get("lecturer") else None,
             "admin_name": session.get("admin_name", "")}
 
@@ -304,14 +320,16 @@ def register():
         if f.get("password") != f.get("confirm"):
             flash_t("pw_mismatch")
         else:
-            st, err = students.register(f.get("first"), f.get("last"), f.get("email"), f.get("password", ""))
+            reserved = {"admin"} | {d["username"].lower() for d in doctors.list_doctors()}
+            st, err = students.register(f.get("first"), f.get("last"), f.get("email"), f.get("password", ""),
+                                        f.get("username", ""), reserved)
             if err:
                 flash_t(err, n=students.MIN_LEN)
             else:
                 log_to_excel("Students", {"student_code": st["code"], "first_name": st["first"],
                                           "last_name": st["last"], "email": st["email"]})
                 sign_in_as("student", st, "", f.get("remember"))
-                return redirect(url_for("student_home"))
+                return redirect(url_for("my_courses"))
     return render_template("register.html")
 
 
@@ -330,7 +348,9 @@ def forgot():
 
 @app.route("/course/<code>")
 def choose_course(code):
-    if code in course_codes() and code != session.get("course") and (not session.get("lecturer") or can_manage(code)):
+    mine = student_course_list() if not session.get("lecturer") else None
+    if code in course_codes() and code != session.get("course") and (not session.get("lecturer") or can_manage(code)) \
+            and (mine is None or code in mine):
         session["course"] = code
         session.pop("practice", None)
     if session.get("lecturer"):
@@ -881,10 +901,7 @@ def export_doctors(fmt):
 @app.route("/admin/students.<fmt>")
 @lecturer_required
 def export_students(fmt):
-    if not is_master() or fmt not in ("xlsx", "csv"):
-        return redirect(url_for("admin"))
-    rows = [[x["code"], x["first"], x["last"], x["email"], x["created"]] for x in students.list_students()]
-    return _table_response(rows, ["student_code", "first_name", "last_name", "email", "created"], "students", fmt)
+    return redirect(url_for("students_export", fmt=fmt))
 
 
 # ------------------------------------------------------------------ Materials (students can keep the lectures)
@@ -917,6 +934,68 @@ def materials_zip():
             z.write(f, f.name)
     buf.seek(0)
     return send_file(buf, as_attachment=True, download_name=f"{course_code()}_lectures.zip")
+
+
+# ------------------------------------------------------------------ the student's courses
+@app.route("/my-courses", methods=["GET", "POST"])
+@student_required
+def my_courses():
+    me = student()
+    guest = me.startswith("GUEST-")
+    st = None if guest else students.get(me)
+    have = [] if guest else (st["courses"] if st else [])
+    if request.method == "POST":
+        picked = [c for c in request.form.getlist("course") if c in course_codes()]
+        if not picked:
+            flash_t("courses_pick_one")
+        else:
+            if not guest:
+                students.set_courses(me, picked)
+            session["course"] = picked[0] if session.get("course") not in picked else session["course"]
+            session.pop("practice", None)
+            flash_t("courses_saved")
+            return redirect(url_for("student_home"))
+    l = lang()
+    cards = []
+    for c in config.list_courses():
+        owner = doctors.get(c["meta"].get("owner")) if c["meta"].get("owner") else None
+        cards.append({"code": c["code"], "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"],
+                      "doctor": owner["name"] if owner else "", "lectures": c["lectures"], "slides": c["slides"],
+                      "checked": c["code"] in have or (guest and c["code"] == session.get("course"))})
+    return render_template("my_courses.html", cards=cards, first=not have and not guest, first_visit=not have and not guest, guest=guest)
+
+
+# ------------------------------------------------------------------ Students (doctor sees only his own courses)
+def students_for_admin():
+    """[{code, first, last, username, email, courses: [(code, title, doctor)], created}] visible to this admin / doctor."""
+    allowed = {c["code"] for c in config.list_courses() if can_manage(c["code"])}
+    info = {c["code"]: (c["name_ar"] or c["name_en"] if lang() == "ar" else c["name_en"],
+                        (doctors.get(c["meta"].get("owner")) or {}).get("name", "")) for c in config.list_courses()}
+    rows = []
+    for s in students.list_students():
+        mine = [(c, *info[c]) for c in s["courses"] if c in allowed and c in info]
+        if mine:
+            rows.append({**s, "courses": mine})
+    return rows
+
+
+@app.route("/students")
+@lecturer_required
+def students_page():
+    return render_template("students.html", rows=students_for_admin(), master=is_master())
+
+
+@app.route("/students.<fmt>")
+@lecturer_required
+def students_export(fmt):
+    if fmt not in ("xlsx", "csv"):
+        return redirect(url_for("students_page"))
+    rows = [[r["code"], r["first"], r["last"], r["username"], r["email"], c[0], c[2], r["created"]]
+            for r in students_for_admin() for c in r["courses"]]
+    header = ["student_code", "first_name", "last_name", "username", "email", "course", "doctor", "registered"]
+    if not is_master():                                    # a doctor never gets the other doctors' names
+        header, rows = header[:-2] + header[-1:], [r[:6] + r[7:] for r in rows]
+    return _table_response(rows, header, "students", fmt)
 
 
 # ------------------------------------------------------------------ Arabic translation of answers (on demand)

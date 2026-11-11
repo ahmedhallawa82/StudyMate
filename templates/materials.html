@@ -1,6 +1,8 @@
 {% extends "base.html" %}
+{% from "_ui.html" import page_head %}
 {% block title %}{{ t('materials_title') }}{% endblock %}
 {% block content %}
+{{ page_head('📚', t('materials_title'), t('materials_note')) }}
 <div class="card">
   <h2>{{ t('materials_title') }} · {{ course }}</h2>
   <p class="muted small">{{ t('materials_note') }}</p>

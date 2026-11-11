@@ -26,6 +26,7 @@ def as_student(c, name):
                                   "password": "secret1", "confirm": "secret1"})
     if "Location" not in r.headers or "/register" in r.headers.get("Location", ""):
         c.post("/start", data={"username": f"{name.lower()}@test.com", "password": "secret1"})
+    c.post("/my-courses", data={"course": [config.DEFAULT_COURSE]})
 
 
 @pytest.fixture(scope="module")
@@ -195,6 +196,7 @@ def test_guest_login_and_no_evaluation_link_for_students():
 
 
 def test_second_course_search_and_arabic(client):
+    client.post("/my-courses", data={"course": ["AI", "MAM336"]})        # the student registers in both courses
     r = client.get("/course/MAM336")
     r = client.get("/ask", query_string={"q": "what does a clutch do"})
     assert "Lecture 3 · Slide" in r.get_data(as_text=True)
@@ -203,6 +205,7 @@ def test_second_course_search_and_arabic(client):
     r = client.get("/ask", query_string={"q": "ايه هو محول العزم"})
     assert "Lecture 5 · Slide" in r.get_data(as_text=True)
     client.get("/course/AI")
+    client.post("/my-courses", data={"course": ["AI"]})
 
 
 def test_delete_lecture_and_course_from_admin(admin):
@@ -291,10 +294,22 @@ def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
         assert "Doctors" in admin.get("/admin").get_data(as_text=True)
         admin.post("/admin", data={"action": "delete_doctor", "doctor": did2})
         assert len(doctors.list_doctors()) == 1
-        # students see all courses, with the live-search list
+        # a student sees only the courses he registered in (live-search list) and has no Admin link
         s = A.app.test_client(); as_student(s, "SRCH1")
         html = s.get("/ask").get_data(as_text=True)
+        assert "DCT9" not in html and 'href="/admin"' not in html
+        s.post("/my-courses", data={"course": [config.DEFAULT_COURSE, "DCT9"]})
+        html = s.get("/ask").get_data(as_text=True)
         assert 'id="courseCombo"' in html and "DCT9" in html and "js/courses.js" in html
+        # each doctor sees the student only in his own course, the main admin in both
+        p1 = d1.get("/students").get_data(as_text=True)
+        assert "srch1@test.com" in p1 and "Doctor course" in p1 and "Artificial Intelligence" not in p1
+        assert "srch1@test.com" not in d2.get("/students").get_data(as_text=True)
+        pa = admin.get("/students").get_data(as_text=True)
+        assert "srch1@test.com" in pa and "Doctor course" in pa and "Artificial Intelligence" in pa
+        csv1 = d1.get("/students.csv").get_data(as_text=True)
+        assert "srch1@test.com" in csv1 and "DCT9" in csv1 and ",AI," not in csv1 and "doctor" not in csv1.splitlines()[0]
+        assert "doctor" in admin.get("/students.csv").get_data(as_text=True).splitlines()[0]
     finally:
         shutil.rmtree(config.BASE_DIR / "data" / "DCT9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "DCT9", ignore_errors=True)
@@ -467,7 +482,8 @@ def test_student_home_and_login_landing():
     import app as A
     c = A.app.test_client()
     r = c.post("/register", data={"first": "Mona", "last": "K", "email": "mona@test.com", "password": "secret1", "confirm": "secret1"})
-    assert r.headers["Location"].endswith("/home")
+    assert r.headers["Location"].endswith("/my-courses")
+    c.post("/my-courses", data={"course": ["AI"]})
     page = c.get("/home").get_data(as_text=True)
     assert "Mona" in page and "hero" in page and "Continue learning" in page
     ar = c.get("/home?lang=ar").get_data(as_text=True)

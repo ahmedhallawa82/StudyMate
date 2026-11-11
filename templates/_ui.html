@@ -1,0 +1,3 @@
+{% macro page_head(icon, title, sub='') %}
+<div class="page-head fade" style="--i:0"><span class="ph-ic">{{ icon }}</span><div><h1>{{ title }}</h1>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></div>
+{% endmacro %}
