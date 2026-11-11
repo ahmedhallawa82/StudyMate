@@ -136,3 +136,37 @@ def update_profile(doctor_id, name, email):
         me["email"] = (email or "").strip()[:120]
         _save(rows)
     return True
+
+
+def reset_by_email(email):
+    """A new strong random password for the doctor with this e-mail. Returns (doctor dict, password) or (None, None)."""
+    from core import passgen
+    email = (email or "").strip().lower()
+    if not email:
+        return None, None
+    with _lock:
+        rows = _load()
+        for d in rows:
+            if d.get("email", "").strip().lower() == email:
+                pw = passgen.generate()
+                d.update(hash=generate_password_hash(pw), initial=pw, new="")
+                _save(rows)
+                return dict(d), pw
+    return None, None
+
+
+def find_by_email(email):
+    email = (email or "").strip().lower()
+    return next((dict(d) for d in _load() if email and d.get("email", "").strip().lower() == email), None)
+
+
+def set_password(doctor_id, pw):
+    """Save a new password for this doctor (also shown to the admin as the system password); it works at once."""
+    with _lock:
+        rows = _load()
+        for d in rows:
+            if d["id"] == doctor_id:
+                d.update(hash=generate_password_hash(pw), initial=pw, new="")
+                _save(rows)
+                return True
+    return False

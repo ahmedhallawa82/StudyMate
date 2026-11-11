@@ -352,7 +352,7 @@ T = {
     "forgot_title": ("Forgot your password", "نسيت كلمة السر"),
     "forgot_note": ("Write the e-mail you registered with and a new password is sent to it.", "اكتب الإيميل اللي سجّلت بيه وهنبعتلك كلمة سر جديدة عليه."),
     "forgot_sent": ("If this e-mail is registered, a new password was sent to it.", "لو الإيميل ده متسجّل، اتبعتله كلمة سر جديدة."),
-    "forgot_no_mail": ("E-mail sending is not set up on this server yet. Ask the admin to give you a new password.", "إرسال الإيميل لسه مش متفعّل على السيرفر. اطلب من الأدمن كلمة سر جديدة."),
+    "forgot_no_mail": ("E-mail sending is not set up on this server yet. Press the 🛟 support icon and ask for a new password.", "إرسال الإيميل لسه مش متفعّل على السيرفر. اضغط على أيقونة الدعم 🛟 واطلب كلمة سر جديدة."),
     "send_btn": ("Send", "إرسال"),
     "doctor_email_ph": ("Doctor e-mail", "إيميل الدكتور"), "doctor_username": ("Doctor username", "اسم مستخدم الدكتور"),
     "doctor_mailed": ("The account details were sent to {email}.", "بيانات الحساب اتبعتت على {email}."),

@@ -128,7 +128,8 @@ def reset_password(email):
         me = next((s for s in rows if s["email"] == norm_email(email)), None)
         if not me:
             return None, None
-        pw = "".join(secrets.choice(_ALPHABET) for _ in range(8))
+        from core import passgen
+        pw = passgen.generate()                    # strong random password (8-15, capitals, digits, symbols)
         me["hash"] = generate_password_hash(pw)
         _save(rows)
     return me, pw
@@ -163,3 +164,19 @@ def update_profile(code, first, last, email):
         me.update(first=first, last=last, email=email)
         _save(rows)
     return ""
+
+
+def find_by_email(email):
+    return next((s for s in _load() if s["email"] == norm_email(email)), None)
+
+
+def set_password(code, pw):
+    """Save a new password (hashed) for this student; it works at once."""
+    with _lock:
+        rows = _load()
+        me = next((s for s in rows if s["code"] == code), None)
+        if not me:
+            return False
+        me["hash"] = generate_password_hash(pw)
+        _save(rows)
+    return True

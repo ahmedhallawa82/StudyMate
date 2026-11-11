@@ -369,13 +369,24 @@ def register():
 
 @app.route("/forgot", methods=["GET", "POST"])
 def forgot():
+    """A strong random password is e-mailed with the 'login details' template. It is saved in the account only AFTER the
+    e-mail was accepted, so it always works the moment the person types it (and nobody is locked out if mail fails)."""
+    from core import mailtemplates, passgen
     sent = False
     if request.method == "POST":
-        st, pw = students.reset_password(request.form.get("email", ""))
-        if st:
-            body = (f"Hello {st['first']},\n\nYour new StudyMate password is: {pw}\n"
-                    f"Sign in with your e-mail and this password, it is better to change it afterwards.")
-            mailer.send(st["email"], "StudyMate - new password", body)
+        email = request.form.get("email", "").strip()
+        if mailer.enabled():
+            st, d = students.find_by_email(email), None
+            if not st:
+                d = doctors.find_by_email(email)
+            if st or d:
+                pw = passgen.generate()
+                who = (st["first"], st["email"], "student") if st else (d["name"], doctors.username_of(d), "doctor")
+                subject, text, html = mailtemplates.password_email(who[0], who[1], pw, who[2], url_for("start", _external=True), lang())
+                if mailer.send_now(email, subject, text, html):
+                    (students.set_password(st["code"], pw) if st else doctors.set_password(d["id"], pw))
+                    for k in {email.lower(), who[1].lower()}:         # a locked-out person gets in again with the new password
+                        _FAILS.pop(k, None)
         sent = True                                   # same answer whether the e-mail exists or not
     return render_template("forgot.html", sent=sent, mail_on=mailer.enabled())
 

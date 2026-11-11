@@ -652,3 +652,35 @@ def test_password_generator_rules_and_button():
     # a generated password is accepted by the registration rules
     r = c.post("/register", data={"first": "Gen", "last": "Pw", "email": "genpw@test.com", "password": pw, "confirm": pw})
     assert r.status_code in (200, 302)
+
+
+def test_forgot_password_mails_a_strong_password_that_works_at_once(monkeypatch):
+    import re
+    import app as A
+    from core import mailer, passgen
+    c = A.app.test_client()
+    as_student(c, "Forgetful")                                   # forgetful@test.com / secret1
+    sent = []
+    monkeypatch.setattr(mailer, "enabled", lambda: True)
+    monkeypatch.setattr(mailer, "send_now", lambda to, subj, text, html=None: sent.append((to, subj, text, html)) or True)
+    # lock the account first: 5 wrong tries
+    k = A.app.test_client()
+    for _ in range(5):
+        k.post("/start", data={"username": "forgetful@test.com", "password": "nope"})
+    assert "No attempts left" in k.post("/start", data={"username": "forgetful@test.com", "password": "secret1"}).get_data(as_text=True)
+    r = A.app.test_client().post("/forgot", data={"email": "Forgetful@test.com"})
+    assert r.status_code == 200 and len(sent) == 1
+    to, subj, text, html = sent[0]
+    pw = re.search(r"password: (\S+)|المؤقتة: (\S+)", text)
+    pw = next(g for g in pw.groups() if g)
+    assert passgen.check(pw) and pw in html and "<table" in html and to == "Forgetful@test.com"
+    d = A.app.test_client().post("/start", data={"username": "forgetful@test.com", "password": pw})
+    assert d.status_code == 302                                     # the mailed password opens the site at once (even after the lock)
+    assert A.app.test_client().post("/start", data={"username": "forgetful@test.com", "password": "secret1"}).status_code == 200  # old one is dead
+    # unknown e-mail: same page, nothing is sent
+    A.app.test_client().post("/forgot", data={"email": "nobody@test.com"})
+    assert len(sent) == 1
+    # mail provider fails: the old password keeps working
+    monkeypatch.setattr(mailer, "send_now", lambda *a, **k: False)
+    A.app.test_client().post("/forgot", data={"email": "forgetful@test.com"})
+    assert A.app.test_client().post("/start", data={"username": "forgetful@test.com", "password": pw}).status_code == 302
