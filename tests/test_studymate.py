@@ -684,3 +684,28 @@ def test_forgot_password_mails_a_strong_password_that_works_at_once(monkeypatch)
     monkeypatch.setattr(mailer, "send_now", lambda *a, **k: False)
     A.app.test_client().post("/forgot", data={"email": "forgetful@test.com"})
     assert A.app.test_client().post("/start", data={"username": "forgetful@test.com", "password": pw}).status_code == 302
+
+
+def test_admin_resets_a_password_from_the_support_inbox_and_it_works_at_once():
+    import re
+    import app as A
+    from core import passgen
+    c = A.app.test_client()
+    as_student(c, "Locked")                                      # locked@test.com / secret1
+    k = A.app.test_client()
+    for _ in range(5):
+        k.post("/start", data={"username": "locked@test.com", "password": "nope"})
+    adm = A.app.test_client()
+    adm.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
+    A.app.test_client().post("/support", data={"name": "Locked", "contact": "locked@test.com", "message": "forgot it"})
+    page = adm.get("/support-inbox").get_data(as_text=True)
+    assert 'name="action" value="reset"' in page                 # the message links to a real account
+    r = adm.post("/support-inbox", data={"action": "reset", "who": "", "who2": "locked@test.com"})
+    html = r.get_data(as_text=True)
+    pw = re.search(r'id="newPw"[^>]*>([^<]+)<', html).group(1)
+    assert passgen.check(pw) and r.headers["Cache-Control"] == "no-store"
+    assert A.app.test_client().post("/start", data={"username": "locked@test.com", "password": pw}).status_code == 302
+    assert A.app.test_client().post("/start", data={"username": "locked@test.com", "password": "secret1"}).status_code == 200
+    assert "newPw" not in adm.get("/support-inbox").get_data(as_text=True)      # never stored or shown again
+    assert "newPw" not in adm.post("/support-inbox", data={"action": "reset", "who": "ghost@x.com"}).get_data(as_text=True)
+    assert A.app.test_client().post("/support-inbox", data={"action": "reset", "who": "locked@test.com"}).status_code == 302  # not an admin

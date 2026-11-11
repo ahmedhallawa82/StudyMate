@@ -2,7 +2,19 @@
 {% block title %}{{ t('support_inbox') }}{% endblock %}
 {% block content %}
 <div class="page-head fade" style="--i:0"><div class="pic">🛟</div><div><h1>{{ t('support_inbox') }}</h1></div></div>
+{% if reset %}<div class="card fade {{ 'reset-ok' if reset.ok else '' }}" style="--i:1">
+  {% if reset.ok %}<h3>🔑 {{ t('sup_reset_done') }}</h3>
+  <p>{{ reset.name }} · <code dir="ltr">{{ reset.user }}</code></p>
+  <p class="pg-out"><code id="newPw" dir="ltr">{{ reset.pw }}</code> <button type="button" class="btn small ghost" onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('newPw').textContent);this.textContent='✓'">{{ t('sup_copy') }}</button></p>
+  <p class="muted small">{{ t('sup_reset_note') }}</p>
+  {% else %}<p class="err-msg">{{ t('sup_reset_none') }}</p>{% endif %}
+</div>{% endif %}
 <div class="card fade" style="--i:1">
+  <form method="post" class="sup-lookup"><input type="hidden" name="action" value="reset">
+    <input type="text" name="who" placeholder="{{ t('sup_reset_ph') }}" dir="ltr" required>
+    <button class="btn small teal" type="submit">🔑 {{ t('sup_reset') }}</button></form>
+</div>
+<div class="card fade" style="--i:2">
   {% for m in items %}
   <div class="sup-item {{ m.status }}">
     <div class="sup-top"><b>{{ m.name or '—' }}</b> <small class="muted" dir="ltr">{{ m.contact }}{% if m.ident %} · @{{ m.ident }}{% endif %} · {{ m.time }}</small>
@@ -10,6 +22,8 @@
     <p>{{ m.message }}</p>
     <form method="post"><input type="hidden" name="id" value="{{ m.id }}"><input type="hidden" name="status" value="{{ 'open' if m.status == 'done' else 'done' }}">
       <button class="btn small ghost" type="submit">{{ t('sup_reopen') if m.status == 'done' else t('sup_mark_done') }}</button></form>
+    {% if m.acct %}<form method="post" style="display:inline"><input type="hidden" name="action" value="reset"><input type="hidden" name="who" value="{{ m.ident }}"><input type="hidden" name="who2" value="{{ m.contact }}">
+      <button class="btn small teal" type="submit">🔑 {{ t('sup_reset') }}</button></form>{% endif %}
   </div>
   {% else %}<p class="muted">{{ t('sup_none') }}</p>{% endfor %}
 </div>

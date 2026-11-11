@@ -1550,15 +1550,48 @@ def support_send():
     return jsonify(ok=bool(rec))
 
 
+def _find_account(*idents):
+    """The student or doctor these identifiers (e-mail, username or student code) point to: (kind, record) or None."""
+    for raw in idents:
+        key = (raw or "").strip().lstrip("@").lower()
+        if not key:
+            continue
+        for st in students.list_students():
+            if key in (st["email"].lower(), st["code"].lower(), (st.get("username") or "").lower()):
+                return "student", st
+        for d in doctors.list_doctors():
+            if key in ((d.get("email") or "").lower(), d["username"].lower()):
+                return "doctor", d
+    return None
+
+
 @app.route("/support-inbox", methods=["GET", "POST"])
 @lecturer_required
 def support_inbox():
     if not is_master():
         return redirect(url_for("staff_home"))
+    reset = None
     if request.method == "POST":
-        support.set_status(request.form.get("id", ""), request.form.get("status", "done"))
-        return redirect(url_for("support_inbox"))
-    return render_template("support_inbox.html", items=support.all_messages())
+        if request.form.get("action") == "reset":
+            found = _find_account(request.form.get("who", ""), request.form.get("who2", ""))
+            if found:
+                kind, acc = found
+                pw = passgen.generate()
+                (students.set_password(acc["code"], pw) if kind == "student" else doctors.set_password(acc["id"], pw))
+                for k in (acc.get("email", ""), acc.get("username", ""), acc.get("code", "")):
+                    _FAILS.pop((k or "").lower(), None)         # a locked account is open again
+                name = acc.get("first") or acc.get("name") or ""
+                reset = {"ok": True, "kind": kind, "name": name, "user": acc.get("email") or acc.get("username"), "pw": pw}
+            else:
+                reset = {"ok": False}
+        else:
+            support.set_status(request.form.get("id", ""), request.form.get("status", "done"))
+            return redirect(url_for("support_inbox"))
+    items = support.all_messages()
+    for m in items:
+        m["acct"] = _find_account(m.get("ident"), m.get("contact")) is not None
+    r = render_template("support_inbox.html", items=items, reset=reset)
+    return (r, 200, {"Cache-Control": "no-store"}) if reset else r
 
 
 @app.route("/generate-password")
