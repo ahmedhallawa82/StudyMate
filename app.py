@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -284,7 +284,7 @@ def inject():
     args["lang"] = "en" if l == "ar" else "ar"
     from urllib.parse import urlencode
     return {"lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(), "student_name": session.get("student_name", ""),
-            "is_lecturer": session.get("lecturer"), "names": (S() or {}).get("names_ar" if l == "ar" else "names", {}),
+            "is_lecturer": session.get("lecturer"), "is_master_user": bool(session.get("lecturer")) and is_master(), "names": (S() or {}).get("names_ar" if l == "ar" else "names", {}),
             "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
                         for c in visible_courses() if session.get("lecturer") or student_course_list() is None
@@ -318,7 +318,7 @@ def try_login(ident, pw):
     if not pw:
         return None
     if ident.lower() in ("admin", ""):
-        if hmac.compare_digest(pw, config.LECTURER_PASSWORD):
+        if adminpw.verify(pw):
             return "admin", doctors.MASTER, ""
     if "@" not in ident:                                   # doctors sign in with their username (or the password alone)
         did = doctors.check(pw, username=ident or None)
@@ -919,7 +919,13 @@ def profile():
         elif action == "password":
             new = request.form.get("new", "")
             if key == "d:" + doctors.MASTER:
-                flash_t("pw_master_note")
+                if new != request.form.get("confirm", ""):
+                    flash_t("pw_mismatch")
+                else:
+                    err = adminpw.change(request.form.get("old", ""), new)
+                    if not err:
+                        notify.push([key], "security", tr("n_pw_title", lang()), tr("n_pw_body", lang()), url_for("profile"))
+                    flash_t(err or "pw_changed", n=adminpw.MIN_LEN)
             elif new != request.form.get("confirm", ""):
                 flash_t("pw_mismatch")
             else:

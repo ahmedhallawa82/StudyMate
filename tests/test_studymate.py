@@ -16,7 +16,7 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    from core import notify, schedule, profiles, support, badges, catalog, custom_badges
+    from core import notify, schedule, profiles, support, badges, catalog, custom_badges, adminpw
     d = tmp_path_factory.mktemp("stu")
     f = d / "students.json"
     students.FILE = lambda: f
@@ -27,6 +27,7 @@ def _students_file(tmp_path_factory):
     support.FILE = lambda: d / "support.json"
     badges.FILE = lambda: d / "badges.json"
     custom_badges.FILE = lambda: d / "custom_badges.json"
+    adminpw.FILE = lambda: d / "admin_auth.json"
     catalog.FILE = lambda: d / "course_codes.json"
 
 
@@ -875,3 +876,17 @@ def test_admin_badges_page_notifies_students_and_hides_them_from_other_doctors(c
     master.post("/badges-admin", data={"action": "award_badge", "badge": bid, "students": code, "note": "Great"})
     assert "Hero" in client.get("/badges").get_data(as_text=True)
     assert custom_badges.unseen_count(code) == 0       # opening the page marks it seen
+
+
+def test_main_admin_can_change_password_and_has_no_support_button():
+    import app as A
+    a = A.app.test_client()
+    a.post("/lecturer", data={"username": "admin", "password": config.LECTURER_PASSWORD})
+    assert 'id="supportBtn"' not in a.get("/profile").get_data(as_text=True)
+    a.post("/profile", data={"action": "password", "old": "wrong", "new": "NewAdmin#77", "confirm": "NewAdmin#77"})
+    assert A.adminpw.verify(config.LECTURER_PASSWORD)                      # wrong old password: unchanged
+    a.post("/profile", data={"action": "password", "old": config.LECTURER_PASSWORD, "new": "NewAdmin#77", "confirm": "NewAdmin#77"})
+    assert A.adminpw.verify("NewAdmin#77") and not A.adminpw.verify(config.LECTURER_PASSWORD)
+    b = A.app.test_client()
+    b.post("/lecturer", data={"username": "admin", "password": "NewAdmin#77"})
+    assert b.get("/dashboard").status_code == 200

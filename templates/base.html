@@ -50,7 +50,7 @@
       {% endif %}
     </nav>
     <div class="tools">
-      <button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>
+      {% if not is_master_user %}<button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>{% endif %}
       {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
       {% if me_key %}
       <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
@@ -107,7 +107,7 @@
   function show(m) { if (m) { m.hidden = false; m.classList.add('show'); } }
   function hide(m) { if (m) { m.classList.remove('show'); m.hidden = true; } }
   var sm = document.getElementById('supportModal'), am = document.getElementById('alertModal');
-  document.getElementById('supportBtn').onclick = function () { hide(am); show(sm); };
+  var sb = document.getElementById('supportBtn'); if (sb) sb.onclick = function () { hide(am); show(sm); };
   var as = document.getElementById('alertSupport'); if (as) as.onclick = function () { hide(am); show(sm); };
   document.querySelectorAll('.modal [data-close]').forEach(function (b) { b.onclick = function () { hide(b.closest('.modal')); }; });
   document.querySelectorAll('.modal').forEach(function (m) { m.addEventListener('click', function (e) { if (e.target === m) hide(m); }); });
