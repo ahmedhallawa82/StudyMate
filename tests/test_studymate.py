@@ -601,3 +601,13 @@ def test_notifications_and_calendar(admin, client):
     assert schedule.for_courses(["AI"])                                      # a student cannot delete it
     admin.post("/calendar", data={"action": "delete", "id": items[0]["id"]})
     assert not schedule.for_courses(["AI"])
+
+
+def test_semantic_and_hybrid_search_keep_the_not_found_gate():
+    from core.search import SearchEngine
+    eng = SearchEngine.load()
+    for m in ("lsa", "hybrid"):
+        found, hits = eng.search("What is minimax search?", method=m)
+        assert found and hits and hits[0]["score"] > 0
+        found, hits = eng.search("how to bake a chocolate cake", method=m)
+        assert not found and hits == []

@@ -459,6 +459,7 @@ def ask():
     result = None
     question = request.values.get("q", "").strip()
     method = request.values.get("method", "tfidf")
+    method = method if method in ("tfidf", "bm25", "lsa", "hybrid") else "tfidf"
     if question:
         clf, eng = S()["clf"], S()["engine"]
         topic, conf = clf.predict(question)

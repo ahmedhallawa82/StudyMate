@@ -90,10 +90,36 @@ class SearchEngine:
         self.threshold = config.DEFAULT_NOT_FOUND_THRESHOLD
         self.min_coverage = 0.5
         self.topic_weight = 0.0   # re-ranking boost from the topic classifier (tuned in evaluate.py)
+        self._build_lsa()
+
+    # ---------------- semantic (LSA) ----------------
+    def _build_lsa(self, dims: int = 100):
+        """Latent semantic space: SVD of the TF-IDF matrix. Words that appear in the same slides end up close,
+        so a question can match a slide that uses related (not identical) words."""
+        from sklearn.decomposition import TruncatedSVD
+        from sklearn.preprocessing import normalize
+        n = min(dims, min(self.matrix.shape) - 1)
+        self.svd, self.doc_lsa = None, None
+        if n >= 2:
+            self.svd = TruncatedSVD(n_components=n, random_state=0).fit(self.matrix)
+            self.doc_lsa = normalize(self.svd.transform(self.matrix))
+
+    def _lsa(self, q: str) -> np.ndarray:
+        if getattr(self, "svd", None) is None:          # engine saved before this feature: build once
+            self._build_lsa()
+        if self.svd is None:
+            return self._tfidf(q)
+        from sklearn.preprocessing import normalize
+        v = normalize(self.svd.transform(self.vectorizer.transform([q])))
+        return np.clip(self.doc_lsa @ v.ravel(), 0, None)
 
     # ---------------- scoring ----------------
     def scores(self, question: str, method: str = "tfidf") -> np.ndarray:
         q = prepare_query(question)
+        if method == "lsa":
+            return self._lsa(q)
+        if method == "hybrid":                           # exact words (TF-IDF) + related words (LSA)
+            return 0.5 * self._tfidf(q) + 0.5 * self._lsa(q)
         if method == "bm25" and self.bm25 is not None:
             s = np.asarray(self.bm25.get_scores(tokenize(q)), dtype=float)
             return s / (s.max() + 1e-9) * self._tfidf(q).max() if s.max() > 0 else s  # same scale as cosine
@@ -113,7 +139,7 @@ class SearchEngine:
         return known / len(toks)
 
     def is_in_course(self, question: str, method: str = "tfidf"):
-        best = self.best_score(question, method if method != "bm25" else "tfidf")
+        best = self.best_score(question, "tfidf")   # the Not-found gate always uses TF-IDF (tuned threshold)
         return best >= self.threshold and self.coverage(question) >= self.min_coverage, best
 
     def ranked_scores(self, question: str, method: str = "tfidf", topic_probs: dict = None) -> np.ndarray:

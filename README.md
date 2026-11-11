@@ -43,7 +43,7 @@ Admin area (Data, Content, Evaluation) password: `lecturer123` by default. Set y
 | **Content** (Admin) | Upload one or several lecture PDFs and rebuild the index; delete a lecture or a course; add a new course; retrain + re-evaluate; (main admin) manage doctors and course owners. |
 
 ## Models
-- **Search:** TF-IDF (word 1–2 grams) + cosine similarity; bonus: BM25 (`rank_bm25`). "Not found" when the best similarity is below a tuned threshold **or** too few question words exist in the slides.
+- **Search:** TF-IDF (word 1–2 grams) + cosine similarity; bonus: BM25 (`rank_bm25`), semantic search with LSA (SVD of the TF-IDF matrix, finds slides with related words) and a hybrid of TF-IDF + LSA (selectable on the Ask page). The "Not found" gate always uses TF-IDF. "Not found" when the best similarity is below a tuned threshold **or** too few question words exist in the slides.
 - **Topic classifier:** question → one of 12 topics. Multinomial Naive Bayes vs Logistic Regression on word + character n-grams (character n-grams handle typos). The best (LR) is used by the app.
 - **Mastery update:** `level = level + 0.35 × (result − level)`; result = 1 (correct, no hint), 0.7 (1 hint), 0.4 (2 hints), 0 (wrong). Red < 40% ≤ amber < 70% ≤ green.
 
@@ -54,6 +54,8 @@ Admin area (Data, Content, Evaluation) password: `lecturer123` by default. Set y
 | Topic accuracy – Naive Bayes | 86.1% (macro F1 0.858) |
 | Search top-1 / top-3 hit rate (TF-IDF) | **70% / 77%** (30 test questions) |
 | Search top-1 / top-3 hit rate (BM25) | 67% / 77% |
+| Search top-1 / top-3 – Semantic LSA (new) | 67% / 80% |
+| Search top-1 / top-3 – Hybrid TF-IDF + LSA (new) | **70% / 80%** |
 | Off-topic questions → "Not found" | **10 / 10** |
 | Arabic questions (bonus) → right topic | 10 / 10 |
 

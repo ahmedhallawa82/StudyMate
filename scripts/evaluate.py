@@ -178,7 +178,8 @@ def main():
     joblib.dump({"similarity": thr, "coverage": cov}, THRESHOLD_FILE)
     engine.threshold, engine.min_coverage = thr, cov
     report["search"] = {"threshold": thr, "min_coverage": cov, "n_test": len(test), "methods": {}}
-    for method, label in (("tfidf", "TF-IDF + cosine (default)"), ("bm25", "BM25 (bonus)")):
+    for method, label in (("tfidf", "TF-IDF + cosine (default)"), ("bm25", "BM25 (bonus)"),
+                          ("lsa", "Semantic LSA (bonus)"), ("hybrid", "Hybrid TF-IDF + LSA (bonus)")):
         if method == "bm25" and engine.bm25 is None:
             continue
         key = method

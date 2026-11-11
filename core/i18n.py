@@ -252,6 +252,7 @@ T = {
                   "حاجة مهمة: الملفات المرفوعة بتتحفظ على السيرفر. علشان تفضل للأبد ضيفها كمان في مستودع GitHub (data/<المادة>/lectures/)، وإلا لو السيرفر اتغيّر ممكن تضيع."),
     
     # ---- delete + method hint
+    "m_hybrid": ("Hybrid (TF-IDF + semantic)", "هجين (TF-IDF + دلالي)"), "m_lsa": ("Semantic (LSA)", "دلالي (LSA)"),
     "hint_method": ("Hint: TF-IDF (the default) ranks slides by the rare, distinctive words of your question. BM25 is a newer version of the same idea: it also limits the effect of repeated words and of very long slides. Both usually give similar results – try the other one if you do not find what you need.",
                     "تلميح: TF-IDF (الافتراضي) بيرتّب الشرايح حسب الكلمات النادرة والمميزة في سؤالك. أما BM25 فهو نسخة أحدث من نفس الفكرة، وبيقلّل تأثير الكلمات المتكررة والشرايح الطويلة. الاتنين غالباً بيدّوا نتايج متقاربة، فجرّب التاني لو مالقيتش اللي عايزه."),
     "adm_delete_lecture": ("Delete lectures", "امسح محاضرات"),
