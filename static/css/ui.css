@@ -221,3 +221,5 @@ html[data-mode="dark"] .n-ic.k-security { background: #4a1d1d; } html[data-mode=
 .ok-msg { color: #0f8b82; font-weight: 600; } .err-msg { color: #c0392b; }
 .sup-item { padding: 14px 0; border-bottom: 1px solid var(--line, #e2ecea); } .sup-item.done { opacity: .6; } .sup-top { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .sup-count { background: #ef4444; color: #fff; border-radius: 999px; padding: 0 8px; font-size: .75rem; margin-inline-start: 4px; }
+
+.passgen { margin: 10px 0; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; } .pg-out code { background: var(--teal-soft, #e4f3f1); padding: 4px 10px; border-radius: 8px; font-size: 1.05rem; user-select: all; }

@@ -634,3 +634,21 @@ def test_wrong_passwords_popup_lock_and_support_messages():
     admin = A.app.test_client()
     admin.post("/lecturer", data={"username": "admin", "password": config.LECTURER_PASSWORD})
     assert "I cannot sign in" in admin.get("/support-inbox").get_data(as_text=True)
+
+
+def test_password_generator_rules_and_button():
+    import app as A
+    from core import passgen
+    lens = set()
+    for _ in range(300):
+        pw = passgen.generate()
+        lens.add(len(pw))
+        assert passgen.check(pw), pw
+    assert min(lens) >= 8 and max(lens) <= 15 and len(lens) > 3
+    c = A.app.test_client()
+    pw = c.get("/generate-password").get_json()["password"]
+    assert passgen.check(pw)
+    assert "data-passgen" in c.get("/register").get_data(as_text=True)
+    # a generated password is accepted by the registration rules
+    r = c.post("/register", data={"first": "Gen", "last": "Pw", "email": "genpw@test.com", "password": pw, "confirm": pw})
+    assert r.status_code in (200, 302)

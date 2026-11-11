@@ -252,6 +252,8 @@ T = {
                   "حاجة مهمة: الملفات المرفوعة بتتحفظ على السيرفر. علشان تفضل للأبد ضيفها كمان في مستودع GitHub (data/<المادة>/lectures/)، وإلا لو السيرفر اتغيّر ممكن تضيع."),
     
     # ---- delete + method hint
+    "pg_btn": ("Generate a strong password", "اعمل لي كلمة سر قوية"), "pg_copy": ("Copy", "نسخ"),
+    "pg_note": ("8–15 characters with capitals, small letters, digits and symbols. Save it somewhere safe.", "من 8 لـ15 حرف فيها حروف كبيرة وصغيرة وأرقام ورموز. احفظها في مكان آمن."),
     "sup_title": ("Contact support", "تواصل مع الدعم"),
     "sup_intro": ("Tell us what went wrong and the support team will fix it.", "اكتب المشكلة اللي واجهتك وفريق الدعم هيحلّها."),
     "sup_name": ("Your name", "اسمك"), "sup_contact": ("E-mail or phone (so we can reach you)", "الإيميل أو الموبايل (عشان نتواصل معاك)"),

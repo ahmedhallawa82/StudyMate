@@ -50,6 +50,7 @@
           <div><label for="new">{{ t('prof_new') }}</label><input id="new" type="password" name="new" autocomplete="new-password" minlength="6" required></div>
           <div><label for="confirm">{{ t('prof_confirm') }}</label><input id="confirm" type="password" name="confirm" autocomplete="new-password" minlength="6" required></div>
         </div>
+        {% set targets = "new,confirm" %}{% include "_passgen.html" %}
         <p><button class="btn" type="submit">{{ t('prof_change') }}</button></p>
       </form>
       {% endif %}

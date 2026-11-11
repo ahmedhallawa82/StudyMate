@@ -17,6 +17,7 @@
     <label class="small">{{ t('password') }}</label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password">
     <p style="margin:8px 0 0"></p>
     <label class="small">{{ t('pw_confirm') }}</label><input type="password" name="confirm" required minlength="6" dir="ltr" autocomplete="new-password">
+    {% set targets = "password,confirm" %}{% include "_passgen.html" %}
     <p class="small"><label><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></p>
     <p class="muted small">{{ t('privacy') }}</p>
     <button class="btn" type="submit">{{ t('register_btn') }}</button>

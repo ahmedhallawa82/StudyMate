@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -1548,6 +1548,14 @@ def support_inbox():
         support.set_status(request.form.get("id", ""), request.form.get("status", "done"))
         return redirect(url_for("support_inbox"))
     return render_template("support_inbox.html", items=support.all_messages())
+
+
+@app.route("/generate-password")
+def generate_password():
+    r = jsonify(password=passgen.generate())
+    r.headers["Cache-Control"] = "no-store"
+    return r
+
 
 
 if __name__ == "__main__":
