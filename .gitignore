@@ -16,3 +16,10 @@ data/course_codes.json
 data/custom_badges.json
 data/admin_auth.json
 data/chat.json
+
+logs.xlsx
+data/faq.json
+data/followups.json
+data/models_auth.json
+data/*/videos/
+data/*/videos.json

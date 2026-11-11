@@ -25,9 +25,23 @@
   <div class="card"><h3>{{ t('students_per_colour') }}</h3><canvas id="colours" height="240"></canvas></div>
   <div class="card"><h3>{{ t('visits_day') }}</h3><canvas id="visits" height="240"></canvas></div>
 </div>
-<div class="card"><h3>{{ t('latest_nf') }}</h3>
-  {% if not_found %}<table><tr><th>{{ t('time') }}</th><th>{{ t('student') }}</th><th>{{ t('question') }}</th></tr>
-    {% for q in not_found %}<tr><td class="small">{{ q.time }}</td><td>{{ q.student_code }}</td><td dir="auto">{{ q.question }}</td></tr>{% endfor %}</table>
+<div class="card" id="followup"><h3>{{ t('fu_title') }}</h3>
+  <p class="muted small">{{ t('fu_sub', a=kpi.answered, o=kpi.open) }}</p>
+  {% if latest %}
+  <div class="table-wrap"><table>
+    <tr><th>{{ t('time') }}</th><th>{{ t('student') }}</th><th>{{ t('question') }}</th><th>{{ t('fu_found') }}</th><th>{{ t('fu_status') }}</th></tr>
+    {% for q in latest %}
+    <tr><td class="small">{{ q.time }}</td><td>{{ q.student_code }}</td><td dir="auto">{{ q.question }}</td>
+      <td>{% if q.found == 'no' %}<span class="tag red">{{ t('fu_nf') }}</span>{% else %}<span class="tag green">{{ t('fu_yes') }}</span>{% endif %}</td>
+      <td>
+        {% if q.fu %}<span class="tag green">✔ {{ t('fu_done') }}</span><br><small class="muted">{{ q.fu.by }} · {{ q.fu.when }}{% if q.fu.note %}<br>{{ q.fu.note }}{% endif %}</small>
+          <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px"><input type="hidden" name="id" value="{{ q.id }}"><input type="hidden" name="action" value="reopen"><button class="btn ghost" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_reopen') }}</button></form>
+        {% else %}<span class="tag amber">{{ t('fu_open') }}</span>
+          <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px;display:flex;gap:4px"><input type="hidden" name="id" value="{{ q.id }}"><input name="note" placeholder="{{ t('fu_note') }}" maxlength="300" style="min-width:110px"><button class="btn" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_mark') }}</button></form>
+        {% endif %}
+      </td></tr>
+    {% endfor %}
+  </table></div>
   {% else %}<p class="muted">{{ t('none_yet') }}</p>{% endif %}
 </div>
 {% endblock %}

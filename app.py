@@ -17,7 +17,7 @@ import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
-from core import faq, modelspw
+from core import faq, modelspw, autoeval, followup, videos
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -31,7 +31,7 @@ app = Flask(__name__)
 app.secret_key = config.SECRET_KEY
 from datetime import timedelta
 app.permanent_session_lifetime = timedelta(days=30)      # "remember me"
-app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50 MB PDFs
+app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024  # PDFs (50 MB) and recorded lectures (videos)
 
 STATE = {}          # course code -> loaded models and data
 
@@ -814,6 +814,14 @@ def models_lock():
     return redirect(url_for("profile"))
 
 
+@app.route("/models/evaluate", methods=["POST"])
+@lecturer_required
+def models_evaluate():
+    if is_master() and session.get("models_ok"):
+        flash_t("mdl_eval_done" if autoeval.safe_run(course_code()) else "mdl_eval_fail")
+    return redirect(url_for("evaluation"))
+
+
 @app.route("/models/password", methods=["POST"])
 @lecturer_required
 def models_password():
@@ -834,7 +842,7 @@ def evaluation():
     P = config.course_paths(course_code())
     path = P.reports / "metrics.json"
     report = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
-    return render_template("evaluation.html", r=report, rep_url=P.reports_url,
+    return render_template("evaluation.html", r=report, rep_url=P.reports_url, ae=autoeval.load(course_code()),
                            auto=not any(c["full"] for c in config.list_courses() if c["code"] == course_code()))
 
 
@@ -1148,6 +1156,8 @@ def dashboard():
     helpful = [q["helpful"] for q in qs if q.get("helpful") in ("yes", "no")]
     per_day = Counter(str(v["time"])[:10] for v in visits)
     not_found = [q for q in qs if q.get("found") == "no"][-10:][::-1]
+    fu = followup.load()
+    latest = [{**q, "fu": fu.get(str(q.get("id")))} for q in qs[-60:][::-1]]
     # mastery per student -> how many students are red / amber / green per topic
     codes = sorted({a["student_code"] for a in ans})
     colours = {t: Counter() for t in order}
@@ -1168,10 +1178,23 @@ def dashboard():
     }
     kpi = {"questions": len(qs), "students": len({q["student_code"] for q in qs} | set(codes)),
            "answers": len(ans), "helpful": round(100 * helpful.count("yes") / len(helpful)) if helpful else None,
-           "not_found": sum(q.get("found") == "no" for q in qs)}
+           "not_found": sum(q.get("found") == "no" for q in qs),
+           "answered": sum(1 for q in qs if str(q.get("id")) in fu), "open": sum(1 for q in qs if str(q.get("id")) not in fu)}
     lowest = [{"name": names[t], "avg": avg[t], "n": len(score[t])} for t in sorted(avg, key=avg.get)[:3]]
     top = [{"name": names[t], "n": n} for t, n in asked.most_common(3)]
-    return render_template("dashboard.html", data=data, kpi=kpi, lowest=lowest, top=top, not_found=not_found)
+    return render_template("dashboard.html", data=data, kpi=kpi, lowest=lowest, top=top, not_found=not_found, latest=latest)
+
+
+@app.route("/dashboard/followup", methods=["POST"])
+@lecturer_required
+def dashboard_followup():
+    if can_manage(course_code()):
+        qid = request.form.get("id", "")
+        if request.form.get("action") == "reopen":
+            followup.reopen(qid)
+        elif qid:
+            followup.mark(qid, session.get("admin_name") or "Admin", request.form.get("note", ""))
+    return redirect(url_for("dashboard") + "#followup")
 
 
 @app.route("/dashboard/logs.xlsx")
@@ -1407,6 +1430,7 @@ def admin():
             try:
                 rep = regenerate(code)
                 load_state(code)
+                autoeval.safe_run(code)
                 flash_t("index_rebuilt", n=rep["slides"], m=rep["lectures"])
             except RuntimeError:
                 flash_t("course_failed")
@@ -1416,6 +1440,7 @@ def admin():
             df = build_passages(predict_topic=lambda text: clf.predict(text)[0], verbose=False, course=code)
             build_index(df, course=code)
             load_state(code)
+            autoeval.safe_run(code)
             flash_t("index_rebuilt", n=len(df), m=df.lecture.nunique())
         elif action == "retrain":
             import scripts.train as T
@@ -1424,6 +1449,7 @@ def admin():
             build_index()
             E.main()
             load_state(code)
+            autoeval.safe_run(code)
             flash_t("retrained")
         return redirect(url_for("admin"))
     visit("admin")
@@ -1437,7 +1463,7 @@ def admin():
     lectures = (passages.groupby(["lecture", "lecture_title"]).agg(passages=("passage_id", "count"),
                 topics=("topic", lambda s: ", ".join(names.get(t, t) for t in sorted(set(s)))))
                 .reset_index().to_dict("records"))
-    return render_template("admin.html", lectures=lectures, total=len(passages), full=full, code=code,
+    return render_template("admin.html", vids=videos.items(code), lectures=lectures, total=len(passages), full=full, code=code,
                            can_delete_course=True, no_course=False, catalog=catalog.load(), used_codes=course_codes(),
                            doctors=doctors.list_doctors() if is_master() else [], owner=course_owner(code),
                            doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {},
@@ -1545,7 +1571,38 @@ def studio():
         pptx_ok = False
     tool = request.args.get("tool", "quiz")
     return render_template("studio.html", lectures=lectures, kit=kit, lecture=lecture, seed=seed, n=n, pptx_ok=pptx_ok,
-                           tool=tool if tool in ("quiz", "mind", "slides") else "quiz")
+                           tool=tool if tool in ("quiz", "mind", "slides", "videos") else "quiz", vids=videos.items(course_code()))
+
+
+@app.route("/videos/<fid>")
+@student_required
+def video_file(fid):
+    from flask import send_from_directory
+    folder, name = videos.file_of(course_code(), fid)
+    if not folder:
+        return ("", 404)
+    return send_from_directory(folder, name, conditional=True)
+
+
+@app.route("/admin/videos", methods=["POST"])
+@lecturer_required
+def admin_videos():
+    code = course_code()
+    if not can_manage(code):
+        return redirect(url_for("admin"))
+    f, by = request.form, session.get("admin_name") or "Admin"
+    act = f.get("action")
+    if act == "link":
+        flash_t("vid_added" if videos.add_link(code, f.get("title", ""), f.get("url", ""), f.get("lecture", ""), by) else "vid_bad_link")
+    elif act == "upload":
+        up = request.files.get("video")
+        if up and up.filename:
+            err = videos.add_recorded(code, f.get("title", ""), up, up.filename, f.get("lecture", ""), by)
+            flash_t("vid_bad_type" if err else "vid_added")
+    elif act == "delete":
+        videos.delete(code, f.get("kind", ""), f.get("id", ""))
+        flash_t("vid_deleted")
+    return redirect(url_for("admin"))
 
 
 @app.route("/studio/terms.xlsx")

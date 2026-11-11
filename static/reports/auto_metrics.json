@@ -1,0 +1,47 @@
+{
+ "course": "AI",
+ "when": "2026-11-12 01:41",
+ "slides": 200,
+ "lectures": 7,
+ "n_queries": 85,
+ "methods": {
+  "tfidf": {
+   "name": "TF-IDF",
+   "top1": 0.271,
+   "top3": 0.459,
+   "mrr": 0.396
+  },
+  "bm25": {
+   "name": "BM25",
+   "top1": 0.271,
+   "top3": 0.459,
+   "mrr": 0.404
+  },
+  "hybrid": {
+   "name": "Hybrid (TF-IDF + semantic)",
+   "top1": 0.247,
+   "top3": 0.494,
+   "mrr": 0.401
+  },
+  "lsa": {
+   "name": "Semantic (LSA)",
+   "top1": 0.235,
+   "top3": 0.482,
+   "mrr": 0.39
+  }
+ },
+ "offtopic": {
+  "total": 40,
+  "rejected": 30
+ },
+ "history": [
+  {
+   "when": "2026-11-12 01:41",
+   "slides": 200,
+   "tfidf": 0.271,
+   "bm25": 0.271,
+   "hybrid": 0.247,
+   "lsa": 0.235
+  }
+ ]
+}

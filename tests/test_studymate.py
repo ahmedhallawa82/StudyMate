@@ -1100,3 +1100,52 @@ def test_studio_shelf_and_no_home_tiles(client):
     assert 'href="/exams"' in page and 'href="/progress"' in page and 'href="/materials"' in page
     assert "st-hub" not in page and 'href="/my-courses"' in page and 'href="/help"' in page
     assert 'class="tiles"' not in client.get("/home").get_data(as_text=True)
+
+
+# ---------------- videos, follow-up, auto-evaluation, clock
+def test_youtube_id_parsing():
+    from core import videos
+    for u in ("https://www.youtube.com/watch?v=dQw4w9WgXcQ", "https://youtu.be/dQw4w9WgXcQ?t=3",
+              "https://www.youtube.com/embed/dQw4w9WgXcQ", "https://youtube.com/shorts/dQw4w9WgXcQ"):
+        assert videos.youtube_id(u) == "dQw4w9WgXcQ"
+    assert videos.youtube_id("https://example.com/watch?v=dQw4w9WgXcQ") == ""
+
+
+def test_videos_upload_link_play_delete(client, tmp_path, monkeypatch):
+    import io
+    import app as A
+    from core import videos, doctors
+    monkeypatch.setattr(videos, "folder", lambda code: tmp_path / "v")
+    monkeypatch.setattr(videos, "_file", lambda code: tmp_path / "videos.json")
+    adm = A.app.test_client()
+    with adm.session_transaction() as s:
+        s["lecturer"], s["admin_id"], s["admin_name"] = True, doctors.MASTER, "Admin"
+    adm.post("/admin/videos", data={"action": "link", "title": "Intro", "url": "https://youtu.be/dQw4w9WgXcQ"})
+    adm.post("/admin/videos", data={"action": "link", "title": "Bad", "url": "https://example.com/x"})
+    adm.post("/admin/videos", data={"action": "upload", "title": "Rec", "video": (io.BytesIO(b"\x00" * 2048), "a.mp4")})
+    adm.post("/admin/videos", data={"action": "upload", "title": "Evil", "video": (io.BytesIO(b"x"), "a.exe")})
+    d = videos.items("AI")
+    assert len(d["links"]) == 1 and len(d["recorded"]) == 1
+    page = client.get("/studio?tool=videos").get_data(as_text=True)
+    assert "youtube-nocookie" in page or "dQw4w9WgXcQ" in page and "Rec" in page
+    fid = d["recorded"][0]["id"]
+    assert client.get("/videos/" + fid).status_code == 200
+    assert client.get("/videos/nope").status_code == 404
+    adm.post("/admin/videos", data={"action": "delete", "kind": "recorded", "id": fid})
+    assert videos.items("AI")["recorded"] == [] and client.get("/videos/" + fid).status_code == 404
+
+
+def test_followup_mark_and_reopen(tmp_path, monkeypatch):
+    from core import followup
+    monkeypatch.setattr(followup, "FILE", lambda: tmp_path / "f.json") if callable(getattr(followup, "FILE", None)) else None
+    followup.mark("q1", "Dr", "done")
+    assert "q1" in followup.load()
+    followup.reopen("q1")
+    assert "q1" not in followup.load()
+
+
+def test_autoeval_runs_and_clock_present(client):
+    from core import autoeval
+    r = autoeval.run("AI", n_queries=30)
+    assert r and "tfidf" in str(r)
+    assert "ticking" in open("static/js/ui.js").read() or "setInterval" in open("static/js/ui.js").read()

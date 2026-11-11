@@ -4,6 +4,7 @@
 {% set tools = [
   ('report', 'st_report', 'st_report_s', 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7'),
   ('flash', 'st_flash', 'st_flash_s', 'M4 7h13v11H4z M7 4h13v11'),
+  ('videos', 'st_videos', 'st_videos_s', 'M4 6h12v12H4z M16 10l5-3v10l-5-3'),
   ('quiz', 'st_quiz', 'st_quiz_s', 'M5 4h14v16H5z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7 M12 17v.5'),
   ('table', 'st_table', 'st_table_s', 'M4 5h16v14H4z M4 10h16 M4 15h16 M10 5v14'),
   ('mind', 'st_mind', 'st_mind_s', 'M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z M4 5h4v3H4z M16 4h4v3h-4z M4 16h4v3H4z M16 17h4v3h-4z M8 7l2.5 3.5 M16 6l-2.5 4 M8 17l2.5-3 M16 18l-2.5-3.5'),
@@ -27,7 +28,7 @@
 </div>
 
 <div class="st-tiles fade" style="--i:3" role="tablist">
-  {% for id, name, sub, d in tools if id in ('quiz', 'mind', 'slides') %}
+  {% for id, name, sub, d in tools if id in ('quiz', 'mind', 'slides', 'videos') %}
   <button type="button" class="st-tile{{ ' on' if id == tool }}" role="tab" data-tool="{{ id }}" aria-selected="{{ 'true' if id == tool else 'false' }}">
     <span class="st-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d }}"/></svg></span>
     <b>{{ t(name) }}</b>
@@ -135,6 +136,20 @@
       {% for i in range(0, [kit.terms|length, 12]|min, 4) %}<div class="st-sl"><div class="bar"><b>Key terms</b></div>
         <ul>{% for d in kit.terms[i:i+4] %}<li><b>{{ d.term }}</b>: {{ d.definition }}</li>{% endfor %}</ul></div>{% endfor %}
     </div>
+  </div>
+
+  <!-- Videos -->
+  <div class="st-pane" data-pane="videos" {{ 'hidden' if tool != 'videos' }}>
+    <div class="st-head"><div><h2>{{ t('st_videos') }}</h2><p class="muted small">{{ t('st_videos_s') }}</p></div></div>
+    <div class="st-player" id="stPlayer" hidden><div class="st-player-box" id="stPlayerBox"></div><p class="small" id="stPlayerTitle"></p></div>
+    <h3>🎞️ {{ t('vid_recorded') }}</h3>
+    {% if vids.recorded %}<div class="st-vids">{% for v in vids.recorded %}
+      <button type="button" class="st-vid" data-kind="file" data-src="{{ url_for('video_file', fid=v.id) }}" data-title="{{ v.title }}"><span class="st-play">▶</span><b dir="auto">{{ v.title }}</b><small>{% if v.lecture %}{{ t('lecture') }} {{ v.lecture }} · {% endif %}{{ (v.size / 1048576)|round(1) }} MB</small></button>{% endfor %}</div>
+    {% else %}<p class="muted">{{ t('vid_none_rec') }}</p>{% endif %}
+    <h3 style="margin-top:22px">▶️ {{ t('vid_youtube') }}</h3>
+    {% if vids.links %}<div class="st-vids">{% for v in vids.links %}
+      <button type="button" class="st-vid" data-kind="yt" data-src="{{ v.yt }}" data-title="{{ v.title }}"><span class="st-play">▶</span><b dir="auto">{{ v.title }}</b><small>{% if v.lecture %}{{ t('lecture') }} {{ v.lecture }} · {% endif %}YouTube</small></button>{% endfor %}</div>
+    {% else %}<p class="muted">{{ t('vid_none_yt') }}</p>{% endif %}
   </div>
 
   <!-- Listen -->

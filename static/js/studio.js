@@ -240,6 +240,22 @@
     speakFrom((K.notes || []).map(function (_, i) { return i; }));
   }
 
+  /* ---------- videos: play inside the page ---------- */
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.st-vid'); if (!b) return;
+    var box = $('#stPlayerBox'), wrap = $('#stPlayer'); box.innerHTML = '';
+    if (b.dataset.kind === 'yt') {
+      var f = document.createElement('iframe');
+      f.src = 'https://www.youtube-nocookie.com/embed/' + encodeURIComponent(b.dataset.src) + '?rel=0&autoplay=1';
+      f.allow = 'accelerometer; autoplay; encrypted-media; picture-in-picture; fullscreen'; f.allowFullscreen = true; f.title = b.dataset.title;
+      box.appendChild(f);
+    } else {
+      var v = document.createElement('video'); v.controls = true; v.autoplay = true; v.preload = 'metadata'; v.src = b.dataset.src; v.setAttribute('controlsList', 'nodownload');
+      box.appendChild(v);
+    }
+    $('#stPlayerTitle').textContent = b.dataset.title; wrap.hidden = false; wrap.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+
   /* ---------- buttons ---------- */
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-act]'); if (!a) return;

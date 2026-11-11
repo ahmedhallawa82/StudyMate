@@ -46,6 +46,34 @@
       </form>
     </div>
     <div class="card">
+      <h2>🎬 {{ t('vid_title') }} · {{ course }}</h2>
+      <p class="muted small">{{ t('vid_sub') }}</p>
+      <div class="grid-2" style="gap:16px">
+        <form method="post" action="{{ url_for('admin_videos') }}" enctype="multipart/form-data">
+          <input type="hidden" name="action" value="upload"><h3>{{ t('vid_recorded') }}</h3>
+          <label class="small">{{ t('title') }}</label><input type="text" name="title" maxlength="120" required>
+          <label class="small">{{ t('lecture_number') }} ({{ t('vid_optional') }})</label><input type="number" name="lecture" min="1">
+          <p><input type="file" name="video" accept="video/mp4,video/webm,video/ogg,.mp4,.webm,.ogg,.m4v,.mov" required></p>
+          <button class="btn" type="submit">{{ t('vid_upload') }}</button>
+        </form>
+        <form method="post" action="{{ url_for('admin_videos') }}">
+          <input type="hidden" name="action" value="link"><h3>{{ t('vid_youtube') }}</h3>
+          <label class="small">{{ t('title') }}</label><input type="text" name="title" maxlength="120" required>
+          <label class="small">{{ t('lecture_number') }} ({{ t('vid_optional') }})</label><input type="number" name="lecture" min="1">
+          <label class="small">YouTube URL</label><input type="url" name="url" placeholder="https://www.youtube.com/watch?v=..." dir="ltr" required>
+          <p></p><button class="btn" type="submit">{{ t('vid_add_link') }}</button>
+        </form>
+      </div>
+      {% if vids.recorded or vids.links %}
+      <table style="margin-top:14px"><tr><th>{{ t('title') }}</th><th>{{ t('vid_type') }}</th><th>{{ t('lecture') }}</th><th></th></tr>
+        {% for kind, rows in (('recorded', vids.recorded), ('link', vids.links)) %}{% for v in rows %}
+        <tr><td dir="auto">{{ v.title }}</td><td>{{ t('vid_recorded') if kind == 'recorded' else 'YouTube' }}</td><td>{{ v.lecture or '—' }}</td>
+          <td><form method="post" action="{{ url_for('admin_videos') }}" onsubmit="return confirm('{{ t('vid_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="id" value="{{ v.id }}"><button class="btn ghost" type="submit">🗑</button></form></td></tr>
+        {% endfor %}{% endfor %}
+      </table>
+      {% endif %}
+    </div>
+    <div class="card">
       <h2>{{ t('lectures_in_index') }} ({{ total }} {{ t('passages') }})</h2>
       <table>
         <tr><th>{{ t('lecture') }}</th><th>{{ t('title') }}</th><th class="num">{{ t('passages') }}</th><th>{{ t('topics_col') }}</th></tr>

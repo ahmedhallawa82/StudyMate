@@ -4,8 +4,28 @@
 {% block content %}
 {{ page_head('🧮', t('mdl_title'), t('mdl_sub')) }}
 <form method="post" action="{{ url_for('models_lock') }}" style="margin:0 0 14px"><button class="btn ghost" type="submit">🔒 {{ t('mdl_lock') }}</button></form>
+{% if ae %}
+<div class="card" style="margin-bottom:16px">
+  <h2>{{ t('mdl_auto_title') }}</h2>
+  <p class="muted">{{ t('mdl_auto_sub', q=ae.n_queries, s=ae.slides, l=ae.lectures, w=ae.when) }}</p>
+  <table>
+    <tr><th>{{ t('ev_method') }}</th><th class="num">Top-1</th><th class="num">Top-3</th><th class="num">MRR</th></tr>
+    {% for k, m in ae.methods.items() %}<tr><td>{{ m.name }}</td><td class="num">{{ (m.top1 * 100)|round(1) }}%</td><td class="num">{{ (m.top3 * 100)|round(1) }}%</td><td class="num">{{ m.mrr }}</td></tr>{% endfor %}
+    <tr><td>{{ t('mdl_off') }}</td><td class="num" colspan="3">{{ ae.offtopic.rejected }}/{{ ae.offtopic.total }} {{ t('mdl_off_ok') }}</td></tr>
+  </table>
+  {% if ae.history|length > 1 %}
+  <details style="margin-top:10px"><summary>{{ t('mdl_history') }}</summary>
+    <table><tr><th>{{ t('mdl_when') }}</th><th class="num">{{ t('mdl_slides') }}</th><th class="num">TF-IDF</th><th class="num">BM25</th><th class="num">Hybrid</th><th class="num">LSA</th></tr>
+      {% for h in ae.history|reverse %}<tr><td>{{ h.when }}</td><td class="num">{{ h.slides }}</td><td class="num">{{ (h.tfidf * 100)|round(1) }}%</td><td class="num">{{ (h.bm25 * 100)|round(1) }}%</td><td class="num">{{ (h.hybrid * 100)|round(1) }}%</td><td class="num">{{ (h.lsa * 100)|round(1) }}%</td></tr>{% endfor %}</table></details>
+  {% endif %}
+  <form method="post" action="{{ url_for('models_evaluate') }}" style="margin-top:12px"><button class="btn ghost" type="submit">🔄 {{ t('mdl_reeval') }}</button></form>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:16px"><p class="muted">{{ t('mdl_auto_none') }}</p>
+  <form method="post" action="{{ url_for('models_evaluate') }}"><button class="btn" type="submit">🔄 {{ t('mdl_reeval') }}</button></form></div>
+{% endif %}
 {% if not r %}
-<div class="card">{{ t('no_eval_course') if auto else t('ev_none') }}</div>
+{% if not ae %}<div class="card">{{ t('no_eval_course') if auto else t('ev_none') }}</div>{% endif %}
 {% else %}
 {% set best = r.models.logreg if r.best_model == 'Logistic Regression' else r.models.nb %}
 <div class="card" style="margin-bottom:16px">
