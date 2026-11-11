@@ -51,12 +51,6 @@
     {% if sm.total > shown %}<p class="muted small">{{ t('exam_shown_first', n=shown) }}</p>{% endif %}{% endif %}
   </div>
 
-  {% if sm.total %}<details class="card ex-danger fade" style="--i:5"><summary>🗑️ {{ t('exam_delete_bank') }}</summary>
-    <form method="post"><input type="hidden" name="action" value="clear"><input type="hidden" name="tab" value="questions">
-      <p class="muted small">{{ t('ex_delete_note', code=code) }}</p>
-      <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off" style="max-width:220px">
-      <button class="btn red small" type="submit">{{ t('delete_btn') }}</button></form>
-  </details>{% endif %}
 </section>
 
 <!-- ② Settings -->
@@ -70,6 +64,12 @@
       <button class="btn teal" type="submit">{{ t('save') }}</button>
     </form>
   </div>
+  {% if sm.total %}<details class="card ex-danger fade" style="--i:3"><summary>🗑️ {{ t('exam_delete_bank') }}</summary>
+    <form method="post"><input type="hidden" name="action" value="clear"><input type="hidden" name="tab" value="settings">
+      <p class="muted small">{{ t('ex_delete_note', code=code) }}</p>
+      <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off" style="max-width:220px">
+      <button class="btn red small" type="submit">{{ t('delete_btn') }}</button></form>
+  </details>{% endif %}
 </section>
 
 <!-- ③ Results -->
