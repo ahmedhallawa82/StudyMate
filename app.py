@@ -15,6 +15,7 @@ from werkzeug.utils import secure_filename
 
 import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
+from core import studio as STU
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -1431,6 +1432,84 @@ def materials_zip():
             z.write(f, f.name)
     buf.seek(0)
     return send_file(buf, as_attachment=True, download_name=f"{course_code()}_lectures.zip")
+
+
+# ------------------------------------------------------------------ Study Studio (study tools built from the slides)
+_STUDIO_CACHE = {}
+
+
+def studio_kit(lecture, seed=0, n=8):
+    """The Studio tools for one lecture (or all). Cached until the course's slides change."""
+    P = config.course_paths(course_code())
+    if not P.passages.exists():
+        return None, None
+    key = (course_code(), P.passages.stat().st_mtime, lecture or 0, int(seed), int(n), lang())
+    if key not in _STUDIO_CACHE:
+        if len(_STUDIO_CACHE) > 60:
+            _STUDIO_CACHE.clear()
+        passages = pd.read_csv(P.passages).fillna("")
+        gl = pd.read_csv(P.glossary) if P.glossary.exists() else None
+        _STUDIO_CACHE[key] = (STU.lectures_of(passages), STU.build(passages, S()["topics"], gl, lecture=lecture, lang=lang(), seed=seed, n_summary=n))
+    return _STUDIO_CACHE[key]
+
+
+def _studio_args():
+    lec = request.args.get("lecture", "all")
+    lecture = int(lec) if lec.isdigit() else None
+    seed = request.args.get("seed", "0")
+    n = request.args.get("n", "8")
+    return lecture, int(seed) if seed.isdigit() else 0, min(14, max(3, int(n))) if n.isdigit() else 8
+
+
+@app.route("/studio")
+@student_required
+def studio():
+    visit("studio")
+    lecture, seed, n = _studio_args()
+    lectures, kit = studio_kit(lecture, seed, n)
+    try:
+        import pptx  # noqa: F401
+        pptx_ok = True
+    except Exception:
+        pptx_ok = False
+    tool = request.args.get("tool", "report")
+    return render_template("studio.html", lectures=lectures, kit=kit, lecture=lecture, seed=seed, n=n, pptx_ok=pptx_ok,
+                           tool=tool if tool in ("report", "flash", "quiz", "table", "mind", "info", "slides", "listen") else "report")
+
+
+@app.route("/studio/terms.xlsx")
+@student_required
+def studio_xlsx():
+    import io, tempfile
+    from flask import send_file
+    lecture, seed, n = _studio_args()
+    _, kit = studio_kit(lecture, seed, n)
+    if not kit:
+        return redirect(url_for("studio"))
+    with tempfile.NamedTemporaryFile(suffix=".xlsx") as f:
+        STU.table_xlsx(kit["terms"], f.name)
+        buf = io.BytesIO(open(f.name, "rb").read())
+    return send_file(buf, as_attachment=True, download_name=f"{course_code()}_terms{'_L' + str(lecture) if lecture else ''}.xlsx")
+
+
+@app.route("/studio/slides.pptx")
+@student_required
+def studio_pptx():
+    import io, tempfile
+    from flask import send_file
+    lecture, seed, n = _studio_args()
+    _, kit = studio_kit(lecture, seed, n)
+    try:
+        import pptx  # noqa: F401
+    except Exception:
+        flash_t("st_pptx_missing")
+        return redirect(url_for("studio", tool="slides", lecture=lecture or "all"))
+    if not kit:
+        return redirect(url_for("studio"))
+    with tempfile.NamedTemporaryFile(suffix=".pptx") as f:
+        STU.slides_pptx(kit, course_title(), f.name)
+        buf = io.BytesIO(open(f.name, "rb").read())
+    return send_file(buf, as_attachment=True, download_name=f"{course_code()}_revision{'_L' + str(lecture) if lecture else ''}.pptx")
 
 
 # ------------------------------------------------------------------ the student's courses

@@ -966,3 +966,49 @@ def test_opening_the_site_link_from_outside_always_asks_for_a_sign_in():
     as_student(c, "LINK1")
     assert c.get("/", headers={"Referer": "http://localhost/home"}).headers["Location"].endswith("/home")
     assert "/start" in c.get("/").headers["Location"]
+
+
+# ---------------- Study Studio (study tools built from the slides)
+def _studio_inputs(lecture):
+    p = pd.read_csv(config.course_paths("AI").passages).fillna("")
+    t = pd.read_csv(config.course_paths("AI").topics).fillna("")
+    t["name_ar"] = [a or n for a, n in zip(t.get("name_ar", t.name), t.name)]
+    t["prereq_list"] = t.prerequisites.map(lambda s: [x for x in str(s).split(";") if x])
+    g = pd.read_csv(config.course_paths("AI").glossary)
+    return p, t, g
+
+
+def test_studio_kit_comes_from_the_slides():
+    from core import studio
+    p, t, g = _studio_inputs(3)
+    kit = studio.build(p, t, g, lecture=3)
+    assert kit["lecture"] == 3 and kit["info"]["slides"] == len(p[p.lecture == 3])
+    slide_text = " ".join(p[p.lecture == 3].text).lower()
+    assert kit["summary"] and all(s["lecture"] == 3 for s in kit["summary"])
+    assert all(d["definition"].lower().rstrip(".?!")[:25] in slide_text for d in kit["terms"])     # nothing invented
+    for q in kit["quiz"]:
+        assert len(q["options"]) == 4 and len(set(q["options"])) == 4 and 0 <= q["answer"] < 4
+    ids = {n["id"] for n in kit["map"]["nodes"]}
+    assert "root" in ids and all(l["a"] in ids and l["b"] in ids for l in kit["map"]["links"])
+    assert all(0 <= n["x"] <= kit["map"]["w"] and 0 <= n["y"] <= kit["map"]["h"] for n in kit["map"]["nodes"])
+    assert studio.build(p, t, g, lecture=None)["info"]["slides"] == len(p)                         # all lectures
+
+
+def test_studio_pages_and_downloads(client):
+    for url in ("/studio", "/studio?lecture=5&tool=quiz", "/studio?lecture=zzz", "/studio?tool=nope&lang=ar"):
+        r = client.get(url)
+        assert r.status_code == 200 and "studioData" in r.get_data(as_text=True)
+    r = client.get("/studio/terms.xlsx?lecture=3")
+    assert r.status_code == 200 and r.data[:2] == b"PK"
+    try:
+        import pptx  # noqa: F401
+        r = client.get("/studio/slides.pptx?lecture=3")
+        assert r.status_code == 200 and r.data[:2] == b"PK"
+    except ImportError:
+        pass
+    assert 'href="/studio"' in client.get("/home").get_data(as_text=True)                                # tab in the nav
+
+
+def test_studio_needs_sign_in():
+    import app as A
+    assert A.app.test_client().get("/studio").status_code == 302

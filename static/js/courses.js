@@ -33,7 +33,7 @@
   }
   /* start page: type straight into the course field; the list below narrows as you type */
   var pk = document.getElementById("coursePick");
-  if (pk) {
+  if (pk && pk.querySelector(".pick-panel")) {
     var pi = pk.querySelector(".pick-input"), pp = pk.querySelector(".pick-panel"),
         pl = [].slice.call(pp.querySelectorAll("li")), pn = pp.querySelector(".combo-none"),
         hid = pk.querySelector("input[type=hidden]"), cur = pi.value, hi = -1;

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head, course_picker with context %}
+{% block title %}{{ t('studio_title') }}{% endblock %}
+{% set tools = [
+  ('report', 'st_report', 'st_report_s', 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7'),
+  ('flash', 'st_flash', 'st_flash_s', 'M4 7h13v11H4z M7 4h13v11'),
+  ('quiz', 'st_quiz', 'st_quiz_s', 'M5 4h14v16H5z M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7 M12 17v.5'),
+  ('table', 'st_table', 'st_table_s', 'M4 5h16v14H4z M4 10h16 M4 15h16 M10 5v14'),
+  ('mind', 'st_mind', 'st_mind_s', 'M12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4z M4 5h4v3H4z M16 4h4v3h-4z M4 16h4v3H4z M16 17h4v3h-4z M8 7l2.5 3.5 M16 6l-2.5 4 M8 17l2.5-3 M16 18l-2.5-3.5'),
+  ('info', 'st_info', 'st_info_s', 'M4 20V10h4v10 M10 20V4h4v16 M16 20v-7h4v7'),
+  ('slides', 'st_slides', 'st_slides_s', 'M3 5h18v12H3z M8 21h8 M12 17v4'),
+  ('listen', 'st_listen', 'st_listen_s', 'M4 10v4 M8 7v10 M12 4v16 M16 8v8 M20 11v2')] %}
+{% block content %}
+{{ page_head('🎓', t('studio_title'), t('studio_sub')) }}
+{{ course_picker(url_for('studio')) }}
+
+{% if not kit %}
+<div class="card"><p class="muted">{{ t('st_empty') }}</p></div>
+{% else %}
+<div class="card st-pick fade" style="--i:2">
+  <label for="stLecture">📖 {{ t('st_lecture') }}</label>
+  <select id="stLecture" onchange="location.href='{{ url_for('studio') }}?lecture=' + this.value + '&tool=' + (window.studioTool ? window.studioTool() : 'report')">
+    <option value="all"{{ ' selected' if not lecture }}>{{ t('st_all') }}</option>
+    {% for l in lectures %}<option value="{{ l.n }}"{{ ' selected' if l.n == lecture }}>{{ t('lecture') }} {{ l.n }}: {{ l.title }} ({{ l.slides }})</option>{% endfor %}
+  </select>
+  <span class="muted small">{{ t('st_note_en') }}</span>
+</div>
+
+<div class="st-tiles fade" style="--i:3" role="tablist">
+  {% for id, name, sub, d in tools %}
+  <button type="button" class="st-tile{{ ' on' if id == tool }}" role="tab" data-tool="{{ id }}" aria-selected="{{ 'true' if id == tool else 'false' }}">
+    <span class="st-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d }}"/></svg></span>
+    <b>{{ t(name) }}</b>
+    <small>{{ t(sub) }}</small>
+  </button>
+  {% endfor %}
+</div>
+
+<section class="card st-panel fade" style="--i:4" id="stPanel">
+
+  <!-- Report -->
+  <div class="st-pane" data-pane="report" {{ 'hidden' if tool != 'report' }}>
+    <div class="st-head"><div><h2>{{ t('st_report') }}</h2><p class="muted small">{{ t('st_report_s') }}</p></div>
+      <div class="actions"><button type="button" class="btn" data-act="print">{{ t('st_pdf') }}</button></div></div>
+    <div class="st-stats">
+      <div><small>{{ t('st_slides_n') }}</small><b>{{ kit.info.slides }}</b></div>
+      <div><small>{{ t('st_terms_n') }}</small><b>{{ kit.info.terms }}</b></div>
+      <div><small>{{ t('st_minutes') }}</small><b>{{ t('st_min', n=kit.info.minutes) }}</b></div>
+    </div>
+    <div class="st-two">
+      <div>
+        <div class="st-sub"><h3>{{ t('st_summary') }}</h3>
+          <span class="st-seg"><span class="muted small">{{ t('st_len') }}</span>
+            {% for lab, v in [('st_short', 5), ('st_medium', 8), ('st_long', 12)] %}<a class="{{ 'on' if n == v }}" href="{{ url_for('studio', lecture=lecture or 'all', tool='report', n=v) }}">{{ t(lab) }}</a>{% endfor %}</span></div>
+        <ol class="st-sum" dir="ltr">
+          {% for s in kit.summary %}<li><span class="st-ref">{% if not lecture %}L{{ s.lecture }}·{% endif %}S{{ s.slide }}</span><span>{{ s.text }}</span></li>{% endfor %}
+        </ol>
+        {% if not kit.summary %}<p class="muted">{{ t('st_empty') }}</p>{% endif %}
+      </div>
+      <div>
+        <h3>{{ t('st_key_terms') }}</h3>
+        <div class="st-chips" dir="ltr">{% for k in kit.keywords[:10] %}<span class="pill">{{ k }}</span>{% endfor %}</div>
+        <h3 style="margin-top:18px">{{ t('st_topics') }}</h3>
+        <div class="st-chips">{% for k in kit.info.topics %}<span class="pill">{{ k }}</span>{% endfor %}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Flashcards -->
+  <div class="st-pane" data-pane="flash" {{ 'hidden' if tool != 'flash' }}>
+    <div class="st-head"><div><h2>{{ t('st_flash') }}</h2><p class="muted small">{{ t('st_flash_s') }}</p></div>
+      <div class="actions"><button type="button" class="btn ghost" data-act="flash-reset">{{ t('st_reset') }}</button>
+        <a class="btn" href="{{ url_for('studio', lecture=lecture or 'all', tool='flash', seed=seed + 1) }}">{{ t('st_shuffle') }}</a></div></div>
+    <div class="st-flash" id="stFlash"></div>
+  </div>
+
+  <!-- Quiz -->
+  <div class="st-pane" data-pane="quiz" {{ 'hidden' if tool != 'quiz' }}>
+    <div class="st-head"><div><h2>{{ t('st_quiz') }}</h2><p class="muted small">{{ t('st_quiz_s') }}</p></div>
+      <div class="actions"><button type="button" class="btn ghost" data-act="quiz-reset">{{ t('st_reset') }}</button>
+        <a class="btn" href="{{ url_for('studio', lecture=lecture or 'all', tool='quiz', seed=seed + 1) }}">{{ t('st_newquiz') }}</a></div></div>
+    <div class="st-quiz" id="stQuiz"></div>
+  </div>
+
+  <!-- Data table -->
+  <div class="st-pane" data-pane="table" {{ 'hidden' if tool != 'table' }}>
+    <div class="st-head"><div><h2>{{ t('st_table') }}</h2><p class="muted small">{{ t('st_table_s') }}</p></div>
+      <div class="actions"><a class="btn" href="{{ url_for('studio_xlsx', lecture=lecture or 'all') }}">{{ t('st_xlsx') }}</a></div></div>
+    {% if kit.terms %}
+    <p><input type="search" id="stFilter" class="st-filter" placeholder="{{ t('st_filter') }}"></p>
+    <div class="table-wrap"><table class="st-table" id="stTable">
+      <thead><tr><th>{{ t('st_col_term') }}</th><th>{{ t('st_col_ar') }}</th><th>{{ t('st_col_def') }}</th><th>{{ t('st_col_slide') }}</th><th>{{ t('st_col_lec') }}</th></tr></thead>
+      <tbody>{% for d in kit.terms %}<tr><td dir="ltr"><b>{{ d.term }}</b></td><td dir="rtl">{{ d.ar }}</td><td dir="ltr">{{ d.definition }}</td><td>{{ d.slide }}</td><td>{{ d.lecture }}</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% else %}<p class="muted">{{ t('st_noterms') }}</p>{% endif %}
+  </div>
+
+  <!-- Mind map -->
+  <div class="st-pane" data-pane="mind" {{ 'hidden' if tool != 'mind' }}>
+    <div class="st-head"><div><h2>{{ t('st_mind') }}</h2><p class="muted small">{{ t('st_mind_s') }}</p></div>
+      <div class="actions"><button type="button" class="btn" data-act="mind-png">{{ t('st_img') }}</button></div></div>
+    <div class="st-map" id="stMap"></div>
+    <p class="muted small" id="stMapInfo">{{ t('st_map_pick') }}</p>
+    <p class="muted small">{{ t('st_map_note') }}</p>
+  </div>
+
+  <!-- Infographic -->
+  <div class="st-pane" data-pane="info" {{ 'hidden' if tool != 'info' }}>
+    <div class="st-head"><div><h2>{{ t('st_info') }}</h2><p class="muted small">{{ t('st_info_s') }}</p></div>
+      <div class="actions"><button type="button" class="btn" data-act="info-png">{{ t('st_png') }}</button></div></div>
+    <div class="st-ig"><canvas id="stIg" width="1000" height="1320"></canvas></div>
+    <p class="muted small">{{ t('st_info_note') }}</p>
+  </div>
+
+  <!-- Slide deck -->
+  <div class="st-pane" data-pane="slides" {{ 'hidden' if tool != 'slides' }}>
+    <div class="st-head"><div><h2>{{ t('st_slides') }}</h2><p class="muted small">{{ t('st_slides_s') }}</p></div>
+      <div class="actions">{% if pptx_ok %}<a class="btn" href="{{ url_for('studio_pptx', lecture=lecture or 'all') }}">{{ t('st_pptx') }}</a>{% endif %}</div></div>
+    <p class="muted">{{ t('st_slides_note') }}</p>
+    {% if not pptx_ok %}<p class="flash">{{ t('st_pptx_missing') }}</p>{% endif %}
+    <h3>{{ t('st_deck_preview') }}</h3>
+    <ol class="st-deck" dir="ltr">
+      <li><b>{{ kit.title or course }}</b><small>{{ kit.info.slides }} · {{ kit.info.terms }} · {{ kit.info.minutes }} min</small></li>
+      {% for i in range(0, kit.summary|length, 3) %}<li><b>Key ideas {{ (i // 3) + 1 }}</b><small>{{ kit.summary[i:i+3]|map(attribute='text')|map('truncate', 70)|join(' · ') }}</small></li>{% endfor %}
+      {% for i in range(0, [kit.terms|length, 12]|min, 4) %}<li><b>Key terms {{ (i // 4) + 1 }}</b><small>{{ kit.terms[i:i+4]|map(attribute='term')|join(', ') }}</small></li>{% endfor %}
+    </ol>
+  </div>
+
+  <!-- Listen -->
+  <div class="st-pane" data-pane="listen" {{ 'hidden' if tool != 'listen' }}>
+    <div class="st-head"><div><h2>{{ t('st_listen') }}</h2><p class="muted small">{{ t('st_listen_s') }}</p></div>
+      <div class="actions"><button type="button" class="btn" id="stPlay" data-act="listen-play">▶ {{ t('st_play') }}</button>
+        <button type="button" class="btn ghost" data-act="listen-stop">{{ t('st_stop') }}</button></div></div>
+    <p><label class="muted small">{{ t('st_speed') }}
+      <select id="stRate"><option value="0.8">0.8x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option></select></label></p>
+    <div class="st-script" dir="ltr" id="stScript">{{ kit.script }}</div>
+    <p class="muted small" id="stVoiceNote" hidden>{{ t('st_no_voice') }}</p>
+    <p class="muted small">{{ t('st_listen_note') }}</p>
+  </div>
+</section>
+
+<script type="application/json" id="studioData">{{ {'kit': kit, 'lecture': lecture, 'tool': tool,
+  'ui': {'card_of': t('st_card_of', i='{i}', n='{n}'), 'term': t('st_term'), 'def': t('st_def'), 'slide': t('st_slide', n='{n}'), 'flip': t('st_flip'),
+         'learning': t('st_learning'), 'know': t('st_know'), 'deck_done': t('st_deck_done'), 'known_n': t('st_known_n', a='{a}', b='{b}'), 'nocards': t('st_nocards'),
+         'q_of': t('st_q_of', i='{i}', n='{n}', l='{l}'), 'next': t('st_next'), 'finish': t('st_finish'), 'q_term': t('st_q_term'), 'q_gap': t('st_q_gap'),
+         'right': t('st_right'), 'wrong': t('st_wrong'), 'from_slide': t('st_from_slide', n='{n}'), 'score': t('st_score', a='{a}', b='{b}'), 'noquiz': t('st_noquiz'),
+         'map_slides': t('st_map_slides', s='{s}'), 'map_pick': t('st_map_pick'), 'ig_points': t('st_ig_points'), 'ig_terms': t('st_key_terms'), 'ig_topics': t('st_topics'),
+         'ig_footer': t('st_ig_footer'), 'slides_n': t('st_slides_n'), 'terms_n': t('st_terms_n'), 'minutes': t('st_minutes'), 'min': t('st_min', n='{n}'),
+         'play': t('st_play'), 'pause': t('st_pause'), 'no_voice': t('st_no_voice'), 'lecture': t('lecture'), 'course': course}}|tojson }}</script>
+{% endif %}
+{% endblock %}
+{% block scripts %}{% if kit %}<script src="{{ url_for('static', filename='js/studio.js') }}"></script>{% endif %}{% endblock %}
