@@ -2,9 +2,23 @@
 {% from "_ui.html" import page_head %}
 {% block title %}{{ t('nav_admin') }}{% endblock %}
 {% block content %}
-{{ page_head('🛠️', t('nav_content'), t('content_sub')) }}
+{{ page_head('🛠️', t('nav_content') ~ (' · ' ~ course if not no_course else ''), t('content_sub')) }}
+<div class="who card small">{{ t('signed_as_master') if admin_role == 'master' else t('signed_as_doctor', name=admin_name) }}
+  {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
+
+<nav class="adm-tabs fade" role="tablist">
+  {% if not no_course %}<button type="button" role="tab" data-tab="lectures">① {{ t('adm_tab_lec') }}</button>{% endif %}
+  <button type="button" role="tab" data-tab="courses">{{ '②' if not no_course else '①' }} {{ t('adm_tab_courses') }}</button>
+  {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">③ {{ t('maintenance') }}</button>{% endif %}
+  {% if admin_role == 'doctor' %}<button type="button" role="tab" data-tab="account">④ {{ t('adm_tab_account') }}</button>{% endif %}
+</nav>
+
+<!-- ① Lectures -->
+{% if not no_course %}
+<section class="adm-pane" id="pane-lectures">
+  <div class="adm-sum card fade"><div><b>{{ lectures|length }}</b><small>{{ t('lecture') }}</small></div><div><b>{{ total }}</b><small>{{ t('passages') }}</small></div></div>
 <div class="card help">
-  <details open>
+  <details>
     <summary style="font-size:17px">{{ t('help_title') }}</summary>
     <p class="muted">{{ t('help_intro') }}</p>
     <ol>
@@ -17,34 +31,6 @@
     <p class="small"><b>{{ t('help_keep') }}</b></p>
   </details>
 </div>
-<div class="who card small">{{ t('signed_as_master') if admin_role == 'master' else t('signed_as_doctor', name=admin_name) }}
-  {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
-<div class="grid">
-  <section>
-    {% if sheet %}
-    <div class="card">
-      <h2>{{ t('sheet_title') }}</h2>
-      <p class="muted small">{{ t('sheet_note') }}</p>
-      <div class="table-wrap"><table>
-        <tr>{% for h in sheet.header %}<th>{{ h }}</th>{% endfor %}</tr>
-        {% for r in sheet.rows %}<tr><td>{{ r[0] }}</td><td dir="ltr">{{ r[1] or '—' }}</td><td dir="ltr">{{ r[2] }}</td><td dir="ltr">{{ r[3] or '—' }}</td><td dir="ltr"><code>{{ r[4] }}</code></td><td dir="ltr">{% if r[5] %}<code>{{ r[5] }}</code>{% else %}—{% endif %}</td></tr>
-        {% else %}<tr><td colspan="6" class="muted small">{{ t('sheet_empty') }}</td></tr>{% endfor %}
-      </table></div>
-      {% if not sheet.google %}
-      {% elif sheet.enabled %}
-        <p class="small">{{ t('sheet_connected', email=sheet.email) }}
-          {% if sheet.status.ok %} · {{ t('sheet_last_ok', time=sheet.status.time) }}{% elif sheet.status.ok == false %} · <span style="color:var(--red,#c0392b)">{{ t('sheet_last_err', time=sheet.status.time, err=sheet.status.error) }}</span>{% endif %}</p>
-        <div class="actions">
-          <form method="post" class="inline"><input type="hidden" name="action" value="sync_sheet"><button class="btn teal" type="submit">{{ t('sheet_sync_btn') }}</button></form>
-          <a class="btn ghost" href="{{ sheet.url }}" target="_blank" rel="noopener">{{ t('sheet_open') }}</a>
-        </div>
-      {% else %}
-        <details class="small"><summary><b>{{ t('sheet_off') }}</b></summary>
-          <ol>{% for k in ['sheet_s1','sheet_s2','sheet_s3','sheet_s4','sheet_s5'] %}<li>{{ t(k) }}</li>{% endfor %}</ol></details>
-      {% endif %}
-    </div>
-    {% endif %}
-    {% if not no_course %}
     <div class="card">
       <h2>{{ t('adm_upload') }} · {{ course }}</h2>
       <p class="muted small">{{ t('adm_upload_note') }}</p>
@@ -66,8 +52,8 @@
         {% for l in lectures %}<tr><td>{{ l.lecture }}</td><td dir="ltr">{{ l.lecture_title }}</td><td class="num">{{ l.passages }}</td><td class="small">{{ l.topics }}</td></tr>{% endfor %}
       </table>
     </div>
-    <div class="card">
-      <h2>{{ t('adm_delete_lecture') }}</h2>
+    <details class="card adm-danger">
+      <summary>🗑️ {{ t('adm_delete_lecture') }}</summary>
       <p class="muted small">{{ t('adm_delete_lecture_note') }}</p>
       <form method="post" onsubmit="return confirm('{{ t('confirm_delete_lecture') }}')">
         <input type="hidden" name="action" value="delete_lecture">
@@ -77,6 +63,70 @@
         </div>
         <button class="btn red" type="submit">{{ t('delete_selected') }}</button>
       </form>
+    </details>
+</section>
+{% endif %}
+
+<!-- ② Courses -->
+<section class="adm-pane" id="pane-courses">
+    <div class="card">
+      <h3>{{ t('courses') }}</h3>
+      <ul class="topics">
+        {% for c in courses %}<li><a href="{{ url_for('choose_course', code=c.code, next=url_for('admin')) }}">{{ c.title }}</a>
+          <span class="pct">{{ c.code }}{% if admin_role == 'master' and c.meta.owner %} · {{ c.meta.owner }}{% endif %} · {{ t('course_full') if c.full else t('course_auto') }}</span></li>{% endfor %}
+      </ul>
+    </div>
+{% if admin_role == 'master' %}
+    <div class="card">
+      <h3>{{ t('doctors') }}</h3>
+      <p class="muted small">{{ t('doctors_note') }}</p>
+      <ul class="topics">
+        {% for d in doctors %}<li><span>{{ d.name }} <span class="small muted" dir="ltr">({{ d.username }}{% if d.email %} · {{ d.email }}{% endif %})</span></span>
+          <span class="pct" style="display:flex;gap:4px;align-items:center">{{ doctor_courses[d.id] }} {{ t('courses') }}
+            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_reset_doctor') }}')"><input type="hidden" name="action" value="reset_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn ghost" style="padding:2px 8px" type="submit">{{ t('new_code') }}</button></form>
+            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_doctor') }}')"><input type="hidden" name="action" value="delete_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn red" style="padding:2px 8px" type="submit">✕</button></form>
+          </span></li>{% endfor %}
+      </ul>
+      <form method="post"><input type="hidden" name="action" value="add_doctor">
+        <input type="text" name="doctor_name" placeholder="{{ t('doctor_name_ph') }}" required maxlength="60">
+        <p></p><input type="text" name="doctor_email" placeholder="{{ t('doctor_email_ph') }}" maxlength="120" dir="ltr">
+        <p></p><button class="btn teal" type="submit">{{ t('add_doctor') }}</button></form>
+      <p class="small" style="margin-top:10px"><b>{{ t('export_doctors') }}:</b>
+        <a href="{{ url_for('export_doctors', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_doctors', fmt='csv') }}">CSV</a><br>
+        <b>{{ t('export_students') }}:</b>
+        <a href="{{ url_for('export_students', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_students', fmt='csv') }}">CSV</a></p>
+    </div>
+    {% if not no_course %}
+    <div class="card">
+      <h3>{{ t('course_owner') }}: {{ code }}</h3>
+      <form method="post"><input type="hidden" name="action" value="set_owner">
+        <select name="owner"><option value="">{{ t('owner_none') }}</option>
+          {% for d in doctors %}<option value="{{ d.id }}" {{ 'selected' if d.id == owner }}>{{ d.name }} ({{ d.id }})</option>{% endfor %}</select>
+        <p></p><button class="btn ghost" type="submit">{{ t('save') }}</button></form>
+    </div>
+    {% endif %}
+    {% endif %}
+    {% if sheet %}
+    <div class="card">
+      <h2>{{ t('sheet_title') }}</h2>
+      <p class="muted small">{{ t('sheet_note') }}</p>
+      <div class="table-wrap"><table>
+        <tr>{% for h in sheet.header %}<th>{{ h }}</th>{% endfor %}</tr>
+        {% for r in sheet.rows %}<tr><td>{{ r[0] }}</td><td dir="ltr">{{ r[1] or '—' }}</td><td dir="ltr">{{ r[2] }}</td><td dir="ltr">{{ r[3] or '—' }}</td><td dir="ltr"><code>{{ r[4] }}</code></td><td dir="ltr">{% if r[5] %}<code>{{ r[5] }}</code>{% else %}—{% endif %}</td></tr>
+        {% else %}<tr><td colspan="6" class="muted small">{{ t('sheet_empty') }}</td></tr>{% endfor %}
+      </table></div>
+      {% if not sheet.google %}
+      {% elif sheet.enabled %}
+        <p class="small">{{ t('sheet_connected', email=sheet.email) }}
+          {% if sheet.status.ok %} · {{ t('sheet_last_ok', time=sheet.status.time) }}{% elif sheet.status.ok == false %} · <span style="color:var(--red,#c0392b)">{{ t('sheet_last_err', time=sheet.status.time, err=sheet.status.error) }}</span>{% endif %}</p>
+        <div class="actions">
+          <form method="post" class="inline"><input type="hidden" name="action" value="sync_sheet"><button class="btn teal" type="submit">{{ t('sheet_sync_btn') }}</button></form>
+          <a class="btn ghost" href="{{ sheet.url }}" target="_blank" rel="noopener">{{ t('sheet_open') }}</a>
+        </div>
+      {% else %}
+        <details class="small"><summary><b>{{ t('sheet_off') }}</b></summary>
+          <ol>{% for k in ['sheet_s1','sheet_s2','sheet_s3','sheet_s4','sheet_s5'] %}<li>{{ t(k) }}</li>{% endfor %}</ol></details>
+      {% endif %}
     </div>
     {% endif %}
     {% if admin_role == 'master' %}
@@ -138,51 +188,24 @@
       })();
       </script>
     </div>
-  </section>
-  <aside>
-    {% if admin_role == 'doctor' %}
-    <div class="card panel">
-      <h3>{{ t('pw_title') }}</h3>
-      <p class="muted small">{{ t('pw_note', n=pw_min) }}</p>
-      <form method="post" autocomplete="off"><input type="hidden" name="action" value="change_password">
-        <input type="password" name="old" placeholder="{{ t('pw_old') }}" required dir="ltr" autocomplete="current-password"><p></p>
-        <input type="password" name="new" placeholder="{{ t('pw_new') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
-        <input type="password" name="confirm" placeholder="{{ t('pw_confirm') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
-        <button class="btn teal" type="submit">{{ t('pw_btn') }}</button></form>
-    </div>
+    {% if can_delete_course %}
+    <details class="card adm-danger">
+      <summary>🗑️ {{ t('adm_delete_course') }}</summary>
+      <p class="muted small">{{ t('adm_delete_course_note', code=code) }}</p>
+      <form method="post">
+        <input type="hidden" name="action" value="delete_course">
+        <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off">
+        {% if admin_role == 'master' %}<p class="small"><label><input type="checkbox" name="purge_logs" value="1"> {{ t('purge_logs') }}</label></p>{% endif %}
+        <p></p><button class="btn red" type="submit">{{ t('delete_btn') }}</button>
+      </form>
+    </details>
     {% endif %}
-    {% if admin_role == 'master' %}
-    <div class="card panel">
-      <h3>{{ t('doctors') }}</h3>
-      <p class="muted small">{{ t('doctors_note') }}</p>
-      <ul class="topics">
-        {% for d in doctors %}<li><span>{{ d.name }} <span class="small muted" dir="ltr">({{ d.username }}{% if d.email %} · {{ d.email }}{% endif %})</span></span>
-          <span class="pct" style="display:flex;gap:4px;align-items:center">{{ doctor_courses[d.id] }} {{ t('courses') }}
-            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_reset_doctor') }}')"><input type="hidden" name="action" value="reset_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn ghost" style="padding:2px 8px" type="submit">{{ t('new_code') }}</button></form>
-            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_doctor') }}')"><input type="hidden" name="action" value="delete_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn red" style="padding:2px 8px" type="submit">✕</button></form>
-          </span></li>{% endfor %}
-      </ul>
-      <form method="post"><input type="hidden" name="action" value="add_doctor">
-        <input type="text" name="doctor_name" placeholder="{{ t('doctor_name_ph') }}" required maxlength="60">
-        <p></p><input type="text" name="doctor_email" placeholder="{{ t('doctor_email_ph') }}" maxlength="120" dir="ltr">
-        <p></p><button class="btn teal" type="submit">{{ t('add_doctor') }}</button></form>
-      <p class="small" style="margin-top:10px"><b>{{ t('export_doctors') }}:</b>
-        <a href="{{ url_for('export_doctors', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_doctors', fmt='csv') }}">CSV</a><br>
-        <b>{{ t('export_students') }}:</b>
-        <a href="{{ url_for('export_students', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_students', fmt='csv') }}">CSV</a></p>
-    </div>
-    {% if not no_course %}
-    <div class="card panel">
-      <h3>{{ t('course_owner') }}: {{ code }}</h3>
-      <form method="post"><input type="hidden" name="action" value="set_owner">
-        <select name="owner"><option value="">{{ t('owner_none') }}</option>
-          {% for d in doctors %}<option value="{{ d.id }}" {{ 'selected' if d.id == owner }}>{{ d.name }} ({{ d.id }})</option>{% endfor %}</select>
-        <p></p><button class="btn ghost" type="submit">{{ t('save') }}</button></form>
-    </div>
-    {% endif %}
-    {% endif %}
-    {% if not no_course %}
-    <div class="card panel">
+</section>
+
+<!-- ③ Maintenance -->
+{% if not no_course %}
+<section class="adm-pane" id="pane-maintenance">
+    <div class="card">
       <h3>{{ t('maintenance') }}</h3>
       <form method="post"><input type="hidden" name="action" value="rebuild">
         <button class="btn teal" type="submit">{{ t('rebuild_index') }}</button></form>
@@ -196,26 +219,54 @@
       <p class="small">{{ t('topic_model') }}: <b>{{ model }}</b><br>{{ t('question_bank') }}: <b>{{ bank }}</b> {{ t('questions') }}<br>
         {{ t('nf_threshold') }}: <b>{{ threshold }}</b></p>
     </div>
-    {% endif %}
-    <div class="card panel">
-      <h3>{{ t('courses') }}</h3>
-      <ul class="topics">
-        {% for c in courses %}<li><a href="{{ url_for('choose_course', code=c.code, next=url_for('admin')) }}">{{ c.title }}</a>
-          <span class="pct">{{ c.code }}{% if admin_role == 'master' and c.meta.owner %} · {{ c.meta.owner }}{% endif %} · {{ t('course_full') if c.full else t('course_auto') }}</span></li>{% endfor %}
-      </ul>
+
+</section>
+{% endif %}
+
+<!-- ④ Account -->
+{% if admin_role == 'doctor' %}
+<section class="adm-pane" id="pane-account">
+    
+    <div class="card">
+      <h3>{{ t('pw_title') }}</h3>
+      <p class="muted small">{{ t('pw_note', n=pw_min) }}</p>
+      <form method="post" autocomplete="off"><input type="hidden" name="action" value="change_password">
+        <input type="password" name="old" placeholder="{{ t('pw_old') }}" required dir="ltr" autocomplete="current-password"><p></p>
+        <input type="password" name="new" placeholder="{{ t('pw_new') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
+        <input type="password" name="confirm" placeholder="{{ t('pw_confirm') }}" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"><p></p>
+        <button class="btn teal" type="submit">{{ t('pw_btn') }}</button></form>
     </div>
-    {% if can_delete_course %}
-    <div class="card panel">
-      <h3>{{ t('adm_delete_course') }}</h3>
-      <p class="muted small">{{ t('adm_delete_course_note', code=code) }}</p>
-      <form method="post">
-        <input type="hidden" name="action" value="delete_course">
-        <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off">
-        {% if admin_role == 'master' %}<p class="small"><label><input type="checkbox" name="purge_logs" value="1"> {{ t('purge_logs') }}</label></p>{% endif %}
-        <p></p><button class="btn red" type="submit">{{ t('delete_btn') }}</button>
-      </form>
-    </div>
-    {% endif %}
-  </aside>
-</div>
+    
+</section>
+{% endif %}
+
+<style>
+.adm-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+.adm-tabs button{border:1px solid var(--line,#d9e2e0);background:var(--card,#fff);border-radius:999px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer;color:inherit}
+.adm-tabs button.on{background:var(--teal,#0f8a82);color:#fff;border-color:transparent}
+.adm-pane[hidden]{display:none}
+.adm-pane > .card, .adm-pane > details.card { margin-bottom:16px }
+.adm-sum{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-around}
+.adm-sum div{text-align:center;min-width:90px}.adm-sum b{display:block;font-size:1.5rem}.adm-sum small{color:var(--muted,#6b7a78)}
+.adm-danger summary{cursor:pointer;font-weight:700;font-size:1.05rem}
+</style>
+<script>
+(function () {
+  var tabs = document.querySelectorAll('.adm-tabs button'), key = 'adm-tab';
+  if (!tabs.length) return;
+  tabs.forEach(function (b, i) { b.textContent = '①②③④'.charAt(i) + ' ' + b.textContent.replace(/^[①②③④]\s*/, ''); });
+  function show(name) {
+    var ok = false;
+    tabs.forEach(function (b) { if (b.dataset.tab === name) ok = true; });
+    if (!ok) name = tabs[0].dataset.tab;
+    tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
+    document.querySelectorAll('.adm-pane').forEach(function (p) { p.hidden = p.id !== 'pane-' + name; });
+    try { sessionStorage.setItem(key, name); } catch (e) {}
+  }
+  tabs.forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });
+  var start = (location.hash || '').slice(1);
+  try { start = start || sessionStorage.getItem(key) || ''; } catch (e) {}
+  show(start);
+})();
+</script>
 {% endblock %}

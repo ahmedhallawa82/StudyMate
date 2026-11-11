@@ -478,6 +478,7 @@ T = {
     "exam_previous": ("Your previous exams", "امتحاناتك السابقة"), "exam_review": ("Review", "مراجعة"),
     "exam_again": ("Take another exam", "امتحن تاني"), "minutes": ("min", "دقيقة"), "seconds": ("s", "ث"),
     "exam_manage_title": ("Exams of this course", "امتحانات المادة"),
+    "adm_tab_lec": ("Lectures", "المحاضرات"), "adm_tab_courses": ("Courses", "المواد"), "adm_tab_account": ("My account", "حسابي"),
     "ex_tab_q": ("Questions", "الأسئلة"), "ex_tab_s": ("Settings", "الإعدادات"), "ex_tab_r": ("Results", "النتائج"),
     "ex_total": ("Questions", "أسئلة"), "ex_en": ("English", "إنجليزي"), "ex_ar": ("Arabic", "عربي"), "ex_mcq": ("Multiple choice", "اختيار"),
     "ex_essay": ("Essay", "مقالي"), "ex_ready": ("Ready (with answers)", "جاهز بإجاباته"),
