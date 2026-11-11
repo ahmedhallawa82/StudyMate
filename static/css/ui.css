@@ -1,0 +1,74 @@
+/* StudyMate UI polish: dashboard home, cards, motion. Uses the theme variables, so every theme and dark mode work. */
+@property --p { syntax: "<number>"; inherits: false; initial-value: 0; }
+body { background: radial-gradient(900px 420px at 85% -80px, color-mix(in srgb, var(--orange) 14%, transparent), transparent),
+                   radial-gradient(700px 380px at 0% 0%, color-mix(in srgb, var(--teal) 10%, transparent), transparent), var(--bg);
+       background-attachment: fixed; }
+header.top { position: sticky; top: 0; z-index: 40; backdrop-filter: blur(8px); box-shadow: 0 2px 14px rgba(0,0,0,.12); }
+nav a { padding: 6px 12px; border-radius: 999px; border-bottom: none !important; transition: background .2s; }
+nav a:hover { background: rgba(255,255,255,.14); }
+nav a.active { background: rgba(255,255,255,.24); }
+.card { transition: transform .2s ease, box-shadow .2s ease; }
+.card:hover { transform: translateY(-2px); }
+.btn { transition: transform .15s ease, box-shadow .15s ease, background .2s; }
+.btn:hover { transform: translateY(-1px); }
+.btn.light { background: #fff; color: #312e81; box-shadow: 0 6px 18px rgba(0,0,0,.18); }
+.btn.light:hover { background: #f5f3ff; }
+.btn.outline { background: transparent; color: #fff; border: 1.5px solid rgba(255,255,255,.7); box-shadow: none; }
+.btn.outline:hover { background: rgba(255,255,255,.16); }
+h1 { margin: 0; }
+
+/* hero */
+.hero { display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; color: #fff; border-radius: 22px;
+        padding: 28px 32px; margin-bottom: 18px; position: relative; overflow: hidden;
+        background: linear-gradient(120deg, #4338ca 0%, #7c3aed 60%, #db2777 120%); box-shadow: 0 14px 40px rgba(79,70,229,.35); }
+.hero::before, .hero::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.09); }
+.hero::before { width: 260px; height: 260px; inset-inline-end: -60px; top: -90px; }
+.hero::after { width: 160px; height: 160px; inset-inline-start: 38%; bottom: -80px; }
+.hero > * { position: relative; z-index: 1; }
+.hero h1 { font-size: 30px; line-height: 1.25; }
+.hero p { margin: 6px 0 14px; opacity: .92; max-width: 520px; }
+.hero-date { font-size: 13px; opacity: .8; margin-bottom: 4px; }
+.hero-ring { text-align: center; }
+.ring-cap { font-size: 12px; opacity: .85; margin-top: 6px; }
+.ring { --p: 0; --size: 92px; width: var(--size); height: var(--size); border-radius: 50%; display: grid; place-items: center;
+        background: conic-gradient(var(--ringc, #fff) calc(var(--p) * 1%), rgba(255,255,255,.25) 0); transition: --p 1.2s cubic-bezier(.2,.8,.2,1); }
+.ring.big { --size: 120px; }
+.ring-in { width: calc(var(--size) - 20px); height: calc(var(--size) - 20px); border-radius: 50%; display: flex; justify-content: center; align-items: baseline; padding-top: 30%; gap: 1px;
+           background: #4f3bd0; font-size: 28px; font-weight: 700; }
+.ring-in span { font-size: 14px; margin-inline-start: 1px; opacity: .85; }
+
+/* stat cards */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.stat { display: flex; align-items: center; gap: 14px; background: var(--card); border-radius: 18px; padding: 16px 18px; box-shadow: 0 4px 18px rgba(49,46,129,.08);
+        transition: transform .2s ease; }
+.stat:hover { transform: translateY(-3px); }
+.stat .ic { font-size: 26px; width: 50px; height: 50px; display: grid; place-items: center; border-radius: 14px; background: var(--teal-soft); }
+.stat .v { font-size: 26px; font-weight: 700; color: var(--teal); line-height: 1.1; }
+.stat .l { font-size: 12.5px; color: var(--muted); }
+h2.sec { font-size: 17px; margin: 6px 0 10px; color: var(--teal-dark); }
+
+/* quick tiles */
+.tiles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 18px; }
+.tile { display: flex; flex-direction: column; gap: 4px; background: var(--card); border-radius: 18px; padding: 18px; text-decoration: none; color: var(--ink);
+        box-shadow: 0 4px 18px rgba(49,46,129,.08); transition: transform .2s ease, box-shadow .2s ease; border: 1.5px solid transparent; }
+.tile:hover { transform: translateY(-4px); border-color: var(--teal); box-shadow: 0 12px 28px rgba(79,70,229,.2); }
+.tile .ti { font-size: 28px; } .tile b { font-size: 16px; } .tile small { color: var(--muted); }
+.next-card { background: linear-gradient(160deg, var(--teal-soft), var(--card)); }
+.row-link { display: flex; justify-content: space-between; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); text-decoration: none; font-size: 14px; }
+.row-q { padding: 6px 0; font-size: 14px; border-bottom: 1px solid var(--line); }
+.row-q:last-child, .row-link:last-of-type { border-bottom: none; }
+
+/* exam chips */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.pill { border-radius: 999px; padding: 4px 12px; font-size: 13px; background: var(--teal-soft); }
+.pill.ok { background: #e6f5ea; color: #2d6b3d; } .pill.bad { background: #fdecea; color: #a03a36; }
+.pill.mid { background: #fff3dc; color: #8a5a0a; } .pill.off { background: #eceff3; color: #5d6b6a; }
+.qcard, .qres { transition: border-color .2s; }
+
+/* motion */
+.fade { opacity: 0; transform: translateY(14px); animation: up .55s ease forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+@keyframes up { to { opacity: 1; transform: none; } }
+.fill { transition: width 1s cubic-bezier(.2,.8,.2,1); }
+@media (prefers-reduced-motion: reduce) { .fade { animation: none; opacity: 1; transform: none; } .ring, .fill { transition: none; } }
+@media (max-width: 900px) { .stats { grid-template-columns: repeat(2, 1fr); } .tiles { grid-template-columns: 1fr 1fr; } .hero { padding: 22px; } .hero h1 { font-size: 24px; } }
+@media (max-width: 520px) { .stats, .tiles { grid-template-columns: 1fr; } }

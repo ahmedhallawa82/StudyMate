@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav_home') }}{% endblock %}
+{% block content %}
+<section class="hero fade" style="--i:0">
+  <div class="hero-text">
+    <div class="hero-date" id="today" data-iso="{{ today }}"></div>
+    <h1>{{ t(greet) }}{{ '،' if lang == 'ar' else ',' }} {{ name }} 👋</h1>
+    <p>{{ t('home_sub', course=course) }}</p>
+    <div class="actions">
+      {% if nxt.topic %}<a class="btn light" href="{{ url_for('practice', topic=nxt.topic) }}">{{ t('home_continue') }} →</a>{% else %}<a class="btn light" href="{{ url_for('practice') }}">{{ t('nav_practice') }} →</a>{% endif %}
+      <a class="btn outline" href="{{ url_for('ask') }}">{{ t('home_ask') }}</a>
+    </div>
+  </div>
+  <div class="hero-ring">
+    <div class="ring big" data-p="{{ stats.overall }}"><div class="ring-in"><b data-count="{{ stats.overall }}">0</b><span>%</span></div></div>
+    <div class="ring-cap">{{ t('home_overall') }}</div>
+  </div>
+</section>
+
+<div class="stats">
+  <div class="stat fade" style="--i:1"><div class="ic">💬</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('home_asked') }}</div></div></div>
+  <div class="stat fade" style="--i:2"><div class="ic">✅</div><div><div class="v">{% if stats.acc is not none %}<span data-count="{{ stats.acc }}">0</span>%{% else %}–{% endif %}</div><div class="l">{{ t('accuracy') }} · {{ stats.answered }} {{ t('practice_answers') }}</div></div></div>
+  <div class="stat fade" style="--i:3"><div class="ic">🎯</div><div><div class="v"><span data-count="{{ stats.green }}">0</span>/{{ stats.topics }}</div><div class="l">{{ t('topics_green') }}</div></div></div>
+  <div class="stat fade" style="--i:4"><div class="ic">🔥</div><div><div class="v"><span data-count="{{ stats.streak }}">0</span></div><div class="l">{{ t('home_streak') }}</div></div></div>
+</div>
+
+<div class="grid">
+  <section>
+    <h2 class="sec fade" style="--i:5">{{ t('home_continue_learning') }}</h2>
+    <div class="tiles">
+      <a class="tile fade" style="--i:6" href="{{ url_for('ask') }}"><span class="ti">🔎</span><b>{{ t('nav_ask') }}</b><small>{{ t('tile_ask') }}</small></a>
+      <a class="tile fade" style="--i:7" href="{{ url_for('practice') }}"><span class="ti">✏️</span><b>{{ t('nav_practice') }}</b><small>{{ t('tile_practice') }}</small></a>
+      <a class="tile fade" style="--i:8" href="{{ url_for('exams') }}"><span class="ti">📝</span><b>{{ t('nav_exams') }}</b><small>{{ t('tile_exams') if exam_ready else t('exam_none') }}</small></a>
+      <a class="tile fade" style="--i:9" href="{{ url_for('materials') }}"><span class="ti">📚</span><b>{{ t('nav_materials') }}</b><small>{{ t('tile_materials') }}</small></a>
+    </div>
+
+    <h2 class="sec fade" style="--i:10">{{ t('home_focus') }}</h2>
+    <div class="card fade" style="--i:11">
+      {% for x in weak %}
+      <div class="bar-row">
+        <div><span class="dot {{ x.colour }}"></span><a href="{{ url_for('practice', topic=x.topic) }}">{{ x.name }}</a></div>
+        <div class="track"><div class="fill {{ x.colour }}" data-w="{{ [x.pct, 3]|max }}" style="width:0"></div></div>
+        <div class="small muted">{{ x.pct }}%</div>
+      </div>
+      {% endfor %}
+      <p style="margin:10px 0 0"><a href="{{ url_for('progress') }}">{{ t('home_all_topics') }} →</a></p>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card next-card fade" style="--i:5">
+      <h3>🎓 {{ t('study_next') }}</h3>
+      {% if nxt.topic %}
+        <div class="next"><b>{{ nxt.name }}</b><span class="small">{{ nxt.why }}</span></div>
+        <a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) }}">{{ t('practise5') }}</a>
+      {% else %}<p>{{ nxt.why }}</p>{% endif %}
+    </div>
+    <div class="card fade" style="--i:6">
+      <h3>📝 {{ t('home_recent_exams') }}</h3>
+      {% if recent_e %}
+        {% for e in recent_e %}
+        <a class="row-link" href="{{ url_for('exams_result', aid=e.id) }}"><span dir="ltr">{{ e.when }}</span><b>{{ '%g'|format(e.score) }} / {{ e.max }} · {{ e.pct }}%</b></a>
+        {% endfor %}
+      {% else %}<p class="muted small">{{ t('home_no_exams') }}</p>{% endif %}
+      <p style="margin:10px 0 0"><a href="{{ url_for('exams') }}">{{ t('nav_exams') }} →</a></p>
+    </div>
+    <div class="card fade" style="--i:7">
+      <h3>💬 {{ t('home_recent_q') }}</h3>
+      {% if recent_q %}
+        {% for q in recent_q %}<div class="row-q" dir="auto"><span class="dot {{ 'green' if q.found else 'red' }}"></span>{{ q.q[:70] }}</div>{% endfor %}
+      {% else %}<p class="muted small">{{ t('home_no_q') }}</p>{% endif %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -26,7 +26,7 @@ from pathlib import Path
 
 import config
 
-DEFAULTS = {"min_mcq": 1.0, "min_essay": 5.0}
+DEFAULTS = {"min_mcq": 1.0, "min_essay": 5.0, "sim_full": 0.45, "sim_half": 0.25}
 _lock = threading.Lock()
 LETTERS_EN = "ABCDEFGH"
 LETTERS_AR = ["أ", "ب", "ج", "د", "هـ", "و", "ز", "ح"]
@@ -73,9 +73,13 @@ def clear_bank(code):
     save_bank(code, {"questions": {}, "settings": b["settings"]})
 
 
-def save_settings(code, min_mcq, min_essay):
+def save_settings(code, min_mcq, min_essay, sim_full=None, sim_half=None):
     b = load_bank(code)
-    b["settings"] = {"min_mcq": max(0.2, min(10.0, float(min_mcq))), "min_essay": max(0.5, min(60.0, float(min_essay)))}
+    old = b["settings"]
+    full = max(0.1, min(0.95, float(sim_full))) if sim_full not in (None, "") else old["sim_full"]
+    half = max(0.05, min(full, float(sim_half))) if sim_half not in (None, "") else min(old["sim_half"], full)
+    b["settings"] = {"min_mcq": max(0.2, min(10.0, float(min_mcq))), "min_essay": max(0.5, min(60.0, float(min_essay))),
+                     "sim_full": full, "sim_half": half}
     save_bank(code, b)
 
 
@@ -400,34 +404,77 @@ def active_attempt(code, student):
     return None
 
 
-def view_questions(att):
-    """The questions of an attempt for the page, WITHOUT the answers."""
+def view_questions(att, lang=None):
+    """The questions of an attempt for the page, WITHOUT the answers. `lang` = the interface language right now."""
     bank = load_bank(att["course"])["questions"]
     out = []
     for i, k in enumerate(att["qids"], 1):
         q = bank.get(k)
         if not q:
             continue
-        side, lang_used = _pick_lang(q, att["lang"])
+        side, lang_used = _pick_lang(q, lang or att["lang"])
         out.append({"i": i, "id": k, "type": q["type"], "q": side["q"], "options": side.get("options", []),
                     "lang": lang_used, "value": att["answers"].get(k, "")})
     return out
 
 
-def _grade_essay(text, side, other):
-    text = (text or "").strip().lower()
+_VEC = {}
+
+
+def _vectorizer(code):
+    """TF-IDF over the course's own model answers and questions (character n-grams: works for Arabic and English).
+    This is the 'training' of the essay grader: it learns which words matter in THIS course."""
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    p = folder(code) / "bank.json"
+    key = (code, p.stat().st_mtime if p.exists() else 0)
+    if key not in _VEC:
+        for k in [k for k in _VEC if k[0] == code]:
+            _VEC.pop(k)
+        corpus = []
+        for q in load_bank(code)["questions"].values():
+            for l in ("en", "ar"):
+                if q.get(l):
+                    corpus += [q[l].get("q", ""), q[l].get("model", "")]
+        _VEC[key] = TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), sublinear_tf=True).fit([c for c in corpus if c] or ["x"])
+    return _VEC[key]
+
+
+def _similarity(code, text, q):
+    """Best cosine similarity between the student's answer and the model answer(s) (English and/or Arabic)."""
+    models = [q[l]["model"] for l in ("en", "ar") if q.get(l, {}).get("model")]
+    if not models or not text.strip():
+        return 0.0
+    try:
+        v = _vectorizer(code)
+        X = v.transform([text] + models)
+        sims = (X[1:] @ X[0].T).toarray().ravel()
+        return float(sims.max())
+    except Exception:
+        return 0.0
+
+
+def _grade_essay(code, text, q, settings):
+    """(mark 0 / 0.5 / 1, keywords found, similarity). The mark is the better of: keyword coverage, similarity to the model answer."""
+    text = (text or "").strip()
     if not text:
-        return 0.0, []
+        return 0.0, [], 0.0
+    side = q.get("ar" if _is_ar(text) else "en") or {}
+    other = q.get("en" if _is_ar(text) else "ar") or {}
     kws = side.get("keywords") or other.get("keywords") or []
+    hit, kw_mark = [], 0.0
     if kws:
-        hit = [k for k in kws if k.lower() in text or all(w in text for w in k.lower().split())]
+        low = text.lower()
+        hit = [k for k in kws if k.lower() in low or all(w in low for w in k.lower().split())]
         ratio = len(hit) / len(kws)
-    else:
-        model = (side.get("model") or other.get("model") or "").lower()
-        mw = {w for w in re.findall(r"\w{3,}", model)}
-        tw = set(re.findall(r"\w{3,}", text))
-        ratio, hit = (len(mw & tw) / len(mw) if mw else 0.0), []
-    return (1.0 if ratio >= 0.7 else 0.5 if ratio >= 0.4 else 0.0), hit
+        kw_mark = 1.0 if ratio >= 0.7 else 0.5 if ratio >= 0.4 else 0.0
+    sim = _similarity(code, text, q)
+    sim_mark = 1.0 if sim >= settings["sim_full"] else 0.5 if sim >= settings["sim_half"] else 0.0
+    return max(kw_mark, sim_mark), hit, round(sim, 3)
+
+
+def _sides(q):
+    return {l: {"q": q[l].get("q", ""), "options": q[l].get("options", []), "model": q[l].get("model", ""),
+                "keywords": q[l].get("keywords", [])} for l in ("en", "ar") if q.get(l)}
 
 
 def finish(att, form_answers):
@@ -435,16 +482,15 @@ def finish(att, form_answers):
     if att["status"] != "active":
         return att
     att["answers"].update({k: v for k, v in form_answers.items() if k in att["qids"]})
-    bank = load_bank(att["course"])["questions"]
+    bank_all = load_bank(att["course"])
+    bank, settings = bank_all["questions"], bank_all["settings"]
     details, total = [], 0.0
     for i, k in enumerate(att["qids"], 1):
         q = bank.get(k)
         if not q:
             continue
-        side, lang_used = _pick_lang(q, att["lang"])
-        other = q.get("en" if lang_used == "ar" else "ar", {})
         given = att["answers"].get(k, "")
-        d = {"i": i, "id": k, "type": q["type"], "q": side["q"], "options": side.get("options", []), "given": given}
+        d = {"i": i, "id": k, "type": q["type"], "given": given, "sides": _sides(q)}
         if q["type"] == "mcq":
             try:
                 g = int(given)
@@ -452,9 +498,8 @@ def finish(att, form_answers):
                 g = None
             d.update(correct_idx=q.get("answer"), given_idx=g, score=1.0 if g is not None and g == q.get("answer") else 0.0)
         else:
-            sc, hit = _grade_essay(given, side, other)
-            d.update(score=sc, hit=hit, keywords=side.get("keywords") or other.get("keywords") or [],
-                     model=side.get("model") or other.get("model") or "")
+            sc, hit, sim = _grade_essay(att["course"], given, q, settings)
+            d.update(score=sc, hit=hit, similarity=sim)
         total += d["score"]
         details.append(d)
     n = len(details)
@@ -463,6 +508,38 @@ def finish(att, form_answers):
                duration=int(min(time.time(), att["deadline"] + 60) - att["started"]))
     save_attempt(att)
     return att
+
+
+def localized(att, lang):
+    """The result details with every question shown in the interface language (falls back to the other one)."""
+    out = []
+    for d in att.get("details", []):
+        sides = d.get("sides")
+        if not sides:                                    # attempt saved by an older version
+            out.append({**d, "lang_used": att.get("lang", "en")})
+            continue
+        used = lang if sides.get(lang) else ("en" if lang == "ar" else "ar")
+        side = sides.get(used) or {}
+        other = sides.get("en" if used == "ar" else "ar", {})
+        out.append({**d, "q": side.get("q", ""), "options": side.get("options", []), "lang_used": used,
+                    "model": side.get("model") or other.get("model", ""),
+                    "keywords": side.get("keywords") or other.get("keywords", [])})
+    return {**att, "details": out}
+
+
+def counts(att):
+    """(correct, partly, wrong, not answered) of a finished attempt."""
+    c = p = w = b = 0
+    for d in att.get("details", []):
+        if d["score"] >= 1:
+            c += 1
+        elif d["score"] > 0:
+            p += 1
+        elif str(d.get("given", "")).strip() == "":
+            b += 1
+        else:
+            w += 1
+    return {"correct": c, "partial": p, "wrong": w, "blank": b}
 
 
 def override(att, qid, score):

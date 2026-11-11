@@ -23,10 +23,18 @@
   {% endif %}
 </div>
 {% if attempts %}
+<div class="grid-4" style="margin-bottom:16px">
+  <div class="kpi"><div class="v">{{ stats.n }}</div><div class="l">{{ t('exam_taken') }}</div></div>
+  <div class="kpi"><div class="v">{{ stats.last }}%</div><div class="l">{{ t('exam_last') }}</div></div>
+  <div class="kpi"><div class="v">{{ stats.best }}%</div><div class="l">{{ t('exam_best') }}</div></div>
+  <div class="kpi"><div class="v">{{ stats.avg }}%</div><div class="l">{{ t('exam_average') }}</div></div>
+</div>
 <div class="card">
   <h3>{{ t('exam_previous') }}</h3>
   <div class="table-wrap"><table>
-    {% for a in attempts %}<tr><td>{{ loop.index }}</td><td>{{ '%g'|format(a.score) }} / {{ a.max }} ({{ a.pct }}%)</td>
+    <tr><th>{{ t('exam_date') }}</th><th>{{ t('exam_score') }}</th><th>{{ t('exam_correct') }}</th><th>{{ t('exam_wrong') }}</th><th>{{ t('exam_not_answered') }}</th><th>{{ t('exam_duration') }}</th><th></th></tr>
+    {% for a in attempts %}<tr><td dir="ltr">{{ a.when }}</td><td><b>{{ '%g'|format(a.score) }} / {{ a.max }}</b> ({{ a.pct }}%)</td>
+      <td class="ok">{{ a.c.correct }}{% if a.c.partial %} (+{{ a.c.partial }}){% endif %}</td><td class="bad">{{ a.c.wrong }}</td><td>{{ a.c.blank }}</td>
       <td>{{ (a.duration // 60) }} {{ t('minutes') }}</td><td><a href="{{ url_for('exams_result', aid=a.id) }}">{{ t('exam_review') }}</a></td></tr>{% endfor %}
   </table></div>
 </div>

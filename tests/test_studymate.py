@@ -350,7 +350,7 @@ def test_register_login_and_students_sheet(tmp_path):
     c2 = A.app.test_client()
     assert c2.post("/start", data={"username": "sara@mail.com", "password": "wrong"}).status_code == 200
     r = c2.post("/start", data={"username": "sara@mail.com", "password": "secret1", "remember": "1"})
-    assert r.status_code == 302 and "/ask" in r.headers["Location"]
+    assert r.status_code == 302 and "/home" in r.headers["Location"]
     assert "Expires" in r.headers.get("Set-Cookie", "")                                   # remember me -> long cookie
 
 
@@ -461,3 +461,26 @@ def test_exam_pdf_noise_and_answer_key():
     assert items[0]["options"][-1] == "w" and items[1]["q"] == "Explain yaw."          # headers/footers do not stick to questions
     assert EX.parse_key("1-A 2-C 3-B\n4. d\nQ5. B\n") == {1: 0, 2: 2, 3: 1, 4: 3, 5: 1}
     assert EX.parse_key("Q1. What is a car?\na) x") == {}
+
+
+def test_student_home_and_login_landing():
+    import app as A
+    c = A.app.test_client()
+    r = c.post("/register", data={"first": "Mona", "last": "K", "email": "mona@test.com", "password": "secret1", "confirm": "secret1"})
+    assert r.headers["Location"].endswith("/home")
+    page = c.get("/home").get_data(as_text=True)
+    assert "Mona" in page and "hero" in page and "Continue learning" in page
+    ar = c.get("/home?lang=ar").get_data(as_text=True)
+    assert "الرئيسية" in ar and "Mona" in ar
+
+
+def test_essay_similarity_grading(tmp_path, monkeypatch):
+    from core import exams as EX
+    monkeypatch.setattr(EX, "folder", lambda code: tmp_path / code / "exams")
+    EX.add_items("T", [{"n": 1, "lang": "en", "type": "essay", "q": "Explain A* search.", "options": [], "answer": None,
+                        "model": "A* search expands the node with the lowest f(n) = g(n) + h(n), using an admissible heuristic so the path is optimal.", "keywords": []}], True)
+    b = EX.load_bank("T")
+    q, st = b["questions"]["1"], b["settings"]
+    assert EX._grade_essay("T", "A* picks the node with smallest f = g + h and an admissible heuristic gives the optimal path", q, st)[0] == 1.0
+    assert EX._grade_essay("T", "It is a sorting algorithm for arrays", q, st)[0] == 0.0
+    assert EX._grade_essay("T", "", q, st)[0] == 0.0

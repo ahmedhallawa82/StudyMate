@@ -30,3 +30,10 @@ html[data-mode="dark"] .btn, html[data-mode="dark"] nav a, html[data-mode="dark"
 html[data-mode="dark"] img.report { background: #fff; }
 html[data-mode="dark"] code { background: #252b55; padding: 1px 5px; border-radius: 4px; }
 html[data-mode="dark"] hr { border-color: var(--line); }
+html[data-mode="dark"] .stat, html[data-mode="dark"] .tile { background: var(--card); box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+html[data-mode="dark"] .stat .ic { background: #252b55; }
+html[data-mode="dark"] .next-card { background: linear-gradient(160deg, #1f2545, var(--card)); }
+html[data-mode="dark"] .pill { background: #252b55; color: #c7d2fe; }
+html[data-mode="dark"] .pill.ok { background: #14301f; color: #86efac; } html[data-mode="dark"] .pill.bad { background: #3a1d22; color: #fca5a5; }
+html[data-mode="dark"] .pill.mid { background: #3a2f14; color: #fcd34d; } html[data-mode="dark"] .pill.off { background: #232843; color: #a0a8cc; }
+html[data-mode="dark"] .tile { color: var(--ink); } html[data-mode="dark"] .row-link { color: var(--ink); }

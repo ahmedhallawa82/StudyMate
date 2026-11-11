@@ -274,7 +274,7 @@ def handle_login(default_next):
     if chosen in course_codes() and kind == "student":
         session["course"] = chosen
     if kind == "student":
-        return redirect(request.args.get("next") or url_for("ask"))
+        return redirect(request.args.get("next") or url_for("student_home"))
     return redirect(request.args.get("next") or url_for("dashboard"))
 
 
@@ -290,7 +290,7 @@ def start():
             chosen = request.form.get("course")
             if chosen in course_codes():
                 session["course"] = chosen
-            return redirect(request.args.get("next") or url_for("ask"))
+            return redirect(request.args.get("next") or url_for("student_home"))
         r = handle_login(None)
         if r:
             return r
@@ -311,7 +311,7 @@ def register():
                 log_to_excel("Students", {"student_code": st["code"], "first_name": st["first"],
                                           "last_name": st["last"], "email": st["email"]})
                 sign_in_as("student", st, "", f.get("remember"))
-                return redirect(url_for("ask"))
+                return redirect(url_for("student_home"))
     return render_template("register.html")
 
 
@@ -335,7 +335,7 @@ def choose_course(code):
         session.pop("practice", None)
     if session.get("lecturer"):
         return redirect(request.args.get("next") or url_for("dashboard"))
-    return redirect(request.args.get("next") or url_for("ask" if student() else "start"))
+    return redirect(request.args.get("next") or url_for("student_home" if student() else "start"))
 
 
 @app.route("/logout")
@@ -348,7 +348,48 @@ def logout():
 def home():
     if session.get("lecturer"):
         return redirect(url_for("dashboard"))
-    return redirect(url_for("ask") if student() else url_for("start"))
+    return redirect(url_for("student_home") if student() else url_for("start"))
+
+
+def _streak(days):
+    """Consecutive days of activity ending today (or yesterday)."""
+    from datetime import date, timedelta
+    ds = {d for d in days if d}
+    cur, n = date.today(), 0
+    if cur.isoformat() not in ds:
+        cur -= timedelta(days=1)
+    while cur.isoformat() in ds:
+        n += 1
+        cur -= timedelta(days=1)
+    return n
+
+
+@app.route("/home")
+@student_required
+def student_home():
+    visit("home")
+    code, me = course_code(), student()
+    mastery = my_mastery()
+    items, nxt = topic_panel(mastery)
+    qs = [q for q in read_sheet("Questions") if q.get("student_code") == me and q.get("course") == code]
+    ans = [a for a in read_sheet("Answers") if a.get("student_code") == me and a.get("course") == code]
+    allv = [v for v in read_sheet("Visits") if v.get("student_code") == me]
+    exams_done = [a for a in EX.list_attempts(code, me) if a["status"] == "done"]
+    correct = sum(str(a["correct"]) in ("1", "True") for a in ans)
+    overall = round(100 * sum(i["level"] for i in items) / len(items)) if items else 0
+    days = [str(x.get("time", ""))[:10] for x in qs + ans + allv]
+    stats = {"asked": len(qs), "answered": len(ans), "acc": round(100 * correct / len(ans)) if ans else None,
+             "green": sum(i["colour"] == "green" for i in items), "topics": len(items), "overall": overall,
+             "exams": len(exams_done), "exam_avg": round(sum(a["pct"] for a in exams_done) / len(exams_done)) if exams_done else None,
+             "streak": _streak(days)}
+    weak = sorted(items, key=lambda i: i["level"])[:4]
+    recent_q = [{"q": q["question"], "found": q.get("found") == "yes"} for q in qs[-4:][::-1]]
+    recent_e = [{"when": datetime_str(a["started"]), "pct": a["pct"], "score": a["score"], "max": a["max"], "id": a["id"]} for a in exams_done[:3]]
+    hour = __import__("datetime").datetime.now().hour
+    greet = "gm" if hour < 12 else "ga" if hour < 18 else "ge"
+    name = session.get("student_name") or me
+    return render_template("home.html", stats=stats, items=items, weak=weak, nxt=nxt, recent_q=recent_q, recent_e=recent_e,
+                           greet=greet, name=name, exam_ready=len(EX.eligible(code)) > 0, today=__import__("datetime").date.today().isoformat())
 
 
 # ------------------------------------------------------------------ Ask
@@ -912,8 +953,12 @@ def exams():
     pool = EX.eligible(code)
     n = len(pool)
     mine = [a for a in EX.list_attempts(code, student()) if a["status"] == "done"]
+    rows = [{**a, "c": EX.counts(a), "when": datetime_str(a["started"])} for a in mine]
+    stats = {"n": len(mine), "best": max((a["pct"] for a in mine), default=None),
+             "avg": round(sum(a["pct"] for a in mine) / len(mine)) if mine else None,
+             "last": mine[0]["pct"] if mine else None}
     return render_template("exams.html", n=n, choices=EX.count_choices(n), avg=round(EX.avg_minutes(code), 2),
-                           active=EX.active_attempt(code, student()), attempts=mine, exam_lang=lang())
+                           active=EX.active_attempt(code, student()), attempts=rows, stats=stats, exam_lang=lang())
 
 
 @app.route("/exams/start", methods=["POST"])
@@ -941,7 +986,7 @@ def exams_take():
     if not att:
         return redirect(url_for("exams"))
     import time as _t
-    return render_template("exam_take.html", att=att, qs=EX.view_questions(att),
+    return render_template("exam_take.html", att=att, qs=EX.view_questions(att, lang()),
                            remaining=max(0, int(att["deadline"] - _t.time())))
 
 
@@ -978,7 +1023,7 @@ def exams_result(aid):
     att = EX.load_attempt(course_code(), aid)
     if not att or att["student"] != student() or att["status"] != "done":
         return redirect(url_for("exams"))
-    return render_template("exam_result.html", att=att, doctor_view=False, letters=EX.LETTERS_AR if att["lang"] == "ar" else EX.LETTERS_EN)
+    return render_template("exam_result.html", att=EX.localized(att, lang()), c=EX.counts(att), doctor_view=False)
 
 
 # ------------------------------------------------------------------ Exams (doctor)
@@ -1011,7 +1056,8 @@ def exams_manage():
                 flash_t("choose_pdf")
         elif action == "settings":
             try:
-                EX.save_settings(code, request.form.get("min_mcq", 1), request.form.get("min_essay", 5))
+                EX.save_settings(code, request.form.get("min_mcq", 1), request.form.get("min_essay", 5),
+                                 request.form.get("sim_full"), request.form.get("sim_half"))
                 flash_t("exam_settings_saved")
             except ValueError:
                 pass
@@ -1056,7 +1102,7 @@ def exams_attempt(aid):
         except ValueError:
             pass
         return redirect(url_for("exams_attempt", aid=aid))
-    return render_template("exam_result.html", att=att, doctor_view=True, letters=EX.LETTERS_AR if att["lang"] == "ar" else EX.LETTERS_EN)
+    return render_template("exam_result.html", att=EX.localized(att, lang()), c=EX.counts(att), doctor_view=True)
 
 
 @app.route("/exams/attempts.<fmt>")

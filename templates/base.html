@@ -17,6 +17,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/themes/' + theme + '.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}">
 </head>
 <body>
@@ -32,6 +33,7 @@
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}">{{ t('nav_exams') }}</a>
       <span class="chip">{% if admin_role == 'master' %}{{ t('role_admin') }}{% else %}{{ t('role_doctor') }} · {{ admin_name }}{% endif %}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
       {% else %}
+      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}">{{ t('nav_home') }}</a>
       <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}">{{ t('nav_ask') }}</a>
       <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}">{{ t('nav_practice') }}</a>
       <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}">{{ t('nav_progress') }}</a>
@@ -83,5 +85,6 @@
 <script src="{{ url_for('static', filename='js/translate.js') }}"></script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/courses.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 </body>
 </html>
