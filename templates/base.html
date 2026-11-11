@@ -27,33 +27,33 @@
     <nav>
       {% set path = request.path %}
       {% if is_lecturer %}
-      <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}" title="{{ t('nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
-      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}" title="{{ t('nav_eval') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
-      <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
-      <span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
+      <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
+      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}" title="{{ t('nav_eval') }}" data-tip="{{ t('tip_nav_eval') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
+      <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
+      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}" data-tip="{{ t('tip_nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
+      <span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}" data-tip="{{ t('tip_nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
       {% elif student_code %}
       {% if not first_visit %}
-      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
-      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
-      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}" title="{{ t('nav_practice') }}"><span class="ni">✏️</span><span class="nl">{{ t('nav_practice') }}</span></a>
-      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}" title="{{ t('nav_progress') }}"><span class="ni">📈</span><span class="nl">{{ t('nav_progress') }}</span></a>
-      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}" title="{{ t('nav_materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
+      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
+      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}" data-tip="{{ t('tip_nav_ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
+      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}" title="{{ t('nav_practice') }}" data-tip="{{ t('tip_nav_practice') }}"><span class="ni">✏️</span><span class="nl">{{ t('nav_practice') }}</span></a>
+      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}" title="{{ t('nav_progress') }}" data-tip="{{ t('tip_nav_progress') }}"><span class="ni">📈</span><span class="nl">{{ t('nav_progress') }}</span></a>
+      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
+      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}" title="{{ t('nav_materials') }}" data-tip="{{ t('tip_nav_materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
       {% endif %}
-      {% if me_key %}<span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
+      {% if me_key %}<span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}" data-tip="{{ t('tip_nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
       {% else %}<span class="chip"><span class="avatar">{{ (student_name or student_code)[:1]|upper }}</span>{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>{% endif %}
       {% endif %}
     </nav>
     <div class="tools">
-      <button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" aria-label="{{ t('sup_title') }}">🛟</button>
+      <button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>
       {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
       {% if me_key %}
-      <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
+      <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
       <div class="bell" id="bell">
-        <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}">🔔{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
+        <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}" data-tip="{{ t('tip_bell') }}">🔔{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
         <div class="bell-panel" hidden>
           <div class="bell-head"><b>{{ t('notif_title') }}</b>{% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="next" value="{{ request.path }}"><button type="submit" class="linkish">{{ t('notif_mark_all') }}</button></form>{% endif %}</div>
           {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋'}.get(n.kind, '🔔') }}</span><span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
@@ -62,8 +62,8 @@
         </div>
       </div>
       {% endif %}
-      <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
-      <a class="tool" href="{{ lang_url }}" title="{{ t('toggle_lang') }}">{{ t('lang_name') }}</a>
+      <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" data-tip="{{ t('tip_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
+      <a class="tool" href="{{ lang_url }}" title="{{ t('toggle_lang') }}" data-tip="{{ t('tip_lang') }}">{{ t('lang_name') }}</a>
     </div>
   </div>
 </header>
@@ -150,5 +150,37 @@
 {% endif %}
 <script src="{{ url_for('static', filename='js/courses.js') }}"></script>
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+
+<script>
+(function () {
+  var tip = document.createElement('div'); tip.className = 'tip'; tip.setAttribute('role', 'status'); document.body.appendChild(tip);
+  var timer, cur;
+  function hide() { tip.classList.remove('on'); if (cur) cur.classList.remove('bump'); cur = null; }
+  function show(el) {
+    clearTimeout(timer); if (cur) cur.classList.remove('bump');
+    var name = el.getAttribute('data-name') || el.getAttribute('aria-label') || '';
+    tip.innerHTML = '<b></b><span></span>'; tip.firstChild.textContent = name; tip.lastChild.textContent = el.getAttribute('data-tip');
+    tip.classList.remove('on'); void tip.offsetWidth;
+    var r = el.getBoundingClientRect(), w = Math.min(260, window.innerWidth - 16);
+    tip.style.width = w + 'px';
+    var x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width / 2 - w / 2));
+    tip.style.left = x + 'px'; tip.style.top = (r.bottom + 12) + 'px';
+    tip.style.setProperty('--ax', (r.left + r.width / 2 - x) + 'px');
+    tip.classList.add('on'); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); cur = el;
+    timer = setTimeout(hide, 2600);
+  }
+  document.querySelectorAll('header [data-tip]').forEach(function (el) {
+    var t = el.getAttribute('title'); if (t) { el.setAttribute('data-name', t); el.removeAttribute('title'); }
+    el.addEventListener('click', function (e) {
+      show(el);
+      if (el.tagName === 'A' && el.href && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.button === 0 && el.target !== '_blank') {
+        e.preventDefault(); var h = el.href; setTimeout(function () { location.href = h; }, 850);
+      }
+    });
+  });
+  document.addEventListener('click', function (e) { if (!e.target.closest('[data-tip]')) hide(); });
+  window.addEventListener('scroll', hide, { passive: true });
+})();
+</script>
 </body>
 </html>
