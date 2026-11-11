@@ -1,9 +1,10 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head %}
+{% from "_ui.html" import page_head, course_picker with context %}
 {% block title %}{{ t('exam_manage_title') }}{% endblock %}
 {% block content %}
 {{ page_head('🧪', t('exam_manage_title') ~ ' · ' ~ course, t('exam_manage_sub')) }}
 
+{{ course_picker(url_for('exams_manage')) }}
 <nav class="ex-tabs fade" role="tablist" style="--i:1">
   <button type="button" role="tab" data-tab="questions" class="{{ 'on' if tab == 'questions' }}">① {{ t('ex_tab_q') }} {% if sm.graded %}<span class="ex-ok">✓</span>{% endif %}</button>
   <button type="button" role="tab" data-tab="settings" class="{{ 'on' if tab == 'settings' }}">② {{ t('ex_tab_s') }}</button>

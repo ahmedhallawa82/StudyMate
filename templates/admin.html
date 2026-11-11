@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head %}
+{% from "_ui.html" import page_head, course_picker with context %}
 {% block title %}{{ t('nav_admin') }}{% endblock %}
 {% block content %}
 {{ page_head('🛠️', t('nav_content') ~ (' · ' ~ course if not no_course else ''), t('content_sub')) }}
 <div class="who card small">{{ t('signed_as_master') if admin_role == 'master' else t('signed_as_doctor', name=admin_name) }}
   {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
 
+{{ course_picker(url_for('admin')) }}
 <nav class="adm-tabs fade" role="tablist">
   {% if not no_course %}<button type="button" role="tab" data-tab="lectures">① {{ t('adm_tab_lec') }}</button>{% endif %}
   <button type="button" role="tab" data-tab="courses">{{ '②' if not no_course else '①' }} {{ t('adm_tab_courses') }}</button>

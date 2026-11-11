@@ -1,3 +1,15 @@
 {% macro page_head(icon, title, sub='') %}
 <div class="page-head fade" style="--i:0"><span class="ph-ic">{{ icon }}</span><div><h1>{{ title }}</h1>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></div>
 {% endmacro %}
+
+{% macro course_picker(next_url) %}
+{% if courses %}
+<div class="card course-pick fade" style="--i:1">
+  <label for="coursePick">🎓 {{ t('pick_course') }}</label>
+  <select id="coursePick" onchange="location.href=this.value">
+    {% for c in courses %}<option value="{{ url_for('choose_course', code=c.code, next=next_url) }}"{{ ' selected' if c.code == course_code }}>{{ c.title }} · {{ c.code }}</option>{% endfor %}
+  </select>
+  <span class="muted small">{{ t('pick_course_note') }}</span>
+</div>
+{% endif %}
+{% endmacro %}

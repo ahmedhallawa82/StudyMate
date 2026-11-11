@@ -480,6 +480,7 @@ T = {
     "exam_manage_title": ("Exams of this course", "امتحانات المادة"),
     "adm_tab_lec": ("Lectures", "المحاضرات"), "adm_tab_courses": ("Courses", "المواد"), "adm_tab_account": ("My account", "حسابي"),
     "ex_min_tf": ("True / False (minutes)", "صح وغلط (دقيقة)"), "ex_tf": ("True / False", "صح وغلط"),
+    "pick_course": ("You are working on:", "انت شغال على مادة:"), "pick_course_note": ("Everything below applies to this course.", "كل اللي تحت بيخص المادة دي."),
     "ex_tab_q": ("Questions", "الأسئلة"), "ex_tab_s": ("Settings", "الإعدادات"), "ex_tab_r": ("Results", "النتائج"),
     "ex_total": ("Questions", "أسئلة"), "ex_en": ("English", "إنجليزي"), "ex_ar": ("Arabic", "عربي"), "ex_mcq": ("Multiple choice", "اختيار"),
     "ex_essay": ("Essay", "مقالي"), "ex_ready": ("Ready (with answers)", "جاهز بإجاباته"),
