@@ -287,3 +287,6 @@ nav a { position: relative; }
 .course-pick { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; padding: 12px 18px; }
 .course-pick label { font-weight: 700; margin: 0; }
 .course-pick select { width: auto; min-width: 260px; max-width: 100%; font-weight: 600; }
+
+.exit-link { display: inline-flex; align-items: center; gap: 8px; }
+.exit-link b { font-weight: 700; padding-inline-start: 8px; border-inline-start: 1px solid var(--line, #d9e2e0); }

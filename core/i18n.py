@@ -16,7 +16,7 @@ T = {
     "nav_admin": ("Admin", "الأدمن"),
     "logout": ("log out", "خروج"),
     "lecturer_chip": ("Admin", "الأدمن"),
-    "back_students": ("Exit admin", "خروج من الأدمن"),
+    "back_students": ("Exit", "خروج"),
     "exit": ("exit", "خروج"),
     "footer": ("StudyMate answers only from the {course} lecture slides and always shows the lecture and slide number.",
                "ستادي ميت بيجاوب من شرايح محاضرات {course} فقط، وبيوريك رقم المحاضرة والشريحة دايمًا."),
