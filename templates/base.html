@@ -33,7 +33,7 @@
       <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}" title="{{ t('nav_eval') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
       <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
-      <span class="chip"><span class="avatar">{{ ('A' if admin_role == 'master' else (admin_name or 'D'))[:1]|upper }}</span>{% if admin_role == 'master' %}{{ t('role_admin') }}{% else %}{{ t('role_doctor') }} · {{ admin_name }}{% endif %}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
+      <span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
       {% elif student_code %}
       {% if not first_visit %}
       <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
@@ -43,7 +43,8 @@
       <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
       <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}" title="{{ t('nav_materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
       {% endif %}
-      <span class="chip"><span class="avatar">{{ (student_name or student_code)[:1]|upper }}</span>{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
+      {% if me_key %}<span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
+      {% else %}<span class="chip"><span class="avatar">{{ (student_name or student_code)[:1]|upper }}</span>{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>{% endif %}
       {% endif %}
     </nav>
     <div class="tools">
@@ -60,6 +61,18 @@
       </div>
       {% endif %}
       {% if student_code and not is_lecturer %}<a class="tool" href="{{ url_for('my_courses') }}">🎓 {{ t('my_courses') }}</a>{% endif %}
+      {% if me_key %}
+      <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
+      <div class="bell" id="bell">
+        <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}">🔔{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
+        <div class="bell-panel" hidden>
+          <div class="bell-head"><b>{{ t('notif_title') }}</b>{% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="next" value="{{ request.path }}"><button type="submit" class="linkish">{{ t('notif_mark_all') }}</button></form>{% endif %}</div>
+          {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋'}.get(n.kind, '🔔') }}</span><span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
+          {% else %}<p class="muted small" style="padding:14px">{{ t('notif_none') }}</p>{% endfor %}
+          <a class="bell-all" href="{{ url_for('notifications_page') }}">{{ t('notif_see_all') }}</a>
+        </div>
+      </div>
+      {% endif %}
       <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
       <a class="tool" href="{{ lang_url }}" title="{{ t('toggle_lang') }}">{{ t('lang_name') }}</a>
     </div>
@@ -81,6 +94,15 @@
     paint(); window.dispatchEvent(new Event('modechange'));
   });
   paint();
+})();
+</script>
+<script>
+(function () {
+  var b = document.getElementById('bell'); if (!b) return;
+  var btn = b.querySelector('button'), p = b.querySelector('.bell-panel');
+  btn.addEventListener('click', function (e) { e.stopPropagation(); var open = p.hidden; p.hidden = !open; btn.setAttribute('aria-expanded', open); });
+  document.addEventListener('click', function (e) { if (!b.contains(e.target)) { p.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') p.hidden = true; });
 })();
 </script>
 {% block scripts %}{% endblock %}

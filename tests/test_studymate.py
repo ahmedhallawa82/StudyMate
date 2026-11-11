@@ -16,8 +16,14 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    f = tmp_path_factory.mktemp("stu") / "students.json"
+    from core import notify, schedule, profiles
+    d = tmp_path_factory.mktemp("stu")
+    f = d / "students.json"
     students.FILE = lambda: f
+    notify.FILE = lambda: d / "notifications.json"
+    schedule.FILE = lambda: d / "schedule.json"
+    profiles.FILE = lambda: d / "profiles.json"
+    profiles.DIR = lambda: d / "avatars"
 
 
 def as_student(c, name):
@@ -138,7 +144,7 @@ def test_admin_and_student_areas_are_separate():
         r = c.get(page)
         assert r.status_code == 302 and "/overview" in r.headers["Location"]
     html = c.get("/dashboard").get_data(as_text=True)
-    assert "/practice" not in html and "/progress" not in html and "SEP1" not in html and "/evaluation" in html
+    assert "/practice" not in html and "/progress" not in html and "/evaluation" in html
     # leaving Admin brings back the student side (needs a new sign-in)
     r = c.get("/lecturer/logout")
     assert "/start" in r.headers["Location"]
@@ -538,3 +544,59 @@ def test_staff_home_admin_and_doctor(admin):
         assert "per-course" in h and "👨‍🏫" not in h and "Dr Home" in h               # doctor: his courses / students / exams / questions
     finally:
         doctors.remove(did)
+
+
+def test_overview_pages_and_card_order(admin):
+    html = admin.get("/overview").get_data(as_text=True)
+    assert html.index("Total site visits") < html.index("Doctors registered") < html.index("Students with an account") < html.index("Courses on the site")
+    assert 'href="/doctors"' in html and 'href="/all-courses"' in html
+    assert admin.get("/doctors").status_code == 200
+    r = admin.get("/all-courses")
+    assert r.status_code == 200 and "MAM336" in r.get_data(as_text=True)
+
+
+def test_profile_photo_name_and_password(client):
+    import io
+    from PIL import Image
+    as_student(client, "PROF1")
+    assert 'href="/profile"' in client.get("/home").get_data(as_text=True)
+    assert client.get("/profile").status_code == 200
+    client.post("/profile", data={"action": "info", "first": "Newname", "last": "Last", "email": "newprof1@test.com"})
+    assert "Newname" in client.get("/profile").get_data(as_text=True)
+    buf = io.BytesIO()
+    Image.new("RGB", (300, 200), (10, 120, 120)).save(buf, "PNG")
+    buf.seek(0)
+    client.post("/profile", data={"action": "photo", "photo": (buf, "me.png")}, content_type="multipart/form-data")
+    html = client.get("/profile").get_data(as_text=True)
+    assert "/avatar/s_" in html
+    src = html.split('/avatar/')[1].split('"')[0].split("?")[0]
+    assert client.get("/avatar/" + src).mimetype == "image/jpeg"
+    bad = client.post("/profile", data={"action": "photo", "photo": (io.BytesIO(b"not an image"), "x.png")}, content_type="multipart/form-data", follow_redirects=True)
+    assert "not a valid image" in bad.get_data(as_text=True)
+    client.post("/profile", data={"action": "password", "old": "wrong", "new": "abcdef", "confirm": "abcdef"})
+    client.post("/profile", data={"action": "password", "old": "secret1", "new": "abcdef12", "confirm": "abcdef12"})
+    client.get("/logout")
+    r = client.post("/start", data={"username": "newprof1@test.com", "password": "abcdef12"})
+    assert r.status_code == 302 and "/start" not in r.headers["Location"]
+
+
+def test_notifications_and_calendar(admin, client):
+    from core import schedule
+    as_student(client, "CAL1")
+    ev = admin.get("/overview").get_data(as_text=True)
+    assert "CAL1 Test" in ev                                                 # the admin's bell shows the new student
+    assert admin.get("/notifications").status_code == 200
+    assert admin.post("/calendar", data={"action": "add", "course": "AI", "title": "Midterm test", "when": "bad"}).status_code == 302
+    assert not schedule.for_courses(["AI"])
+    admin.post("/calendar", data={"action": "add", "course": "AI", "title": "Midterm test", "when": "2026-12-01T10:00", "note": "Bring ID"})
+    items = schedule.for_courses(["AI"])
+    assert len(items) == 1
+    stu = client.get("/calendar").get_data(as_text=True)
+    assert "Midterm test" in stu and "2026-12-01" in stu                     # the student sees it in the calendar
+    assert "Midterm test" in client.get("/home").get_data(as_text=True)       # ...and in the bell
+    assert "Schedule an exam" not in stu                                     # students cannot schedule
+    assert "Schedule an exam" in admin.get("/calendar").get_data(as_text=True)
+    client.post("/calendar", data={"action": "delete", "id": items[0]["id"]})
+    assert schedule.for_courses(["AI"])                                      # a student cannot delete it
+    admin.post("/calendar", data={"action": "delete", "id": items[0]["id"]})
+    assert not schedule.for_courses(["AI"])

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('doc_title') }}{% endblock %}
+{% block content %}
+{{ page_head('👨‍🏫', t('doc_title'), t('doc_sub')) }}
+<div class="card">
+  <div class="actions" style="margin:0 0 12px;align-items:center">
+    <input type="text" id="q" placeholder="{{ t('doc_search') }}" style="max-width:320px">
+    <span class="muted small">{{ rows|length }} {{ t('doc_count') }}</span>
+    <a class="btn ghost small" href="{{ url_for('export_doctors', fmt='xlsx') }}">Excel</a>
+    <a class="btn ghost small" href="{{ url_for('export_doctors', fmt='csv') }}">CSV</a>
+    <a class="btn small" href="{{ url_for('admin') }}">{{ t('doc_manage') }}</a>
+  </div>
+  {% if rows %}
+  <div class="table-wrap"><table id="tbl">
+    <tr><th>{{ t('prof_name') }}</th><th>{{ t('username') }}</th><th>{{ t('email') }}</th><th>{{ t('doc_courses') }}</th><th class="num">{{ t('doc_students') }}</th></tr>
+    {% for r in rows %}<tr data-q="{{ (r.name ~ ' ' ~ r.username ~ ' ' ~ r.email)|lower }}">
+      <td><span class="who-cell">{% if r.avatar %}<img class="mini-av" src="{{ url_for('avatar', key=r.key) }}" alt="">{% else %}<span class="mini-av">{{ r.name[:1]|upper }}</span>{% endif %}<b>{{ r.name }}</b></span></td>
+      <td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.email or '–' }}</td>
+      <td>{% for c in r.courses %}<span class="tag">{{ c }}</span> {% else %}–{% endfor %}</td><td class="num">{{ r.students }}</td></tr>{% endfor %}
+  </table></div>
+  {% else %}<p class="muted">{{ t('doc_none') }}</p>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var q = document.getElementById('q'), rows = document.querySelectorAll('#tbl tr[data-q]');
+  q.addEventListener('input', function () { var v = q.value.trim().toLowerCase(); rows.forEach(function (r) { r.style.display = r.dataset.q.indexOf(v) < 0 ? 'none' : ''; }); });
+})();
+</script>
+{% endblock %}

@@ -17,12 +17,12 @@
   <section class="col-main">
     <div class="stats">
       {% if master %}
-      <div class="stat fade" style="--i:1"><div class="ic">👨‍🏫</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></div>
-      <button type="button" class="stat fade click" style="--i:2" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
-      <div class="stat fade" style="--i:3"><div class="ic">🌐</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }} · {{ t('sh_visitors', n=stats.visitors) }}</div></div></div>
-      <div class="stat fade" style="--i:4"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></div>
+      <div class="stat fade" style="--i:1"><div class="ic">🌐</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }} · {{ t('sh_visitors', n=stats.visitors) }}</div></div></div>
+      <a class="stat fade click" style="--i:2" href="{{ url_for('doctors_page') }}" title="{{ t('doc_manage') }}"><div class="ic">👨‍🏫</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></a>
+      <button type="button" class="stat fade click" style="--i:3" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
+      <a class="stat fade click" style="--i:4" href="{{ url_for('all_courses') }}"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></a>
       {% else %}
-      <div class="stat fade" style="--i:1"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_my_courses') }}</div></div></div>
+      <a class="stat fade click" style="--i:1" href="{{ url_for('all_courses') }}"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_my_courses') }}</div></div></a>
       <button type="button" class="stat fade click" style="--i:2" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_my_students') }}</div></div></button>
       <div class="stat fade" style="--i:3"><div class="ic">📝</div><div><div class="v" data-count="{{ stats.exams }}">0</div><div class="l">{{ t('sh_exams') }}</div></div></div>
       <div class="stat fade" style="--i:4"><div class="ic">💬</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('sh_asked') }}</div></div></div>

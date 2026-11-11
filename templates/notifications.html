@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('notif_title') }}{% endblock %}
+{% block content %}
+{{ page_head('🔔', t('notif_title'), t('notif_sub')) }}
+<div class="card">
+  <div class="actions" style="margin:0 0 12px;align-items:center">
+    <span class="muted small">{{ items|length }}</span>
+    {% if unread %}<form method="post" action="{{ url_for('notifications_read') }}" class="inline"><button class="btn ghost small" type="submit">{{ t('notif_mark_all') }}</button></form>{% endif %}
+  </div>
+  {% for n in items %}
+  <a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or '#' }}">
+    <span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋'}.get(n.kind, '🔔') }}</span>
+    <span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span>
+    {% if n.unread %}<span class="n-new">{{ t('notif_new') }}</span>{% endif %}
+  </a>
+  {% else %}<p class="muted">{{ t('notif_none') }}</p>{% endfor %}
+</div>
+{% endblock %}

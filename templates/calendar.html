@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('cal_title') }}{% endblock %}
+{% block content %}
+{{ page_head('📅', t('cal_title'), t('cal_sub_staff') if staff else t('cal_sub_student')) }}
+<div class="cal-grid">
+  <section class="card fade" style="--i:1">
+    <div class="cal-bar">
+      <button type="button" class="btn ghost small" id="prev" aria-label="‹">{{ '›' if lang == 'ar' else '‹' }}</button>
+      <select id="month" aria-label="month"></select>
+      <input id="year" type="number" min="2000" max="2100" aria-label="year">
+      <button type="button" class="btn ghost small" id="next" aria-label="›">{{ '‹' if lang == 'ar' else '›' }}</button>
+      <button type="button" class="btn small" id="calToday">{{ t('cal_today') }}</button>
+    </div>
+    <div class="cal" id="cal"></div>
+    <div class="cal-legend"><span><i class="dot-s"></i>{{ t('cal_legend_sched') }}</span><span><i class="dot-a"></i>{{ t('cal_legend_attempt') }}</span></div>
+  </section>
+  <aside class="cal-side">
+    <div class="card fade" style="--i:2"><h3 id="dayTitle"></h3><div id="dayList"></div></div>
+    <div class="card fade" style="--i:3"><h3>{{ t('cal_upcoming') }}</h3><div id="upList"></div></div>
+    {% if staff %}
+    <div class="card fade" style="--i:4">
+      <h3>{{ t('cal_schedule') }}</h3>
+      <p class="muted small">{{ t('cal_schedule_note') }}</p>
+      {% if managed %}
+      <form method="post">
+        <input type="hidden" name="action" value="add">
+        <label for="c1">{{ t('cal_course') }}</label>
+        <select id="c1" name="course">{% for c in managed %}<option value="{{ c.code }}" {{ 'selected' if c.code == course_code }}>{{ c.title }} ({{ c.code }})</option>{% endfor %}</select>
+        <label for="t1">{{ t('cal_exam_title') }}</label><input id="t1" type="text" name="title" maxlength="120" required>
+        <label for="w1">{{ t('cal_when') }}</label><input id="w1" type="datetime-local" name="when" required dir="ltr">
+        <label for="n1">{{ t('cal_note') }}</label><input id="n1" type="text" name="note" maxlength="300">
+        <p><button class="btn teal" type="submit">{{ t('cal_add') }}</button></p>
+      </form>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endif %}
+    </div>
+    {% endif %}
+  </aside>
+</div>
+<script type="application/json" id="events">{{ events|tojson }}</script>
+<form id="delForm" method="post" hidden><input type="hidden" name="action" value="delete"><input type="hidden" name="id" id="delId"></form>
+{% endblock %}
+{% block scripts %}
+<script>window.CAL = {lang: '{{ lang }}', del: '{{ t("cal_delete") }}', none: '{{ t("cal_nothing_day") }}', noneUp: '{{ t("cal_nothing_up") }}'};</script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

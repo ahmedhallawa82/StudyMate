@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('cov_title') }}{% endblock %}
+{% block content %}
+{{ page_head('📚', t('cov_title'), t('cov_sub')) }}
+<div class="card">
+  <div class="actions" style="margin:0 0 12px;align-items:center">
+    <input type="text" id="q" placeholder="{{ t('cov_search') }}" style="max-width:320px">
+    <span class="muted small">{{ rows|length }} {{ t('cov_title') }}</span>
+  </div>
+  <div class="table-wrap"><table id="tbl">
+    <tr><th>{{ t('cov_code') }}</th><th>{{ t('cov_name') }}</th>{% if master %}<th>{{ t('cov_doctor') }}</th>{% endif %}<th class="num">{{ t('cov_lectures') }}</th><th class="num">{{ t('cov_slides') }}</th><th class="num">{{ t('cov_students') }}</th><th class="num">{{ t('cov_questions') }}</th><th></th></tr>
+    {% for r in rows %}<tr data-q="{{ (r.code ~ ' ' ~ r.title ~ ' ' ~ r.doctor)|lower }}">
+      <td dir="ltr"><span class="tag">{{ r.code }}</span></td><td><b>{{ r.title }}</b></td>{% if master %}<td>{{ r.doctor or '–' }}</td>{% endif %}
+      <td class="num">{{ r.lectures }}</td><td class="num">{{ r.slides }}</td><td class="num">{{ r.students }}</td><td class="num">{{ r.questions }}</td>
+      <td><a class="btn small" href="{{ url_for('choose_course', code=r.code, next=url_for('admin')) }}">{{ t('cov_open') }}</a></td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var q = document.getElementById('q'), rows = document.querySelectorAll('#tbl tr[data-q]');
+  q.addEventListener('input', function () { var v = q.value.trim().toLowerCase(); rows.forEach(function (r) { r.style.display = r.dataset.q.indexOf(v) < 0 ? 'none' : ''; }); });
+})();
+</script>
+{% endblock %}

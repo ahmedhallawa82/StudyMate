@@ -144,3 +144,22 @@ def set_courses(code, courses):
         me["courses"] = list(dict.fromkeys(courses))
         _save(rows)
     return True
+
+
+def update_profile(code, first, last, email):
+    """Change name / e-mail. Returns an error key ('' = done)."""
+    first, last, email = (first or "").strip()[:40], (last or "").strip()[:40], norm_email(email)
+    if not first:
+        return "reg_name_missing"
+    if not _EMAIL.match(email):
+        return "reg_email_bad"
+    with _lock:
+        rows = _load()
+        me = next((s for s in rows if s["code"] == code), None)
+        if not me:
+            return "wrong_login"
+        if any(s["email"] == email for s in rows if s is not me):
+            return "reg_email_taken"
+        me.update(first=first, last=last, email=email)
+        _save(rows)
+    return ""

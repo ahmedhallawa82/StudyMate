@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('prof_title') }}{% endblock %}
+{% block content %}
+{{ page_head('🙋', t('prof_title'), t('prof_sub')) }}
+<div class="profile-grid">
+  <aside class="card prof-card fade" style="--i:1">
+    <div class="big-av">{% if me_avatar %}<img src="{{ me_avatar }}" alt="">{% else %}<span>{{ me_name[:1]|upper }}</span>{% endif %}</div>
+    <h2>{{ me_name }}</h2>
+    <span class="pill">{{ me_role }}</span>
+    <p class="muted small" dir="ltr">@{{ info.username }}{% if info.code %} · {{ info.code }}{% endif %}</p>
+    <h3>{{ t('prof_photo') }}</h3>
+    <p class="muted small">{{ t('prof_photo_note') }}</p>
+    <form method="post" enctype="multipart/form-data">
+      <input type="hidden" name="action" value="photo">
+      <input type="file" name="photo" accept="image/png,image/jpeg,image/webp" required>
+      <p><button class="btn teal" type="submit">{{ t('prof_upload') }}</button></p>
+    </form>
+    {% if me_avatar %}<form method="post"><input type="hidden" name="action" value="photo_remove"><button class="btn ghost small" type="submit">{{ t('prof_remove') }}</button></form>{% endif %}
+  </aside>
+  <section class="prof-forms">
+    <div class="card fade" style="--i:2">
+      <h2>{{ t('prof_info') }}</h2>
+      <form method="post">
+        <input type="hidden" name="action" value="info">
+        {% if is_staff %}
+        <label for="name">{{ t('prof_name') }}</label>
+        <input id="name" type="text" name="name" value="{{ info.name }}" maxlength="60" required>
+        {% else %}
+        <div class="grid-2" style="gap:10px">
+          <div><label for="first">{{ t('prof_first') }}</label><input id="first" type="text" name="first" value="{{ info.first }}" maxlength="40" required></div>
+          <div><label for="last">{{ t('prof_last') }}</label><input id="last" type="text" name="last" value="{{ info.last }}" maxlength="40"></div>
+        </div>
+        {% endif %}
+        <label for="email">{{ t('prof_email') }}</label>
+        <input id="email" type="email" name="email" value="{{ info.email }}" dir="ltr" {{ 'required' if not is_staff }}>
+        <label for="uname">{{ t('prof_username') }}</label>
+        <input id="uname" type="text" value="{{ info.username }}" dir="ltr" disabled>
+        <p><button class="btn" type="submit">{{ t('prof_save') }}</button></p>
+      </form>
+    </div>
+    <div class="card fade" style="--i:3">
+      <h2>{{ t('prof_password') }}</h2>
+      {% if is_master_user %}<p class="muted">{{ t('prof_master_pw') }}</p>
+      {% else %}
+      <form method="post">
+        <input type="hidden" name="action" value="password">
+        <label for="old">{{ t('prof_old') }}</label><input id="old" type="password" name="old" autocomplete="current-password" required>
+        <div class="grid-2" style="gap:10px">
+          <div><label for="new">{{ t('prof_new') }}</label><input id="new" type="password" name="new" autocomplete="new-password" minlength="6" required></div>
+          <div><label for="confirm">{{ t('prof_confirm') }}</label><input id="confirm" type="password" name="confirm" autocomplete="new-password" minlength="6" required></div>
+        </div>
+        <p><button class="btn" type="submit">{{ t('prof_change') }}</button></p>
+      </form>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

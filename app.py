@@ -14,7 +14,8 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer
+from core import doctors, sheet_sync, students, mailer, notify, profiles
+from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
 from core.classifier import TopicClassifier, KIND_NAME
@@ -217,6 +218,30 @@ def current_theme():
     return session.get("theme", config.THEME)
 
 
+def user_key():
+    """'s:<code>' for a signed-in student account, 'd:<id>' for a doctor / the admin, None for guests and visitors."""
+    if session.get("lecturer"):
+        return "d:" + (admin_id() or doctors.MASTER)
+    me = student()
+    return "s:" + me if me and not me.startswith("GUEST-") else None
+
+
+def _me_context():
+    key = user_key()
+    if not key:
+        return {"me_key": None, "me_avatar": None, "me_name": "", "me_role": "", "notifs": [], "unread": 0}
+    pkey = profiles.safe(key)
+    if key.startswith("s:"):
+        st = students.get(key[2:]) or {}
+        name, role = (st.get("first", "") + " " + st.get("last", "")).strip() or key[2:], tr("role_student", lang())
+    elif key == "d:" + doctors.MASTER:
+        name, role = profiles.get(pkey).get("name") or tr("role_admin", lang()), tr("role_admin", lang())
+    else:
+        name, role = session.get("admin_name", ""), tr("role_doctor", lang())
+    return {"me_key": key, "me_avatar": url_for("avatar", key=pkey) + "?v=" + str(int(profiles.avatar_path(key).stat().st_mtime)) if profiles.avatar_path(key) else None,
+            "me_name": name, "me_role": role, "notifs": notify.for_user(key, 6), "unread": notify.unread_count(key)}
+
+
 @app.context_processor
 def inject():
     l = lang()
@@ -230,7 +255,7 @@ def inject():
                         for c in visible_courses() if session.get("lecturer") or student_course_list() is None
                         or c["code"] in student_course_list()],
             "admin_role": ("master" if is_master() else "doctor") if session.get("lecturer") else None,
-            "admin_name": session.get("admin_name", "")}
+            "admin_name": session.get("admin_name", ""), **_me_context()}
 
 
 # ------------------------------------------------------------------ student login (code only, no names)
@@ -330,6 +355,7 @@ def register():
                 log_to_excel("Students", {"student_code": st["code"], "first_name": st["first"],
                                           "last_name": st["last"], "email": st["email"]})
                 sign_in_as("student", st, "", f.get("remember"))
+                notify.push(["s:" + st["code"]], "welcome", tr("n_welcome_title", lang()), tr("n_welcome_body", lang()), url_for("profile"))
                 return redirect(url_for("my_courses"))
     return render_template("register.html")
 
@@ -647,6 +673,202 @@ def staff_home():
     return render_template("staff_home.html", stats=stats, week=wk, week_total=sum(w["n"] for w in wk), master=master,
                            by_course=by_course, team=team, recent=recent, greet=greet, name=name,
                            today=td.isoformat(), courses=courses)
+
+
+# ------------------------------------------------------------------ doctors / courses overview pages (admin + doctor home cards)
+@app.route("/doctors")
+@lecturer_required
+def doctors_page():
+    if not is_master():
+        return redirect(url_for("staff_home"))
+    allc = config.list_courses()
+    owned = {}
+    for c in allc:
+        owned.setdefault(c["meta"].get("owner"), []).append(c["code"])
+    per = Counter(c[0] for r in students_for_admin() for c in r["courses"])
+    rows = []
+    for d in doctors.list_doctors():
+        mine = owned.get(d["id"], [])
+        rows.append({**d, "courses": mine, "students": sum(per.get(c, 0) for c in mine), "avatar": profiles.avatar_path("d:" + d["id"]) is not None,
+                     "key": profiles.safe("d:" + d["id"])})
+    return render_template("doctors.html", rows=rows)
+
+
+@app.route("/all-courses")
+@lecturer_required
+def all_courses():
+    per = Counter(c[0] for r in students_for_admin() for c in r["courses"])
+    names = {d["id"]: d["name"] for d in doctors.list_doctors()}
+    rows = []
+    for c in config.list_courses():
+        if not can_manage(c["code"]):
+            continue
+        try:
+            nq = len(EX.load_bank(c["code"])["questions"])
+        except Exception:
+            nq = 0
+        rows.append({"code": c["code"], "title": (c["name_ar"] or c["name_en"]) if lang() == "ar" else c["name_en"],
+                     "doctor": names.get(c["meta"].get("owner"), ""), "lectures": c["lectures"], "slides": c["slides"],
+                     "students": per.get(c["code"], 0), "questions": nq})
+    return render_template("courses_overview.html", rows=rows, master=is_master())
+
+
+# ------------------------------------------------------------------ profile (student, doctor, admin)
+@app.route("/avatar/<key>")
+def avatar(key):
+    from flask import send_file, abort
+    if not (session.get("lecturer") or student()):
+        abort(404)
+    p = profiles.avatar_path(key)
+    if not p:
+        abort(404)
+    r = send_file(p, mimetype="image/jpeg")
+    r.headers["Cache-Control"] = "private, max-age=3600"
+    return r
+
+
+@app.route("/profile", methods=["GET", "POST"])
+def profile():
+    key = user_key()
+    if not key:
+        return redirect(url_for("start", next=request.path))
+    is_staff = key.startswith("d:")
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "photo":
+            f = request.files.get("photo")
+            err = profiles.save_avatar(key, f) if f and f.filename else "photo_missing"
+            flash_t(err or "photo_saved")
+        elif action == "photo_remove":
+            profiles.remove_avatar(key)
+            flash_t("photo_removed")
+        elif action == "info":
+            if is_staff:
+                name, email = request.form.get("name", "").strip(), request.form.get("email", "").strip()
+                if key == "d:" + doctors.MASTER:
+                    profiles.update(key, name=name[:60], email=email[:120])
+                else:
+                    doctors.update_profile(admin_id(), name, email)
+                    session["admin_name"] = (name or session.get("admin_name", ""))[:60]
+                    sync_sheet()
+                flash_t("profile_saved")
+            else:
+                err = students.update_profile(key[2:], request.form.get("first", ""), request.form.get("last", ""), request.form.get("email", ""))
+                if not err:
+                    session["student_name"] = request.form.get("first", "").strip()[:40]
+                flash_t(err or "profile_saved")
+        elif action == "password":
+            new = request.form.get("new", "")
+            if key == "d:" + doctors.MASTER:
+                flash_t("pw_master_note")
+            elif new != request.form.get("confirm", ""):
+                flash_t("pw_mismatch")
+            else:
+                err = (doctors.change_password(admin_id(), request.form.get("old", ""), new, config.LECTURER_PASSWORD) if is_staff
+                       else students.change_password(key[2:], request.form.get("old", ""), new))
+                if err:
+                    flash_t(err, n=doctors.MIN_LEN)
+                else:
+                    if is_staff:
+                        sync_sheet()
+                    notify.push([key], "security", tr("n_pw_title", lang()), tr("n_pw_body", lang()), url_for("profile"))
+                    flash_t("pw_changed")
+        return redirect(url_for("profile"))
+    if is_staff:
+        if key == "d:" + doctors.MASTER:
+            info = {"name": profiles.get(key).get("name", "") or session.get("admin_name") or "Admin", "email": profiles.get(key).get("email", ""), "username": "admin", "code": ""}
+        else:
+            d = doctors.get(admin_id()) or {}
+            info = {"name": d.get("name", ""), "email": d.get("email", ""), "username": d.get("username", ""), "code": ""}
+    else:
+        st = students.get(key[2:]) or {}
+        info = {"first": st.get("first", ""), "last": st.get("last", ""), "email": st.get("email", ""), "username": st.get("username", ""), "code": st.get("code", "")}
+    return render_template("profile.html", info=info, is_staff=is_staff, is_master_user=key == "d:" + doctors.MASTER)
+
+
+# ------------------------------------------------------------------ notifications
+@app.route("/notifications")
+def notifications_page():
+    key = user_key()
+    if not key:
+        return redirect(url_for("start", next=request.path))
+    items = notify.for_user(key, 80)
+    notify.mark_read(key)                       # opening the page = reading them (the "new" tags still show once)
+    return render_template("notifications.html", items=items)
+
+
+@app.route("/notifications/read", methods=["POST"])
+def notifications_read():
+    key = user_key()
+    if key:
+        try:
+            nid = int(request.form.get("id", ""))
+        except ValueError:
+            nid = None
+        notify.mark_read(key, nid)
+    return redirect(request.form.get("next") or request.referrer or url_for("notifications_page"))
+
+
+# ------------------------------------------------------------------ calendar (scheduled exams + exams taken)
+def _calendar_events():
+    key = user_key()
+    ar = lang() == "ar"
+    title_of = {c["code"]: (c["name_ar"] or c["name_en"]) if ar else c["name_en"] for c in config.list_courses()}
+    names = {s["code"]: (s["first"] + " " + s["last"]).strip() for s in students.list_students()}
+    ev = []
+    if session.get("lecturer"):
+        codes = [c["code"] for c in config.list_courses() if can_manage(c["code"])]
+    else:
+        codes = [c for c in (student_course_list() or []) if c in title_of]
+    for it in SCH.for_courses(codes):
+        d, t = it["when"].split("T")
+        ev.append({"date": d, "time": t, "kind": "scheduled", "title": it["title"], "sub": it["note"], "course": title_of.get(it["course"], it["course"]),
+                   "id": it["id"], "mine": session.get("lecturer") and can_manage(it["course"])})
+    import datetime as _dt
+    for c in codes:
+        for a in EX.list_attempts(c, None if session.get("lecturer") else key[2:])[:300]:
+            when = _dt.datetime.fromtimestamp(a["started"])
+            who = "" if not session.get("lecturer") else names.get(a["student"], a["student"])
+            res = (f"{'%g' % a['score']}/{a['max']} · {a['pct']}%") if a["status"] == "done" else tr("cal_in_progress", lang())
+            ev.append({"date": when.strftime("%Y-%m-%d"), "time": when.strftime("%H:%M"), "kind": "attempt",
+                       "title": (who + " · " if who else "") + tr("cal_practice_exam", lang()), "sub": res, "course": title_of.get(c, c),
+                       "link": (url_for("exams_attempt", aid=a["id"]) if session.get("lecturer") else url_for("exams_result", aid=a["id"])) if a["status"] == "done" else ""})
+    return ev
+
+
+@app.route("/calendar", methods=["GET", "POST"])
+def calendar_page():
+    key = user_key()
+    if not key:
+        return redirect(url_for("start", next=request.path))
+    managed = [c for c in config.list_courses() if can_manage(c["code"])] if session.get("lecturer") else []
+    if request.method == "POST" and session.get("lecturer"):
+        action = request.form.get("action")
+        if action == "add":
+            code = request.form.get("course", "")
+            if not can_manage(code):
+                flash_t("cal_bad_course")
+            else:
+                item = SCH.add(code, request.form.get("title", ""), request.form.get("when", ""), request.form.get("note", ""), admin_id() or "")
+                if not item:
+                    flash_t("cal_bad_date")
+                else:
+                    ctitle = next(((c["name_ar"] or c["name_en"]) if lang() == "ar" else c["name_en"] for c in managed if c["code"] == code), code)
+                    to = [f"s:{s['code']}" for s in students.list_students() if code in s["courses"]] + ["d:" + doctors.MASTER, "d:" + (course_owner(code) or doctors.MASTER)]
+                    notify.push(to, "exam", tr("n_exam_title", lang(), course=ctitle), tr("n_exam_body", lang(), title=item["title"], when=item["when"].replace("T", " ")), url_for("calendar_page"))
+                    flash_t("cal_added")
+        elif action == "delete":
+            try:
+                it = SCH.get(int(request.form.get("id", "")))
+            except ValueError:
+                it = None
+            if it and can_manage(it["course"]):
+                SCH.remove(it["id"])
+                flash_t("cal_deleted")
+        return redirect(url_for("calendar_page"))
+    l = lang()
+    return render_template("calendar.html", events=_calendar_events(), managed=[{"code": c["code"], "title": (c["name_ar"] or c["name_en"]) if l == "ar" else c["name_en"]} for c in managed],
+                           staff=bool(session.get("lecturer")))
 
 
 @app.route("/dashboard")
@@ -1017,6 +1239,13 @@ def my_courses():
         else:
             if not guest:
                 students.set_courses(me, picked)
+                st0 = students.get(me) or {}
+                for c in config.list_courses():
+                    if c["code"] in picked and c["code"] not in have:
+                        notify.push(["d:" + doctors.MASTER, "d:" + (c["meta"].get("owner") or doctors.MASTER)], "student",
+                                    tr("n_student_title", lang(), course=c["name_en"]),
+                                    tr("n_student_body", lang(), name=(st0.get("first", "") + " " + st0.get("last", "")).strip(), user=st0.get("username", "")),
+                                    url_for("students_page"))
             session["course"] = picked[0] if session.get("course") not in picked else session["course"]
             session.pop("practice", None)
             flash_t("courses_saved")
@@ -1156,6 +1385,11 @@ def exams_submit():
     import time as _t
     sent = {k[2:]: v[:4000] for k, v in request.form.items() if k.startswith("q_")} if _t.time() <= att["deadline"] + 60 else {}
     att = EX.finish(att, sent)
+    me0 = students.get(student()) or {}
+    cc = course_code()
+    notify.push(["d:" + (course_owner(cc) or doctors.MASTER)], "exam", tr("n_done_title", lang(), course=cc),
+                tr("n_done_body", lang(), name=(me0.get("first", "") + " " + me0.get("last", "")).strip() or student(), score="%g" % att["score"], max=att["max"], pct=att["pct"]),
+                url_for("exams_attempt", aid=att["id"]))
     log("Exams", {"student_code": student(), "attempt_id": att["id"], "n_questions": att["max"], "correct": att["score"],
                   "score_pct": att["pct"], "duration_sec": att["duration"], "lang": att["lang"],
                   "wrong": ",".join(d["id"] for d in att["details"] if d["score"] < 1)})

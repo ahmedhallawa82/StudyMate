@@ -7,7 +7,7 @@ html[data-mode="dark"] header.top { background: linear-gradient(90deg, #1e1b4b, 
 html[data-mode="dark"] .card, html[data-mode="dark"] .kpi, html[data-mode="dark"] .result { background: var(--card);
   box-shadow: 0 4px 18px rgba(0,0,0,.35); }
 html[data-mode="dark"] .panel { background: #1b2040; border-color: var(--line); }
-html[data-mode="dark"] input[type=text], html[data-mode="dark"] input[type=password], html[data-mode="dark"] input[type=number],
+html[data-mode="dark"] input[type=text], html[data-mode="dark"] input[type=password], html[data-mode="dark"] input[type=number], html[data-mode="dark"] input[type=email],
 html[data-mode="dark"] textarea, html[data-mode="dark"] select { background: #11152a; color: var(--ink); border-color: #3a4170; }
 html[data-mode="dark"] .btn.ghost { background: transparent; color: #c7d2fe; border-color: #6d78c9; }
 html[data-mode="dark"] .btn.teal { background: #4f46e5; }

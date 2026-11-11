@@ -123,3 +123,16 @@ def sheet_rows(courses_of):
     """[[name, e-mail, username, courses, system password, doctor's own password]] – courses_of(doctor_id) -> 'AI, MAM336'."""
     return [[d["name"], d.get("email", ""), username_of(d), courses_of(d["id"]), d.get("initial", ""), d.get("new", "")]
             for d in _load()]
+
+
+def update_profile(doctor_id, name, email):
+    """Change the doctor's display name / e-mail."""
+    with _lock:
+        rows = _load()
+        me = next((d for d in rows if d["id"] == doctor_id), None)
+        if not me:
+            return False
+        me["name"] = (name or me["name"]).strip()[:60] or me["name"]
+        me["email"] = (email or "").strip()[:120]
+        _save(rows)
+    return True

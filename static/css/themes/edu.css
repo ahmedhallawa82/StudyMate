@@ -7,7 +7,7 @@ html[lang="ar"] body { font-family: Cairo, Tahoma, "Segoe UI", sans-serif; }
 .card, .kpi, .result, .stat, .tile, .ccard { border: none; border-radius: var(--radius); box-shadow: 0 2px 14px rgba(15,60,57,.06); }
 .btn { border-radius: 999px; box-shadow: none; }
 .btn.ghost { box-shadow: none; }
-input[type=text], input[type=password], input[type=number], textarea, select { border-radius: 14px; }
+input[type=text], input[type=password], input[type=number], input[type=email], textarea, select { border-radius: 14px; }
 .panel { background: var(--teal-soft); } .next { background: #f1f9f8; border-color: #cfe7e5; }
 .tag { background: var(--teal-soft); color: var(--teal-dark); } th { background: #f4f6f6; }
 
@@ -22,8 +22,8 @@ nav a { display: inline-flex; align-items: center; justify-content: center; gap:
 nav a .ni { font-size: 19px; line-height: 1; filter: grayscale(.2); }
 nav a .nl { max-width: 0; opacity: 0; white-space: nowrap; overflow: hidden; transition: max-width .3s ease, opacity .2s; font-size: 14px; }
 nav a:hover { background: var(--teal-soft); color: var(--teal-dark); }
-nav a.active .nl { max-width: 150px; opacity: 1; margin-inline-start: 8px; }
-nav a.active { background: var(--teal); color: #fff; }
+nav .nl { display: none; }
+nav a.active { background: var(--teal); color: #fff; padding: 0; min-width: 46px; }
 nav a.active .ni { filter: none; }
 .chip { background: var(--card); color: var(--ink); border-radius: 999px; padding: 5px 14px 5px 6px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 14px rgba(15,60,57,.06); }
 html[dir="rtl"] .chip { padding: 5px 6px 5px 14px; }
@@ -54,7 +54,7 @@ html[data-theme="edu"][data-mode="dark"] .btn.ghost { color: var(--teal); border
 html[data-theme="edu"][data-mode="dark"] th { background: #17302f; color: var(--teal-dark); }
 html[data-theme="edu"][data-mode="dark"] a { color: #7fd4cd; }
 html[data-theme="edu"][data-mode="dark"] nav a, html[data-theme="edu"][data-mode="dark"] .brand { color: inherit; }
-html[data-theme="edu"][data-mode="dark"] input[type=text], html[data-theme="edu"][data-mode="dark"] input[type=password], html[data-theme="edu"][data-mode="dark"] input[type=number],
+html[data-theme="edu"][data-mode="dark"] input[type=text], html[data-theme="edu"][data-mode="dark"] input[type=password], html[data-theme="edu"][data-mode="dark"] input[type=number], html[data-theme="edu"][data-mode="dark"] input[type=email],
 html[data-theme="edu"][data-mode="dark"] textarea, html[data-theme="edu"][data-mode="dark"] select { background: #0f1a19; border-color: #2a3d3b; color: var(--ink); }
 html[data-theme="edu"][data-mode="dark"] .next, html[data-theme="edu"][data-mode="dark"] .next-card { background: #122322; border-color: var(--line); }
 html[data-theme="edu"][data-mode="dark"] .tag { background: #17302f; color: #9adbd5; }

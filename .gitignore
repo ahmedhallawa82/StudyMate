@@ -6,3 +6,7 @@ data/doctors.json
 secrets/
 data/students.json
 data/*/exams/
+data/avatars/
+data/profiles.json
+data/notifications.json
+data/schedule.json
