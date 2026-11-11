@@ -454,10 +454,10 @@ def test_exam_flow(admin, tmp_path, monkeypatch):
 
 def test_exam_pdf_noise_and_answer_key():
     from core import exams as EX
-    text = ("Lecture 1: Intro\\nQ1.\\nWhat is a car?\\na) x\\nb) y\\nc) z\\nd) w\\nPage 1 / 36\\n"
-            "Automotive Engineering — Question Bank\\nEssay Questions\\nQ2.\\nExplain yaw.\\nLecture 2: Dynamics\\n").replace("\\\\n", "\\n")
+    text = "\n".join(["Lecture 1: Intro", "Q1.", "What is a car?", "a) x", "b) y", "c) z", "d) w", "Page 1 / 36",
+                      "Automotive Engineering — Question Bank", "Essay Questions", "Q2.", "Explain yaw.", "Lecture 2: Dynamics"])
     items = EX.parse_text(text)
     assert [i["type"] for i in items] == ["mcq", "essay"]
     assert items[0]["options"][-1] == "w" and items[1]["q"] == "Explain yaw."          # headers/footers do not stick to questions
-    assert EX.parse_key("1-A 2-C 3-B\\n4. d\\nQ5. B\\n".replace("\\\\n", "\\n")) == {1: 0, 2: 2, 3: 1, 4: 3, 5: 1}
-    assert EX.parse_key("Q1. What is a car?\\na) x") == {}
+    assert EX.parse_key("1-A 2-C 3-B\n4. d\nQ5. B\n") == {1: 0, 2: 2, 3: 1, 4: 3, 5: 1}
+    assert EX.parse_key("Q1. What is a car?\na) x") == {}
