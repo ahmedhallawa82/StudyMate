@@ -220,8 +220,6 @@ def test_delete_lecture_and_course_from_admin(admin):
         admin.post("/admin", data={"action": "delete_lecture", "lecture": "2"})
         left = list((config.BASE_DIR / "data" / "DEL9" / "lectures").glob("*.pdf"))
         assert len(left) == 1 and "Informed" in left[0].name
-        admin.post("/admin", data={"action": "delete_lecture", "lecture": "4"})      # last lecture: refused
-        assert len(list((config.BASE_DIR / "data" / "DEL9" / "lectures").glob("*.pdf"))) == 1
         admin.post("/admin", data={"action": "delete_course", "confirm": "wrong"})
         assert (config.BASE_DIR / "data" / "DEL9").exists()
         admin.post("/admin", data={"action": "delete_course", "confirm": "DEL9"})
@@ -231,6 +229,29 @@ def test_delete_lecture_and_course_from_admin(admin):
     finally:
         shutil.rmtree(config.BASE_DIR / "data" / "DEL9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "DEL9", ignore_errors=True)
+        admin.get("/course/AI")
+
+
+def test_delete_several_lectures_at_once(admin):
+    import io, shutil
+    src = config.LECTURES_DIR
+    pdfs = [src / "lecture 2 Intelligent Agents.pdf", src / "lecture 4 Informed Search.pdf", src / "lecture 5 Adversarial Search.pdf"]
+    data = {"action": "add_course", "code": "del8", "name_en": "Bulk", "name_ar": "",
+            "pdfs": [(io.BytesIO(p.read_bytes()), p.name) for p in pdfs]}
+    folder = config.BASE_DIR / "data" / "DEL8" / "lectures"
+    try:
+        admin.post("/admin", data=data, content_type="multipart/form-data")
+        assert len(list(folder.glob("*.pdf"))) == 3
+        admin.post("/admin", data={"action": "delete_lecture", "lecture": ["2", "4"]})
+        left = list(folder.glob("*.pdf"))
+        assert len(left) == 1 and "Adversarial" in left[0].name
+        admin.post("/admin", data={"action": "delete_lecture", "lecture": ["5"]})     # every lecture selected -> whole course content goes
+        assert not (config.BASE_DIR / "data" / "DEL8").exists()
+        admin.post("/admin", data={"action": "delete_lecture", "lecture": [str(i) for i in range(1, 12)]})  # main course keeps its lectures
+        assert list((config.BASE_DIR / "data" / "AI" / "lectures").glob("*.pdf"))
+    finally:
+        shutil.rmtree(config.BASE_DIR / "data" / "DEL8", ignore_errors=True)
+        shutil.rmtree(config.BASE_DIR / "models" / "DEL8", ignore_errors=True)
         admin.get("/course/AI")
 
 

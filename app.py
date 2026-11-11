@@ -806,22 +806,34 @@ def admin():
             return redirect(url_for("admin"))
         if action == "delete_lecture":
             from core.passages import lecture_number
-            num = request.form.get("lecture", "")
-            pdfs = [f for f in P.lectures.glob("*.pdf") if str(lecture_number(f.name)) == num]
+            nums = [n for n in request.form.getlist("lecture") if n]
+            allpdfs = list(P.lectures.glob("*.pdf"))
+            pdfs = [f for f in allpdfs if str(lecture_number(f.name)) in nums]
             if not pdfs:
                 flash_t("no_such_lecture")
                 return redirect(url_for("admin"))
-            if len(list(P.lectures.glob("*.pdf"))) <= len(pdfs):
-                flash_t("last_lecture")
+            if len(allpdfs) <= len(pdfs):
+                if code == config.DEFAULT_COURSE:         # the main course cannot be emptied
+                    flash_t("last_lecture")
+                    return redirect(url_for("admin"))
+                import shutil                               # every lecture selected = remove the whole course content
+                for d in (P.data, P.models, P.reports):
+                    shutil.rmtree(d, ignore_errors=True)
+                STATE.pop(code, None)
+                session["course"] = config.DEFAULT_COURSE
+                session.pop("practice", None)
+                sync_sheet()
+                flash_t("course_deleted", code=code)
                 return redirect(url_for("admin"))
             for f in pdfs:
                 for c in (P.data / "ocr_cache").glob(f"{f.stem}__p*.txt"):
                     c.unlink()
                 f.unlink()
-            if not full:                       # added course: drop the lecture's topic and questions too
+            gone = sorted({str(lecture_number(f.name)) for f in pdfs})
+            if not full:                       # added course: drop the lectures' topics and questions too
                 tp, bk = pd.read_csv(P.topics), pd.read_csv(P.bank)
-                tp[tp.topic != f"lec{num}"].to_csv(P.topics, index=False, encoding="utf-8")
-                bk[bk.lecture.astype(str) != num].to_csv(P.bank, index=False, encoding="utf-8-sig")
+                tp[~tp.topic.isin([f"lec{n}" for n in gone])].to_csv(P.topics, index=False, encoding="utf-8")
+                bk[~bk.lecture.astype(str).isin(gone)].to_csv(P.bank, index=False, encoding="utf-8-sig")
                 from core.autocourse import regenerate
                 regenerate(code)
             else:
@@ -830,7 +842,7 @@ def admin():
                 df = build_passages(predict_topic=lambda text: clf.predict(text)[0], verbose=False, course=code)
                 build_index(df, course=code)
             load_state(code)
-            flash_t("lecture_deleted", n=num)
+            flash_t("lecture_deleted", n=", ".join(gone))
             return redirect(url_for("admin"))
         if action == "upload":
             from core.autocourse import save_lecture

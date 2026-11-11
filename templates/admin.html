@@ -69,12 +69,13 @@
     <div class="card">
       <h2>{{ t('adm_delete_lecture') }}</h2>
       <p class="muted small">{{ t('adm_delete_lecture_note') }}</p>
-      <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_lecture') }}')">
+      <form method="post" onsubmit="return confirm('{{ t('confirm_delete_lecture') }}')">
         <input type="hidden" name="action" value="delete_lecture">
-        <select name="lecture" style="flex:1;width:100%">
-          {% for l in lectures %}<option value="{{ l.lecture }}">{{ t('lecture') }} {{ l.lecture }} — {{ l.lecture_title }}</option>{% endfor %}
-        </select>
-        <button class="btn red" type="submit">{{ t('delete_btn') }}</button>
+        <label class="small" style="display:block;margin-bottom:6px"><input type="checkbox" onclick="this.form.querySelectorAll('input[name=lecture]').forEach(function(c){c.checked=this.checked}.bind(this))"> <b>{{ t('select_all') }}</b></label>
+        <div style="max-height:240px;overflow:auto;display:grid;gap:4px;margin-bottom:10px">
+          {% for l in lectures %}<label class="small"><input type="checkbox" name="lecture" value="{{ l.lecture }}"> {{ t('lecture') }} {{ l.lecture }} — <span dir="ltr">{{ l.lecture_title }}</span></label>{% endfor %}
+        </div>
+        <button class="btn red" type="submit">{{ t('delete_selected') }}</button>
       </form>
     </div>
     {% endif %}
