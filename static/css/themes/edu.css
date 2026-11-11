@@ -14,7 +14,7 @@ input[type=text], input[type=password], input[type=number], input[type=email], t
 /* header: light bar, capsule of round icon buttons, avatar chip */
 header.top { background: transparent; color: var(--ink); box-shadow: none; position: sticky; top: 0; z-index: 40; backdrop-filter: blur(10px);
              background: color-mix(in srgb, var(--bg) 82%, transparent); }
-header.top .bar { max-width: 1240px; padding: 14px 22px; }
+header.top .bar { max-width: 1400px; padding: 14px 22px; }
 .brand { color: var(--teal); font-size: 24px; letter-spacing: -.3px; }
 nav { background: var(--card); border-radius: 999px; padding: 6px; gap: 6px; box-shadow: 0 2px 14px rgba(15,60,57,.06); flex-wrap: nowrap; }
 nav a { display: inline-flex; align-items: center; justify-content: center; gap: 0; min-width: 46px; height: 46px; padding: 0 12px; border-radius: 999px; border-bottom: none !important;
@@ -63,3 +63,5 @@ html[data-theme="edu"][data-mode="dark"] .card.cont { background: linear-gradien
 html[data-theme="edu"][data-mode="dark"] .stat .ic, html[data-theme="edu"][data-mode="dark"] .pill { background: #17302f; color: #9adbd5; }
 html[data-theme="edu"][data-mode="dark"] .plan-row .track, html[data-theme="edu"][data-mode="dark"] .track { background: #0f1a19; }
 html[data-theme="edu"][data-mode="dark"] .profile .ring { background: conic-gradient(var(--teal) calc(var(--p) * 1%), #1b2a29 0); }
+
+@media (max-width: 1460px) and (min-width: 1001px) { nav { gap: 4px; padding: 5px; } nav a { min-width: 42px; height: 42px; padding: 0 10px; } nav a.active { min-width: 42px; } .tools { gap: 6px; } .tools .tool { padding: 7px 11px; } .chip { padding-inline-end: 10px; } header.top .bar { gap: 12px; padding: 12px 16px; } }

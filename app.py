@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -229,7 +229,7 @@ def user_key():
 def _me_context():
     key = user_key()
     if not key:
-        return {"me_key": None, "me_avatar": None, "me_name": "", "me_role": "", "notifs": [], "unread": 0}
+        return {"me_key": None, "me_avatar": None, "me_name": "", "me_role": "", "notifs": [], "unread": 0, "badge_new": 0}
     pkey = profiles.safe(key)
     if key.startswith("s:"):
         st = students.get(key[2:]) or {}
@@ -239,7 +239,8 @@ def _me_context():
     else:
         name, role = session.get("admin_name", ""), tr("role_doctor", lang())
     return {"me_key": key, "me_avatar": url_for("avatar", key=pkey) + "?v=" + str(int(profiles.avatar_path(key).stat().st_mtime)) if profiles.avatar_path(key) else None,
-            "me_name": name, "me_role": role, "notifs": notify.for_user(key, 6), "unread": notify.unread_count(key)}
+            "me_name": name, "me_role": role, "notifs": notify.for_user(key, 6), "unread": notify.unread_count(key),
+            "badge_new": badges.unseen_count(key[2:]) if key.startswith("s:") else 0}
 
 
 @app.context_processor
@@ -429,10 +430,45 @@ def _streak(days):
     return n
 
 
+GROUP_ORDER = badges.GROUPS
+
+
+def my_mistakes():
+    """Questions of this course whose latest answer by this student was wrong (oldest first)."""
+    last = {}
+    for a in read_sheet("Answers"):
+        if a.get("student_code") == student() and a.get("course") == course_code():
+            last[a["question_id"]] = str(a["correct"]) in ("1", "True")
+    known = S()["qid_topic"]
+    return [q for q, ok in last.items() if not ok and q in known]
+
+
+def award(code=None):
+    """Work out the student's badges, announce the new ones in the bell, and return all of them."""
+    code = code or student()
+    if not code or code.startswith("GUEST-"):
+        return []
+    mine = lambda rows: [r for r in rows if r.get("student_code") == code]
+    topics_of = {}
+    for c in config.list_courses():
+        try:
+            topics_of[c["code"]] = list(load_topics(c["code"]).topic)
+        except Exception:
+            pass
+    allb = badges.compute(mine(read_sheet("Questions")), mine(read_sheet("Answers")), mine(read_sheet("Exams")), topics_of, config.GREEN_FROM, lang())
+    got = {b["id"]: b["when"] for b in allb if b["earned"]}
+    by_id = {b["id"]: b for b in allb}
+    for bid in badges.new_ids(code, got):
+        b = by_id[bid]
+        notify.push(["s:" + code], "badge", tr("badge_new", lang(), name=b["name"]), b["desc"], url_for("badges_page"))
+    return allb
+
+
 @app.route("/home")
 @student_required
 def student_home():
     visit("home")
+    award()
     code, me = course_code(), student()
     mastery = my_mastery()
     items, nxt = topic_panel(mastery)
@@ -446,7 +482,7 @@ def student_home():
     stats = {"asked": len(qs), "answered": len(ans), "acc": round(100 * correct / len(ans)) if ans else None,
              "green": sum(i["colour"] == "green" for i in items), "topics": len(items), "overall": overall,
              "exams": len(exams_done), "exam_avg": round(sum(a["pct"] for a in exams_done) / len(exams_done)) if exams_done else None,
-             "streak": _streak(days)}
+             "streak": _streak(days), "mistakes": len(my_mistakes())}
     weak = sorted(items, key=lambda i: i["level"])[:4]
     recent_q = [{"q": q["question"], "found": q.get("found") == "yes"} for q in qs[-4:][::-1]]
     recent_e = [{"when": datetime_str(a["started"]), "pct": a["pct"], "score": a["score"], "max": a["max"], "id": a["id"]} for a in exams_done[:3]]
@@ -496,6 +532,7 @@ def ask():
             "confidence": round(conf, 3), "first_slide": hits[0]["passage_id"] if hits else "",
             "found": "yes" if found else "no", "method": method, "helpful": "",
         })
+        award()
         result = {"found": found, "hits": hits, "topic": topic, "topic_name": topic_name(topic),
                   "confidence": round(conf * 100), "log_id": log_id}
     else:
@@ -563,7 +600,15 @@ def practice():
     topic = request.args.get("topic")
     if p is not None and p.get("course") != course_code():
         p = None
-    if request.method == "GET" and (p is None or topic is not None and topic != p.get("topic")):
+    if request.method == "GET" and request.args.get("mode") == "mistakes":
+        ids = my_mistakes()
+        if not ids:
+            return redirect(url_for("practice"))
+        p = {"topic": None, "review": True, "queue": ids, "total": len(ids), "fixed": 0, "done": [], "count": 0, "goal": len(ids),
+             "course": course_code(), "q_id": ids[0], "hints": 0, "stage": "ask", "answer": ""}
+        session["practice"] = p
+        visit("practice")
+    elif request.method == "GET" and (p is None or topic is not None and topic != p.get("topic") or (p.get("review") and request.args.get("new"))):
         if topic is None:
             topic, _ = study_next(my_mastery(), S()["topics"], lang())
         p = {"topic": topic, "done": [], "count": 0, "goal": 5, "course": course_code()}
@@ -573,6 +618,8 @@ def practice():
 
     if request.method == "POST":
         action = request.form.get("action")
+        if p is None or p.get("stage") == "finished":
+            return redirect(url_for("practice"))
         if action == "hint" and p["hints"] < 2:
             p["hints"] += 1
         elif action == "check":
@@ -587,11 +634,20 @@ def practice():
             new = M.update(old, correct, p["hints"])
             log("Answers", {"student_code": student(), "question_id": p["q_id"], "topic": q_topic,
                                      "correct": int(correct), "hints_used": p["hints"], "mastery_after": new})
+            award()
             p["done"].append(p["q_id"])
             p["count"] += 1
             p["last"] = {"correct": correct, "old": round(old * 100), "new": round(new * 100),
                          "colour": M.colour(new)}
-            p.update({"q_id": next_question(p["topic"], p["done"]), "hints": 0, "stage": "ask", "answer": ""})
+            if p.get("review"):                                    # mistakes review: go through the wrong ones one by one
+                p["queue"] = p["queue"][1:]
+                p["fixed"] += int(correct)
+                if p["queue"]:
+                    p.update({"q_id": p["queue"][0], "hints": 0, "stage": "ask", "answer": ""})
+                else:
+                    p.update({"hints": 0, "stage": "finished", "answer": ""})
+            else:
+                p.update({"q_id": next_question(p["topic"], p["done"]), "hints": 0, "stage": "ask", "answer": ""})
         session["practice"] = p
         return redirect(url_for("practice"))
 
@@ -600,8 +656,28 @@ def practice():
     topics = [{"topic": r.topic, "name": r.name_ar if lang() == "ar" else r["name"]} for _, r in S()["topics"].iterrows()]
     last = p.pop("last", None)
     session["practice"] = p
-    return render_template("practice.html", p=p, q=q, match=match, topics=topics, last=last,
-                           topic_name=topic_name(p["topic"], tr("all_topics", lang())))
+    return render_template("practice.html", p=p, q=q, match=match, topics=topics, last=last, mistakes=len(my_mistakes()),
+                           topic_name=tr("review_title", lang()) if p.get("review") else topic_name(p["topic"], tr("all_topics", lang())))
+
+
+# ------------------------------------------------------------------ Badges
+@app.route("/badges")
+@student_required
+def badges_page():
+    visit("badges")
+    allb = award()
+    code = student()
+    fresh = badges.unseen_ids(code)
+    badges.mark_seen(code)
+    groups = []
+    for g in GROUP_ORDER:
+        items = [dict(b, new=b["id"] in fresh) for b in allb if b["group"] == g]
+        groups.append({"id": g, "name": badges.GROUP_NAMES[g][1 if lang() == "ar" else 0], "items": items,
+                       "got": sum(b["earned"] for b in items)})
+    done = [b for b in allb if b["earned"]]
+    todo = sorted([b for b in allb if not b["earned"] and b["value"]], key=lambda b: -b["pct"])
+    return render_template("badges.html", groups=groups, total=len(allb), got=len(done), nxt=todo[0] if todo else None,
+                           latest=sorted(done, key=lambda b: b["when"])[-1] if done else None)
 
 
 # ------------------------------------------------------------------ Progress
@@ -1417,6 +1493,7 @@ def exams_submit():
     log("Exams", {"student_code": student(), "attempt_id": att["id"], "n_questions": att["max"], "correct": att["score"],
                   "score_pct": att["pct"], "duration_sec": att["duration"], "lang": att["lang"],
                   "wrong": ",".join(d["id"] for d in att["details"] if d["score"] < 1)})
+    award()
     return redirect(url_for("exams_result", aid=att["id"]))
 
 

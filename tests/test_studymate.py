@@ -16,7 +16,7 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    from core import notify, schedule, profiles, support
+    from core import notify, schedule, profiles, support, badges
     d = tmp_path_factory.mktemp("stu")
     f = d / "students.json"
     students.FILE = lambda: f
@@ -25,6 +25,7 @@ def _students_file(tmp_path_factory):
     profiles.FILE = lambda: d / "profiles.json"
     profiles.DIR = lambda: d / "avatars"
     support.FILE = lambda: d / "support.json"
+    badges.FILE = lambda: d / "badges.json"
 
 
 def as_student(c, name):
@@ -709,3 +710,47 @@ def test_admin_resets_a_password_from_the_support_inbox_and_it_works_at_once():
     assert "newPw" not in adm.get("/support-inbox").get_data(as_text=True)      # never stored or shown again
     assert "newPw" not in adm.post("/support-inbox", data={"action": "reset", "who": "ghost@x.com"}).get_data(as_text=True)
     assert A.app.test_client().post("/support-inbox", data={"action": "reset", "who": "locked@test.com"}).status_code == 302  # not an admin
+
+
+def test_badge_metrics_dates_and_streaks():
+    from core import badges
+    q = lambda t: {"time": t, "course": "AI"}
+    a = lambda t, ok, qid="Q1", lvl=0.2, topic="T1": {"time": t, "course": "AI", "question_id": qid, "correct": ok, "mastery_after": lvl, "topic": topic}
+    qs = [q("2026-01-01 09:00:00"), q("2026-01-02 02:30:00"), q("2026-01-03 05:00:00")]
+    an = [a("2026-01-03 10:00:00", 0), a("2026-01-03 10:01:00", 1, lvl=0.75), a("2026-01-05 10:00:00", 1, "Q2", 0.8, "T2")]
+    ex = [{"time": "2026-01-06 12:00:00", "course": "AI", "score_pct": 95}]
+    all_ = {b["id"]: b for b in badges.compute(qs, an, ex, {"AI": ["T1", "T2"]})}
+    assert all_["q1"]["earned"] and all_["q1"]["when"] == "2026-01-01" and not all_["q10"]["earned"] and all_["q10"]["value"] == 3
+    assert all_["s3"]["earned"] and all_["s3"]["when"] == "2026-01-03" and not all_["s7"]["earned"]      # 1,2,3 Jan in a row
+    assert all_["fix"]["earned"] and all_["t1"]["earned"] and not all_["t5"]["earned"]
+    assert all_["tall"]["earned"] and all_["tall"]["when"] == "2026-01-05"                                 # every topic of the course went green
+    assert all_["e1"]["earned"] and all_["e90"]["earned"] and all_["early"]["earned"] and all_["night"]["earned"]
+    assert all_["d10"]["value"] == 5 and all_["d10"]["pct"] == 50 and len(all_) == 25
+    assert badges.compute([], [], [], {})[0]["earned"] is False
+
+
+def test_badges_page_notifies_and_review_mode_fixes_mistakes():
+    import app as A
+    from core import notify, badges
+    c = A.app.test_client()
+    as_student(c, "Badger")
+    code = next(s["code"] for s in A.students.list_students() if s["email"] == "badger@test.com")
+    c.get("/ask?q=what+is+an+intelligent+agent")
+    assert any(r["kind"] == "badge" for r in notify.for_user("s:" + code))                  # "First question" announced in the bell
+    assert badges.unseen_count(code) >= 1
+    page = c.get("/badges").get_data(as_text=True)
+    assert "First question" in page and 'class="bd on' in page and "Beginner" in page
+    assert badges.unseen_count(code) == 0                                                    # opening the page clears the counter
+    # mistakes review
+    c.get("/practice")
+    assert "mode=mistakes" not in c.get("/practice").get_data(as_text=True)                  # nothing wrong yet -> no button
+    c.post("/practice", data={"action": "wrong"})
+    r = c.get("/practice")
+    assert "mode=mistakes" in r.get_data(as_text=True)
+    r = c.get("/practice?mode=mistakes")
+    assert r.status_code == 200 and "Mistakes review" in r.get_data(as_text=True)
+    c.post("/practice", data={"action": "right"})
+    done = c.get("/practice").get_data(as_text=True)
+    assert "Review finished" in done and "1 of 1" in done
+    assert "mode=mistakes" not in done                                                       # fixed: nothing left to review
+    assert "Fixed a mistake" in c.get("/badges").get_data(as_text=True)

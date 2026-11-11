@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('nav_badges') }}{% endblock %}
+{% block content %}
+{{ page_head('🏅', t('bg_title'), t('bg_sub')) }}
+<div class="bd-sum card fade" style="--i:1">
+  <div class="bd-ring" style="--p: {{ (100 * got / total)|round|int }}"><b>{{ got }}</b><small>/ {{ total }}</small></div>
+  <div class="bd-sum-t">
+    <h3>{{ t('bg_got', n=got, t=total) }}</h3>
+    <div class="bd-bar"><i style="width: {{ (100 * got / total)|round|int }}%"></i></div>
+    <p class="muted small">{{ t('bg_note') }}</p>
+  </div>
+  <div class="bd-sum-side">
+    {% if latest %}<div class="bd-mini"><span class="bd-ic on">{{ latest.icon }}</span><div><small class="muted">{{ t('bg_latest') }}</small><b>{{ latest.name }}</b></div></div>{% endif %}
+    {% if nxt %}<div class="bd-mini"><span class="bd-ic">{{ nxt.icon }}</span><div><small class="muted">{{ t('bg_next') }}</small><b>{{ nxt.name }}</b>
+      <div class="bd-bar sm"><i style="width: {{ nxt.pct }}%"></i></div><small class="muted">{{ nxt.value }} / {{ nxt.target }}</small></div></div>{% endif %}
+  </div>
+</div>
+{% if not got %}<p class="muted fade" style="--i:2">{{ t('bg_none') }}</p>{% endif %}
+{% for g in groups %}
+<section class="bd-group fade" style="--i:{{ loop.index + 1 }}">
+  <h3>{{ g.name }} <span class="pill">{{ g.got }}/{{ g['items']|length }}</span></h3>
+  <div class="bd-grid">
+    {% for b in g['items'] %}
+    <div class="bd{{ ' on' if b.earned }}{{ ' new' if b.new }}" style="--k:{{ loop.index0 }}" title="{{ b.desc }}">
+      {% if b.new %}<span class="bd-new">{{ t('bg_new') }}</span>{% endif %}
+      <span class="bd-ic{{ ' on' if b.earned }}">{{ b.icon }}</span>
+      <b>{{ b.name }}</b>
+      <small>{{ b.desc }}</small>
+      {% if b.earned %}<span class="bd-when">✓ {{ t('bg_earned', d=b.when) }}</span>
+      {% else %}<div class="bd-bar sm"><i style="width: {{ b.pct }}%"></i></div><span class="bd-when">🔒 {{ b.value }} / {{ b.target }}</span>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

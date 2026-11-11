@@ -12,6 +12,7 @@
   <div class="edu-actions">
     <a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) if nxt.topic else url_for('practice') }}">{{ t('home_continue') }} →</a>
     <a class="btn ghost" href="{{ url_for('ask') }}">{{ t('home_ask') }}</a>
+    {% if stats.mistakes %}<a class="btn ghost" href="{{ url_for('practice', mode='mistakes') }}">🔁 {{ t('review_btn', n=stats.mistakes) }}</a>{% endif %}
   </div>
 </div>
 

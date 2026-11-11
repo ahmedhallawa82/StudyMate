@@ -10,7 +10,7 @@
   </div>
   {% for n in items %}
   <a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or '#' }}">
-    <span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋'}.get(n.kind, '🔔') }}</span>
+    <span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋', 'badge': '🏅'}.get(n.kind, '🔔') }}</span>
     <span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span>
     {% if n.unread %}<span class="n-new">{{ t('notif_new') }}</span>{% endif %}
   </a>
