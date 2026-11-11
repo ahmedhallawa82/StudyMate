@@ -31,3 +31,19 @@
     tick(); setInterval(tick, 1000);
   }
 })();
+
+
+/* course dropdown */
+(function () {
+  document.querySelectorAll('[data-cmenu]').forEach(function (m) {
+    var btn = m.querySelector('.cmenu-btn'), panel = m.querySelector('.cmenu-panel'), q = m.querySelector('.cmenu-search');
+    function set(open) { panel.hidden = !open; m.classList.toggle('open', open); btn.setAttribute('aria-expanded', open ? 'true' : 'false'); if (open && q) q.focus(); }
+    btn.addEventListener('click', function (e) { e.stopPropagation(); set(panel.hidden); });
+    document.addEventListener('click', function (e) { if (!m.contains(e.target)) set(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') set(false); });
+    if (q) q.addEventListener('input', function () {
+      var v = q.value.trim().toLowerCase();
+      m.querySelectorAll('.cmenu-item').forEach(function (a) { a.style.display = (!v || a.dataset.name.indexOf(v) > -1) ? '' : 'none'; });
+    });
+  });
+})();

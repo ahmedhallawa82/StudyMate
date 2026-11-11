@@ -28,16 +28,16 @@
 </div>
 
 <div class="st-tiles fade" style="--i:3" role="tablist">
-  {% for id, name, sub, d in tools if id in ('quiz', 'mind', 'slides', 'videos') %}
+  {% for id, name, sub, d in tools if id in ('videos', 'quiz', 'mind') %}
   <button type="button" class="st-tile{{ ' on' if id == tool }}" role="tab" data-tool="{{ id }}" aria-selected="{{ 'true' if id == tool else 'false' }}">
     <span class="st-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d }}"/></svg></span>
     <b>{{ t(name) }}</b>
     <small>{{ t(sub) }}</small>
   </button>
   {% endfor %}
-  {% for href, ic, name, sub in [(url_for('exams'), '📝', t('nav_exams'), t('tile_exams')), (url_for('progress'), '📈', t('nav_progress'), t('tile_progress')), (url_for('materials'), '📚', t('nav_materials'), t('tile_materials'))] %}
+  {% for href, d, name, sub in [(url_for('exams'), 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13l2 2 4-4', t('nav_exams'), t('tile_exams')), (url_for('progress'), 'M4 19h16 M6 15l4-5 3 3 5-7', t('nav_progress'), t('tile_progress')), (url_for('materials'), 'M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h10', t('nav_materials'), t('tile_materials'))] %}
   <a class="st-tile st-link" href="{{ href }}">
-    <span class="st-ic st-emoji">{{ ic }}</span>
+    <span class="st-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d }}"/></svg></span>
     <b>{{ name }}</b>
     <small>{{ sub }}</small>
   </a>

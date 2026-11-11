@@ -780,8 +780,6 @@ def progress():
 @app.route("/help", methods=["GET", "POST"])
 def help_page():
     staff = bool(session.get("lecturer"))
-    if not (staff or session.get("student_code")):
-        return redirect(url_for("start", next=request.path))
     if request.method == "POST":
         if staff:
             if request.form.get("action") == "delete":
@@ -1571,7 +1569,7 @@ def studio():
         pptx_ok = False
     tool = request.args.get("tool", "quiz")
     return render_template("studio.html", lectures=lectures, kit=kit, lecture=lecture, seed=seed, n=n, pptx_ok=pptx_ok,
-                           tool=tool if tool in ("quiz", "mind", "slides", "videos") else "quiz", vids=videos.items(course_code()))
+                           tool=tool if tool in ("quiz", "mind", "videos") else "quiz", vids=videos.items(course_code()))
 
 
 @app.route("/videos/<fid>")

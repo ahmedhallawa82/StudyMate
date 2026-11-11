@@ -31,6 +31,8 @@ T = {
     "tip_nav_practice": ("Practice questions to test yourself.", "أسئلة تدريب لاختبار نفسك."),
     "tip_nav_progress": ("Track your progress and weak topics.", "تابع تقدمك ونقاط ضعفك."),
     "tip_nav_materials": ("Lecture slides and files for your course.", "سلايدات وملفات محاضرات المادة."),
+    "cm_search": ("Search courses…", "ابحث عن مادة…"),
+    "help_fab": ("Help & questions", "المساعدة والأسئلة"),
     "st_videos": ('Videos', 'الفيديوهات'),
     "st_videos_s": ('Recorded lectures and YouTube links, watched here', 'محاضرات مسجلة وروابط يوتيوب، بتتشاف هنا'),
     "vid_title": ('Videos for students', 'فيديوهات للطلاب'),

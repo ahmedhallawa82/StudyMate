@@ -2,13 +2,29 @@
 <div class="page-head fade" style="--i:0"><span class="ph-ic">{{ icon }}</span><div><h1>{{ title }}</h1>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></div>
 {% endmacro %}
 
+{% macro course_menu(next_url=None) %}
+{% if courses %}{% set cur = (courses|selectattr('code', 'equalto', course_code)|list|first) or courses[0] %}
+<div class="cmenu" data-cmenu>
+  <button type="button" class="cmenu-btn" aria-haspopup="listbox" aria-expanded="false">
+    <span class="cmenu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></span><span class="cmenu-cur" dir="auto">{{ cur.title }}</span>
+    <svg class="cmenu-chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+  <div class="cmenu-panel" role="listbox" hidden>
+    {% if courses|length > 6 %}<input type="search" class="cmenu-search" placeholder="{{ t('cm_search') }}" aria-label="{{ t('cm_search') }}">{% endif %}
+    <div class="cmenu-list">
+    {% for c in courses %}<a class="cmenu-item{{ ' on' if c.code == course_code }}" role="option" href="{{ url_for('choose_course', code=c.code, next=next_url) if next_url else url_for('choose_course', code=c.code) }}" data-name="{{ c.title|lower }} {{ c.code|lower }}">
+      <span class="cmenu-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></span><span dir="auto">{{ c.title }}</span>{% if c.code == course_code %}<svg class="cmenu-ok" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>{% endif %}</a>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
+
 {% macro course_picker(next_url) %}
 {% if courses %}
 <div class="card course-pick fade" style="--i:1">
-  <label for="coursePick">🎓 {{ t('pick_course') }}</label>
-  <select id="coursePick" onchange="location.href=this.value">
-    {% for c in courses %}<option value="{{ url_for('choose_course', code=c.code, next=next_url) }}"{{ ' selected' if c.code == course_code }}>{{ c.title }} · {{ c.code }}</option>{% endfor %}
-  </select>
+  <label><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9l10-5 10 5-10 5z M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg> {{ t('pick_course') }}</label>
+  {{ course_menu(next_url) }}
   <span class="muted small">{{ t('pick_course_note') }}</span>
 </div>
 {% endif %}

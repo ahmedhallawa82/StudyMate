@@ -76,6 +76,7 @@
   {% endif %}
   {% block content %}{% endblock %}
 </main>
+{% if not request.path.startswith('/help') %}<a class="help-fab" href="{{ url_for('help_page') }}" title="{{ t('help_fab') }}" aria-label="{{ t('help_fab') }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7 M12 17v.5"/></svg></a>{% endif %}
 <div class="modal" id="supportModal" hidden role="dialog" aria-modal="true" aria-labelledby="supTitle">
   <div class="modal-box">
     <button type="button" class="modal-x" data-close aria-label="{{ t('close') }}">×</button>

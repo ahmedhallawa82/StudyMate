@@ -406,3 +406,21 @@ a.st-tile { text-decoration: none; } .st-emoji { font-size: 22px; }
 .st-play { width: 34px; height: 34px; border-radius: 50%; background: var(--teal); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }
 .st-player { margin: 0 0 18px; } .st-player-box { position: relative; width: 100%; aspect-ratio: 16 / 9; background: #000; border-radius: 14px; overflow: hidden; }
 .st-player-box iframe, .st-player-box video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+/* ---- course dropdown ---- */
+.cmenu { position: relative; display: inline-block; max-width: 100%; }
+.cmenu-btn { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer; max-width: 100%; }
+.cmenu-btn:hover, .cmenu.open .cmenu-btn { border-color: var(--teal); }
+.cmenu-ic { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; background: var(--teal-soft); color: var(--teal); flex: none; }
+.cmenu-cur { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 46vw; } .cmenu-chev { transition: transform .15s; opacity: .7; } .cmenu.open .cmenu-chev { transform: rotate(180deg); }
+.cmenu-panel { position: absolute; z-index: 60; inset-inline-start: 0; top: calc(100% + 6px); min-width: 260px; max-width: 90vw; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 14px 40px rgba(20,30,50,.18); padding: 8px; }
+.cmenu-list { max-height: 300px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+.cmenu-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; color: var(--ink); text-decoration: none; } .cmenu-item:hover { background: var(--teal-soft); }
+.cmenu-item.on { background: var(--teal-soft); font-weight: 700; } .cmenu-item > span:nth-child(2) { flex: 1; } .cmenu-ok { color: var(--teal); }
+.cmenu-search { width: 100%; margin: 0 0 6px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+.course-pick { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; } .course-pick > label { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; margin: 0; }
+/* ---- floating help button ---- */
+.help-fab { position: fixed; inset-inline-end: 18px; bottom: 18px; z-index: 50; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--teal); color: #fff; box-shadow: 0 8px 24px rgba(30,45,80,.28); text-decoration: none; }
+.help-fab:hover { background: var(--teal-dark); color: #fff; }
+.course-chips { position: relative; z-index: 45; } .course-pick { position: relative; z-index: 45; }
+.cmenu-panel { width: max-content; min-width: 260px; } .cmenu-item { white-space: nowrap; line-height: 1.3; }

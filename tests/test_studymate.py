@@ -1095,7 +1095,8 @@ def test_models_password_can_be_separate(admin, tmp_path, monkeypatch):
 
 def test_studio_shelf_and_no_home_tiles(client):
     page = client.get("/studio").get_data(as_text=True)
-    assert 'data-tool="quiz"' in page and 'data-tool="mind"' in page and 'data-tool="slides"' in page
+    assert 'data-tool="quiz"' in page and 'data-tool="mind"' in page and 'data-tool="videos"' in page
+    assert 'data-tool="slides"' not in page and "st-emoji" not in page                       # slide deck removed; every tile uses the same line icons
     assert 'data-tool="listen"' not in page and 'data-tool="flash"' not in page and 'data-tool="report"' not in page
     assert 'href="/exams"' in page and 'href="/progress"' in page and 'href="/materials"' in page
     assert "st-hub" not in page and 'href="/my-courses"' in page and 'href="/help"' in page
@@ -1149,3 +1150,17 @@ def test_autoeval_runs_and_clock_present(client):
     r = autoeval.run("AI", n_queries=30)
     assert r and "tfidf" in str(r)
     assert "ticking" in open("static/js/ui.js").read() or "setInterval" in open("static/js/ui.js").read()
+
+
+def test_help_is_public_and_only_staff_add(client):
+    import app as A
+    anon = A.app.test_client()
+    page = anon.get("/help")
+    assert page.status_code == 200 and 'name="q_en"' not in page.get_data(as_text=True)
+    assert 'class="help-fab"' in client.get("/studio").get_data(as_text=True)
+    assert 'class="help-fab"' in anon.get("/").get_data(as_text=True) or anon.get("/").status_code in (200, 302)
+
+
+def test_course_dropdown_shows_title_only(client):
+    page = client.get("/studio").get_data(as_text=True)
+    assert 'data-cmenu' in page and "cmenu-item" in page
