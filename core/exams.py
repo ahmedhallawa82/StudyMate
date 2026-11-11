@@ -26,7 +26,7 @@ from pathlib import Path
 
 import config
 
-DEFAULTS = {"min_mcq": 1.0, "min_essay": 5.0, "sim_full": 0.45, "sim_half": 0.25}
+DEFAULTS = {"min_mcq": 1.0, "min_tf": 0.5, "min_essay": 5.0, "sim_full": 0.45, "sim_half": 0.25}
 _lock = threading.Lock()
 LETTERS_EN = "ABCDEFGH"
 LETTERS_AR = ["أ", "ب", "ج", "د", "هـ", "و", "ز", "ح"]
@@ -54,6 +54,14 @@ def save_bank(code, bank):
         (folder(code) / "bank.json").write_text(json.dumps(bank, ensure_ascii=False), encoding="utf-8")
 
 
+def is_tf(q):
+    """A true/false question is a multiple-choice question with exactly two options."""
+    if q.get("type") != "mcq":
+        return False
+    n = [len(q.get(l, {}).get("options", [])) for l in ("en", "ar") if q.get(l)]
+    return bool(n) and max(n) == 2
+
+
 def is_graded(q):
     if q.get("type") == "mcq":
         return q.get("answer") is not None
@@ -64,7 +72,7 @@ def summary(code):
     b = load_bank(code)
     qs = b["questions"].values()
     return {"total": len(b["questions"]), "en": sum("en" in q for q in qs), "ar": sum("ar" in q for q in qs),
-            "mcq": sum(q["type"] == "mcq" for q in qs), "essay": sum(q["type"] == "essay" for q in qs),
+            "mcq": sum(q["type"] == "mcq" and not is_tf(q) for q in qs), "tf": sum(is_tf(q) for q in qs), "essay": sum(q["type"] == "essay" for q in qs),
             "graded": sum(is_graded(q) for q in qs), "settings": b["settings"]}
 
 
@@ -73,12 +81,15 @@ def clear_bank(code):
     save_bank(code, {"questions": {}, "settings": b["settings"]})
 
 
-def save_settings(code, min_mcq, min_essay, sim_full=None, sim_half=None):
+def save_settings(code, min_mcq, min_essay=None, sim_full=None, sim_half=None, min_tf=None):
     b = load_bank(code)
     old = b["settings"]
+    if min_essay in (None, ""):
+        min_essay = old["min_essay"]
     full = max(0.1, min(0.95, float(sim_full))) if sim_full not in (None, "") else old["sim_full"]
     half = max(0.05, min(full, float(sim_half))) if sim_half not in (None, "") else min(old["sim_half"], full)
-    b["settings"] = {"min_mcq": max(0.2, min(10.0, float(min_mcq))), "min_essay": max(0.5, min(60.0, float(min_essay))),
+    b["settings"] = {"min_mcq": max(0.2, min(10.0, float(min_mcq))),
+                     "min_tf": max(0.1, min(10.0, float(min_tf))) if min_tf not in (None, "") else old["min_tf"], "min_essay": max(0.5, min(60.0, float(min_essay))),
                      "sim_full": full, "sim_half": half}
     save_bank(code, b)
 
@@ -331,7 +342,9 @@ def _pick_lang(q, lang):
 
 
 def _seconds(q, settings):
-    return int(round(60 * (settings["min_mcq"] if q["type"] == "mcq" else settings["min_essay"])))
+    if q["type"] == "mcq":
+        return int(round(60 * (settings["min_tf"] if is_tf(q) else settings["min_mcq"])))
+    return int(round(60 * settings["min_essay"]))
 
 
 def eligible(code):

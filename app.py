@@ -1719,8 +1719,8 @@ def exams_manage():
                 flash_t("choose_pdf")
         elif action == "settings":
             try:
-                EX.save_settings(code, request.form.get("min_mcq", 1), request.form.get("min_essay", 5),
-                                 request.form.get("sim_full"), request.form.get("sim_half"))
+                EX.save_settings(code, request.form.get("min_mcq", 1), request.form.get("min_essay"),
+                                 request.form.get("sim_full"), request.form.get("sim_half"), request.form.get("min_tf"))
                 flash_t("exam_settings_saved")
             except ValueError:
                 pass

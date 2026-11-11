@@ -907,3 +907,12 @@ def test_exam_notification_has_no_link_to_the_student_attempt():
     notify.push(["d:master"], "student", "New student", "Sara registered", "/students")
     rows = {r["title"]: r for r in notify.for_user("d:master")}
     assert rows["Exam finished"]["link"] == "" and rows["New student"]["link"] == "/students"
+
+
+def test_true_false_questions_have_their_own_time_and_settings_only_hold_two_times():
+    from core import exams as EX
+    tf = {"type": "mcq", "answer": 0, "en": {"q": "Sky is blue", "options": ["True", "False"]}}
+    mc = {"type": "mcq", "answer": 1, "en": {"q": "Pick", "options": ["a", "b", "c", "d"]}}
+    assert EX.is_tf(tf) and not EX.is_tf(mc)
+    st = {**EX.DEFAULTS, "min_mcq": 1.0, "min_tf": 0.5}
+    assert EX._seconds(tf, st) == 30 and EX._seconds(mc, st) == 60
