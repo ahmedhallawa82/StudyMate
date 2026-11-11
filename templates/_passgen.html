@@ -1,22 +1,16 @@
 <div class="passgen">
   <button type="button" class="btn ghost small" data-passgen data-url="{{ url_for('generate_password') }}" data-targets="{{ targets }}">🎲 {{ t('pg_btn') }}</button>
-  <span class="pg-out" hidden><code dir="ltr"></code> <button type="button" class="btn ghost small" data-copy>{{ t('pg_copy') }}</button> <small class="muted">{{ t('pg_note') }}</small></span>
+  <small class="muted">{{ t('pg_note') }}</small>
 </div>
 <script>
 (function () {
   document.querySelectorAll('[data-passgen]').forEach(function (b) {
     if (b.dataset.on) return; b.dataset.on = 1;
-    var box = b.parentNode.querySelector('.pg-out'), code = box.querySelector('code');
     b.onclick = function () {
       fetch(b.dataset.url, {cache: 'no-store'}).then(function (r) { return r.json(); }).then(function (j) {
         var form = b.closest('form');
-        b.dataset.targets.split(',').forEach(function (n) { var i = form.querySelector('input[name="' + n + '"]'); if (i) i.value = j.password; });
-        code.textContent = j.password; box.hidden = false;
+        b.dataset.targets.split(',').forEach(function (n) { var i = form.querySelector('input[name="' + n + '"]'); if (i) { i.value = j.password; i.dispatchEvent(new CustomEvent('pw-show')); } });
       });
-    };
-    box.querySelector('[data-copy]').onclick = function () {
-      try { navigator.clipboard.writeText(code.textContent); } catch (e) {}
-      this.textContent = '✓';
     };
   });
 })();

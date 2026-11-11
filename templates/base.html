@@ -188,5 +188,27 @@
   window.addEventListener('scroll', hide, { passive: true });
 })();
 </script>
+
+<script>
+(function () {
+  var EYE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var OFF = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.9 17.9A10.9 10.9 0 0 1 12 20C5 20 1 12 1 12a18.5 18.5 0 0 1 5.1-5.9M9.9 4.2A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2"/><path d="M1 1l22 22"/></svg>';
+  var SHOW = {{ t('pw_show')|tojson }}, HIDE = {{ t('pw_hide')|tojson }};
+  document.querySelectorAll('input[type=password]').forEach(function (inp) {
+    var w = document.createElement('span'); w.className = 'pw-wrap';
+    inp.parentNode.insertBefore(w, inp); w.appendChild(inp);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'pw-eye'; b.innerHTML = EYE;
+    b.title = SHOW; b.setAttribute('aria-label', SHOW); b.setAttribute('aria-pressed', 'false'); w.appendChild(b);
+    function place() { b.style.top = (inp.offsetTop + inp.offsetHeight / 2 - 16) + 'px'; }
+    function set(on) {
+      inp.type = on ? 'text' : 'password'; b.innerHTML = on ? OFF : EYE; b.title = on ? HIDE : SHOW;
+      b.setAttribute('aria-label', b.title); b.setAttribute('aria-pressed', on ? 'true' : 'false'); b.classList.toggle('on', on);
+    }
+    b.onclick = function () { set(inp.type === 'password'); inp.focus(); };
+    inp.addEventListener('pw-show', function () { set(true); });
+    place(); window.addEventListener('resize', place); window.addEventListener('load', place);
+  });
+})();
+</script>
 </body>
 </html>

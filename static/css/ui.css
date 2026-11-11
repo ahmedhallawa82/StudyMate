@@ -235,3 +235,10 @@ html[dir="rtl"] .tip::before { inset-inline-start: auto; left: calc(var(--ax, 50
 @media (prefers-reduced-motion: reduce) { .tip, .tip.on { transition: none; } .bump, .bump .ni { animation: none; } }
 
 .sup-lookup { display: flex; gap: 10px; flex-wrap: wrap; } .sup-lookup input { flex: 1; min-width: 220px; margin: 0; } .reset-ok { border: 2px solid #0f8b82; }
+
+/* password eye */
+.pw-wrap { position: relative; display: block; }
+.pw-wrap input { padding-inline-end: 46px !important; }
+.pw-eye { position: absolute; inset-inline-end: 10px; width: 32px; height: 32px; display: grid; place-items: center; border: 0; background: transparent; color: #6b8683; border-radius: 50%; cursor: pointer; padding: 0; transition: background .15s, color .15s, transform .15s; }
+.pw-eye:hover { background: var(--teal-soft, #e4f3f1); color: #0f8b82; } .pw-eye:active { transform: scale(.88); } .pw-eye.on { color: #0f8b82; }
+.passgen { flex-wrap: wrap; }

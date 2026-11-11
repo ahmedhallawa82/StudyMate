@@ -43,6 +43,8 @@ T = {
     "sup_reset_note": ("Shown only once. Send it to the user; the old password stopped working and a locked account is open again.", "بتظهر مرة واحدة بس. ابعتها للمستخدم؛ القديمة وقفت والحساب المقفول اتفتح."),
     "sup_reset_none": ("No student or doctor matches that e-mail, code or username.", "مفيش طالب أو دكتور بالإيميل أو الكود أو اسم المستخدم ده."),
     "sup_copy": ("Copy", "نسخ"),
+    "pw_show": ("Show password", "إظهار كلمة السر"),
+    "pw_hide": ("Hide password", "إخفاء كلمة السر"),
     "toggle_mode": ("Change light / dark mode", "تغيير الوضع فاتح / داكن"),
     "toggle_lang": ("Switch language", "تغيير اللغة"),
     "lang_name": ("العربية", "English"),
