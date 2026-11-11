@@ -79,16 +79,43 @@
       </form>
     </div>
     {% endif %}
+    {% if admin_role == 'master' %}
+    <div class="card">
+      <h2>{{ t('codes_title') }}</h2>
+      <p class="muted small">{{ t('codes_note') }}</p>
+      <form method="post" enctype="multipart/form-data" class="codes-form">
+        <input type="hidden" name="action" value="upload_codes">
+        <input type="file" name="codes" accept=".xlsx" required>
+        <button class="btn teal small" type="submit">⬆️ {{ t('codes_upload') }}</button>
+        <a class="btn ghost small" href="{{ url_for('course_codes_template') }}">⬇️ {{ t('codes_template') }}</a>
+      </form>
+      {% if catalog %}
+      <table class="codes-tbl"><tr><th>{{ t('course_code') }}</th><th>{{ t('course_name_en') }}</th><th>{{ t('course_name_ar') }}</th><th></th></tr>
+        {% for c in catalog %}<tr><td dir="ltr"><b>{{ c.code }}</b></td><td dir="ltr">{{ c.name_en or '—' }}</td><td>{{ c.name_ar or '—' }}</td>
+          <td>{% if c.code in used_codes %}<span class="pill">{{ t('codes_in_use') }}</span>{% endif %}</td></tr>{% endfor %}
+      </table>
+      <form method="post" onsubmit="return confirm('{{ t('codes_clear_q') }}')"><input type="hidden" name="action" value="clear_codes"><button class="btn ghost small" type="submit">🗑️ {{ t('codes_clear') }}</button></form>
+      {% else %}<p class="muted small">{{ t('codes_none') }}</p>{% endif %}
+    </div>
+    {% endif %}
     <div class="card">
       <h2>{{ t('add_course') }}</h2>
       <p class="muted small">{{ t('add_course_note') }}</p>
       <form method="post" enctype="multipart/form-data">
         <input type="hidden" name="action" value="add_course">
         <div class="grid-2" style="gap:10px">
-          <div><label class="small">{{ t('course_code') }}</label><input type="text" name="code" placeholder="ML" maxlength="10" required dir="ltr"></div>
-          <div><label class="small">{{ t('course_name_en') }}</label><input type="text" name="name_en" placeholder="Machine Learning" required dir="ltr"></div>
+          <div><label class="small">{{ t('course_code') }}</label>
+            {% if catalog %}
+            <select name="code" id="courseCode" required>
+              <option value="">{{ t('code_pick') }}</option>
+              {% for c in catalog %}{% set used = c.code in used_codes %}<option value="{{ c.code }}" data-en="{{ c.name_en }}" data-ar="{{ c.name_ar }}"{{ ' disabled' if used }}>{{ c.code }}{% if c.name_en %} — {{ c.name_en }}{% endif %}{{ ' ✓' if used }}</option>{% endfor %}
+              {% if admin_role == 'master' %}<option value="__other__">✏️ {{ t('code_other') }}</option>{% endif %}
+            </select>
+            <input type="text" name="code_custom" id="codeCustom" placeholder="ML" maxlength="10" dir="ltr" hidden style="margin-top:8px">
+            {% else %}<input type="text" name="code" placeholder="ML" maxlength="10" required dir="ltr">{% endif %}</div>
+          <div><label class="small">{{ t('course_name_en') }}</label><input type="text" name="name_en" id="nameEn" placeholder="Machine Learning" required dir="ltr"></div>
         </div>
-        <p><label class="small">{{ t('course_name_ar') }}</label><input type="text" name="name_ar" placeholder="تعلّم الآلة"></p>
+        <p><label class="small">{{ t('course_name_ar') }}</label><input type="text" name="name_ar" id="nameAr" placeholder="تعلّم الآلة"></p>
         {% if admin_role == 'master' and doctors %}
         <p><label class="small">{{ t('course_owner') }}</label>
           <select name="owner"><option value="">{{ t('owner_none') }}</option>
@@ -97,6 +124,17 @@
         <p><label class="small">{{ t('pdf_files') }}</label><br><input type="file" name="pdfs" accept="application/pdf" multiple required></p>
         <button class="btn teal" type="submit">{{ t('create_course') }}</button>
       </form>
+      <script>
+      (function () {
+        var sel = document.getElementById('courseCode'); if (!sel) return;
+        var en = document.getElementById('nameEn'), ar = document.getElementById('nameAr'), custom = document.getElementById('codeCustom');
+        sel.addEventListener('change', function () {
+          var o = sel.options[sel.selectedIndex], other = sel.value === '__other__';
+          custom.hidden = !other; custom.required = other;
+          if (o && o.dataset && sel.value && !other) { en.value = o.dataset.en || en.value; ar.value = o.dataset.ar || ar.value; }
+        });
+      })();
+      </script>
     </div>
   </section>
   <aside>

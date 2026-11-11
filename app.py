@@ -14,7 +14,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges
+from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -35,7 +35,9 @@ STATE = {}          # course code -> loaded models and data
 
 def load_state(code=None):
     """Load models + data of one course into memory (also called after the admin rebuilds the index)."""
-    code = code or config.DEFAULT_COURSE
+    code = code or config.default_course()
+    if not code:
+        return None                                        # no course at all (the admin deleted them all)
     P = config.course_paths(code)
     st = {}
     try:
@@ -43,7 +45,7 @@ def load_state(code=None):
         st["clf"] = TopicClassifier.load(course=code)
     except Exception as e:  # models missing or saved with another scikit-learn version -> rebuild them
         print(f"Could not load the saved models of {code} ({type(e).__name__}). Rebuilding them, please wait ...")
-        if code == config.DEFAULT_COURSE:
+        if code == config.DEFAULT_COURSE and any(c["full"] for c in config.list_courses() if c["code"] == code):
             import scripts.train as T
             import scripts.evaluate as E
             if not config.PASSAGES_CSV.exists():
@@ -91,7 +93,7 @@ def course_code():
         own = [x["code"] for x in visible_courses()]
         if own:
             return c if c in own else own[0]
-    return c if c in course_codes() else config.DEFAULT_COURSE
+    return c if c in course_codes() else config.default_course()
 
 
 def S():
@@ -183,6 +185,38 @@ def visible_courses():
     return allc
 
 
+def remove_course_files(code):
+    """Delete one course: its data folder, models and reports. The AI course keeps its files straight inside models/ and
+    static/reports/ (next to the other courses' folders), so there only its own files go."""
+    import shutil
+    P = config.course_paths(code)
+    shutil.rmtree(P.data, ignore_errors=True)
+    for d in (P.models, P.reports):
+        if code == config.DEFAULT_COURSE:
+            for f in d.glob("*"):
+                if f.is_file():
+                    f.unlink()
+        else:
+            shutil.rmtree(d, ignore_errors=True)
+    STATE.pop(code, None)
+    session.pop("practice", None)
+
+
+OPEN_WITHOUT_COURSES = {"static", "start", "register", "forgot", "logout", "lecturer_login", "lecturer_logout", "admin", "support_send",
+                        "support_inbox", "staff_home", "doctors_page", "export_doctors", "students_page", "students_export", "export_students",
+                        "profile", "avatar", "notifications_page", "notifications_read", "generate_password", "download_logs", "course_codes_template"}
+
+
+@app.before_request
+def _no_courses_guard():
+    """With every course deleted only the account / admin pages work; the rest shows 'no courses yet'."""
+    if request.endpoint is None or request.endpoint in OPEN_WITHOUT_COURSES or course_codes():
+        return None
+    if session.get("lecturer"):
+        return redirect(url_for("admin"))
+    return render_template("no_courses.html"), 200
+
+
 def visit(page):
     if session.get("lecturer"):                        # admin pages are not student visits
         return
@@ -250,7 +284,7 @@ def inject():
     args["lang"] = "en" if l == "ar" else "ar"
     from urllib.parse import urlencode
     return {"lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(), "student_name": session.get("student_name", ""),
-            "is_lecturer": session.get("lecturer"), "names": S()["names_ar" if l == "ar" else "names"],
+            "is_lecturer": session.get("lecturer"), "names": (S() or {}).get("names_ar" if l == "ar" else "names", {}),
             "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
                         for c in visible_courses() if session.get("lecturer") or student_course_list() is None
@@ -1060,6 +1094,22 @@ def admin():
     mine = can_manage(code)                                  # a doctor with no course yet can only add one
     if request.method == "POST":
         action = request.form.get("action")
+        if action in ("upload_codes", "clear_codes"):        # the admin's list of course codes (Excel)
+            if is_master():
+                if action == "clear_codes":
+                    catalog.save([])
+                    flash_t("codes_cleared")
+                else:
+                    f = request.files.get("codes")
+                    try:
+                        rows = catalog.parse_xlsx(f.read()) if f and f.filename else []
+                        if not rows:
+                            raise ValueError("empty")
+                        catalog.save(rows)
+                        flash_t("codes_saved", n=len(rows))
+                    except Exception:
+                        flash_t("codes_bad")
+            return redirect(url_for("admin"))
         if action == "change_password":                      # a doctor changes his own password
             if is_master() or not admin_id():
                 flash_t("pw_master_note")
@@ -1126,7 +1176,7 @@ def admin():
             else:
                 sync_sheet()
             return redirect(url_for("admin"))
-        if action != "add_course" and not mine:
+        if action != "add_course" and not (mine and code):
             flash_t("not_your_course")
             return redirect(url_for("admin"))
         if action == "add_course":
@@ -1135,15 +1185,22 @@ def admin():
                 flash_t("too_many_courses", n=config.MAX_COURSES_PER_DOCTOR)
                 return redirect(url_for("admin"))
             files = [(f.filename, f.read()) for f in request.files.getlist("pdfs") if f.filename.lower().endswith(".pdf")]
+            raw_code = request.form.get("code", "")
+            if raw_code == "__other__" and is_master():
+                raw_code = request.form.get("code_custom", "")
+            listed = catalog.lookup(clean_code(raw_code))
+            if catalog.load() and not listed and not (is_master() and request.form.get("code") == "__other__"):
+                flash_t("code_not_listed")                      # a doctor can only use the codes the admin listed
+                return redirect(url_for("admin"))
             try:
                 owner = admin_id() if not is_master() else (request.form.get("owner") or None)
-                rep = build_course(request.form.get("code", ""), request.form.get("name_en", "").strip(),
-                                   request.form.get("name_ar", "").strip(), files, owner=owner)
+                rep = build_course(raw_code, request.form.get("name_en", "").strip() or (listed or {}).get("name_en", ""),
+                                   request.form.get("name_ar", "").strip() or (listed or {}).get("name_ar", ""), files, owner=owner)
                 load_state(rep["code"])
                 session["course"] = rep["code"]
                 session.pop("practice", None)
                 sync_sheet()
-                flash_t("course_created", name=request.form.get("name_en") or rep["code"], n=rep["slides"],
+                flash_t("course_created", name=request.form.get("name_en") or (listed or {}).get("name_en") or rep["code"], n=rep["slides"],
                         m=rep["lectures"], q=rep["questions"])
             except FileExistsError:
                 flash_t("course_exists")
@@ -1153,17 +1210,11 @@ def admin():
                 flash_t("course_failed")
             return redirect(url_for("admin"))
         if action == "delete_course":
-            import shutil
-            if code == config.DEFAULT_COURSE:
-                flash_t("cannot_delete_default")
-            elif request.form.get("confirm", "").strip().upper() != code:
+            if request.form.get("confirm", "").strip().upper() != code:
                 flash_t("bad_confirm")
             else:
-                for d in (P.data, P.models, P.reports):
-                    shutil.rmtree(d, ignore_errors=True)
-                STATE.pop(code, None)
-                session["course"] = config.DEFAULT_COURSE
-                session.pop("practice", None)
+                remove_course_files(code)
+                session["course"] = config.default_course()
                 sync_sheet()
                 flash_t("course_deleted", code=code)
             return redirect(url_for("admin"))
@@ -1175,16 +1226,9 @@ def admin():
             if not pdfs:
                 flash_t("no_such_lecture")
                 return redirect(url_for("admin"))
-            if len(allpdfs) <= len(pdfs):
-                if code == config.DEFAULT_COURSE:         # the main course cannot be emptied
-                    flash_t("last_lecture")
-                    return redirect(url_for("admin"))
-                import shutil                               # every lecture selected = remove the whole course content
-                for d in (P.data, P.models, P.reports):
-                    shutil.rmtree(d, ignore_errors=True)
-                STATE.pop(code, None)
-                session["course"] = config.DEFAULT_COURSE
-                session.pop("practice", None)
+            if len(allpdfs) <= len(pdfs):                      # every lecture selected = remove the whole course
+                remove_course_files(code)
+                session["course"] = config.default_course()
                 sync_sheet()
                 flash_t("course_deleted", code=code)
                 return redirect(url_for("admin"))
@@ -1247,17 +1291,18 @@ def admin():
             flash_t("retrained")
         return redirect(url_for("admin"))
     visit("admin")
-    if not mine:                                             # doctor without a course: only the "add a course" card
+    if not mine or not code:                                 # doctor without a course (or no course at all): only the "add a course" card
         return render_template("admin.html", no_course=True, lectures=[], total=0, full=False, code="", can_delete_course=False,
-                               bank=0, threshold="", model="", lecture_dir="", doctors=[], owner=None, is_owner_view=False,
-                               sheet=None, pw_min=doctors.MIN_LEN)
+                               bank=0, threshold="", model="", lecture_dir="", doctors=doctors.list_doctors() if is_master() else [], owner=None, is_owner_view=False,
+                               sheet=sheet_view(), pw_min=doctors.MIN_LEN, catalog=catalog.load(), used_codes=course_codes(),
+                               doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {})
     names = S()["names_ar"] if lang() == "ar" else S()["names"]
     passages = pd.read_csv(P.passages)
     lectures = (passages.groupby(["lecture", "lecture_title"]).agg(passages=("passage_id", "count"),
                 topics=("topic", lambda s: ", ".join(names.get(t, t) for t in sorted(set(s)))))
                 .reset_index().to_dict("records"))
     return render_template("admin.html", lectures=lectures, total=len(passages), full=full, code=code,
-                           can_delete_course=code != config.DEFAULT_COURSE, no_course=False,
+                           can_delete_course=True, no_course=False, catalog=catalog.load(), used_codes=course_codes(),
                            doctors=doctors.list_doctors() if is_master() else [], owner=course_owner(code),
                            doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {},
                            bank=len(S()["bank"]), threshold=S()["engine"].threshold,
@@ -1669,6 +1714,16 @@ def support_inbox():
         m["acct"] = _find_account(m.get("ident"), m.get("contact")) is not None
     r = render_template("support_inbox.html", items=items, reset=reset)
     return (r, 200, {"Cache-Control": "no-store"}) if reset else r
+
+
+@app.route("/course-codes-template.xlsx")
+@lecturer_required
+def course_codes_template():
+    from flask import Response
+    if not is_master():
+        return redirect(url_for("admin"))
+    return Response(catalog.template_xlsx(catalog.load() or None), mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": "attachment; filename=course_codes.xlsx"})
 
 
 @app.route("/generate-password")

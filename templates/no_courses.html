@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('nc_title') }}{% endblock %}
+{% block content %}
+{{ page_head('📭', t('nc_title'), t('nc_sub')) }}
+<div class="card" style="text-align:center"><p>{{ t('nc_body') }}</p></div>
+{% endblock %}

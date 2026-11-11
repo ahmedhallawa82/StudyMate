@@ -92,3 +92,9 @@ def list_courses():
             out.append({"code": code, "name_en": meta.get("name_en", code), "name_ar": meta.get("name_ar", ""),
                         "full": meta.get("full", True), "lectures": lec, "slides": sl, "meta": meta})
     return out
+
+
+def default_course():
+    """The course shown when none is picked: the original one if it still exists, else the first course, else ''."""
+    codes = [c["code"] for c in list_courses()]
+    return DEFAULT_COURSE if DEFAULT_COURSE in codes else (codes[0] if codes else "")

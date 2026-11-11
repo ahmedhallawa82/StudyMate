@@ -16,7 +16,7 @@ from core.logger import log_to_excel, read_sheet
 def _students_file(tmp_path_factory):
     """Student accounts of the tests live in a temp folder, never in data/students.json."""
     from core import students
-    from core import notify, schedule, profiles, support, badges
+    from core import notify, schedule, profiles, support, badges, catalog
     d = tmp_path_factory.mktemp("stu")
     f = d / "students.json"
     students.FILE = lambda: f
@@ -26,6 +26,7 @@ def _students_file(tmp_path_factory):
     profiles.DIR = lambda: d / "avatars"
     support.FILE = lambda: d / "support.json"
     badges.FILE = lambda: d / "badges.json"
+    catalog.FILE = lambda: d / "course_codes.json"
 
 
 def as_student(c, name):
@@ -232,8 +233,6 @@ def test_delete_lecture_and_course_from_admin(admin):
         assert (config.BASE_DIR / "data" / "DEL9").exists()
         admin.post("/admin", data={"action": "delete_course", "confirm": "DEL9"})
         assert not (config.BASE_DIR / "data" / "DEL9").exists()
-        admin.post("/admin", data={"action": "delete_course", "confirm": "AI"})      # first course is protected
-        assert (config.BASE_DIR / "data" / "AI").exists()
     finally:
         shutil.rmtree(config.BASE_DIR / "data" / "DEL9", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "DEL9", ignore_errors=True)
@@ -255,8 +254,6 @@ def test_delete_several_lectures_at_once(admin):
         assert len(left) == 1 and "Adversarial" in left[0].name
         admin.post("/admin", data={"action": "delete_lecture", "lecture": ["5"]})     # every lecture selected -> whole course content goes
         assert not (config.BASE_DIR / "data" / "DEL8").exists()
-        admin.post("/admin", data={"action": "delete_lecture", "lecture": [str(i) for i in range(1, 12)]})  # main course keeps its lectures
-        assert list((config.BASE_DIR / "data" / "AI" / "lectures").glob("*.pdf"))
     finally:
         shutil.rmtree(config.BASE_DIR / "data" / "DEL8", ignore_errors=True)
         shutil.rmtree(config.BASE_DIR / "models" / "DEL8", ignore_errors=True)
@@ -754,3 +751,62 @@ def test_badges_page_notifies_and_review_mode_fixes_mistakes():
     assert "Review finished" in done and "1 of 1" in done
     assert "mode=mistakes" not in done                                                       # fixed: nothing left to review
     assert "Fixed a mistake" in c.get("/badges").get_data(as_text=True)
+
+
+def test_any_course_can_be_deleted_even_all_and_the_codes_list_feeds_the_dropdown(tmp_path, monkeypatch):
+    """Runs on a throw-away COPY of the data, so the real AI course is never touched."""
+    import io, shutil
+    import app as A
+    from core import catalog
+    root = tmp_path / "site"
+    (root / "static").mkdir(parents=True)
+    shutil.copytree(config.BASE_DIR / "data", root / "data", ignore=shutil.ignore_patterns("ocr_cache"))
+    shutil.copytree(config.BASE_DIR / "models", root / "models")
+    shutil.copytree(config.BASE_DIR / "static" / "reports", root / "static" / "reports")
+    for k, v in (("BASE_DIR", root), ("MODELS_DIR", root / "models"), ("REPORTS_DIR", root / "static" / "reports")):
+        monkeypatch.setattr(config, k, v)
+    monkeypatch.setattr(A, "STATE", {})
+    monkeypatch.setattr(catalog, "FILE", lambda: root / "data" / "course_codes.json")
+    admin = A.app.test_client()
+    admin.post("/lecturer", data={"password": config.LECTURER_PASSWORD})
+    # the admin uploads the codes sheet -> the add-course form becomes a dropdown
+    sheet = catalog.template_xlsx([{"code": "AUTO", "name_en": "Automotive", "name_ar": "سيارات"}, {"code": "CTRL", "name_en": "Control", "name_ar": ""}])
+    admin.post("/admin", data={"action": "upload_codes", "codes": (io.BytesIO(sheet), "codes.xlsx")}, content_type="multipart/form-data")
+    page = admin.get("/admin").get_data(as_text=True)
+    assert '<select name="code" id="courseCode"' in page and 'value="CTRL"' in page and "Automotive" in page
+    pdfs = [root / "data" / "AI" / "lectures" / "lecture 2 Intelligent Agents.pdf"]
+    pdf_bytes, pdf_name = pdfs[0].read_bytes(), pdfs[0].name                 # read now: the AI course is deleted below
+    mk = lambda code: {"action": "add_course", "code": code, "name_en": "", "name_ar": "", "pdfs": [(io.BytesIO(pdf_bytes), pdf_name)]}
+    # delete the AI course (the original one): its files go, the other course's models stay
+    from core import doctors
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    did, dcode = doctors.add("Dr Codes")
+    dr = A.app.test_client()
+    dr.post("/lecturer", data={"username": doctors.username_of(doctors.get(did)), "password": dcode})
+    assert dr.get("/admin").status_code == 200 and "courseCode" in dr.get("/admin").get_data(as_text=True)   # signed in, sees the dropdown
+    dr.post("/admin", data=mk("ZZZZ"), content_type="multipart/form-data")                 # not in the admin's list -> refused
+    assert "ZZZZ" not in [c["code"] for c in config.list_courses()]
+    admin.get("/course/AI")
+    admin.post("/admin", data={"action": "delete_course", "confirm": "AI"})
+    assert not (root / "data" / "AI").exists() and not list((root / "models").glob("*.joblib")) + list((root / "models").glob("*.pkl"))
+    assert (root / "models" / "MAM336").exists() and "AI" not in [c["code"] for c in config.list_courses()]
+    st = A.app.test_client()
+    as_student(st, "Nocourse")
+    st.post("/my-courses", data={"course": ["MAM336"]})
+    assert config.default_course() == "MAM336" and st.get("/home").status_code == 200   # the site falls back to another course
+    # delete the last course: nothing crashes, students see "no courses yet", the admin can add a new one
+    admin.get("/course/MAM336")
+    admin.post("/admin", data={"action": "delete_course", "confirm": "MAM336"})
+    assert config.list_courses() == []
+    assert "No courses yet" in st.get("/home").get_data(as_text=True) and st.get("/profile").status_code == 200
+    assert admin.get("/admin").status_code == 200 and "Add a new course" in admin.get("/admin").get_data(as_text=True)
+    assert admin.get("/overview").status_code in (200, 302)
+    # a new course by listed code: name comes from the list and the AI pipeline trains it
+    admin.post("/admin", data=mk("AUTO"), content_type="multipart/form-data")
+    got = {c["code"]: c for c in config.list_courses()}
+    assert "AUTO" in got and got["AUTO"]["name_en"] == "Automotive" and got["AUTO"]["name_ar"] == "سيارات"
+    assert (root / "models" / "AUTO").exists()
+    st.post("/my-courses", data={"course": ["AUTO"]})
+    assert st.get("/ask", query_string={"q": "what is a model-based reflex agent"}).status_code == 200 and st.get("/home").status_code == 200
+    admin.post("/admin", data=mk("AUTO"), content_type="multipart/form-data")           # same code again: refused, nothing breaks
+    assert len(config.list_courses()) == 1
