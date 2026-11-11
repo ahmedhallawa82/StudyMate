@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="{{ lang }}" dir="{{ dir }}" data-mode="light">
+<html lang="{{ lang }}" dir="{{ dir }}" data-mode="light" data-theme="{{ theme }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -27,22 +27,22 @@
     <nav>
       {% set path = request.path %}
       {% if is_lecturer %}
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}">{{ t('nav_dashboard') }}</a>
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}">{{ t('nav_content') }}</a>
-      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}">{{ t('nav_eval') }}</a>
-      <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}">{{ t('nav_exams') }}</a>
-      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}">{{ t('nav_students') }}</a>
-      <span class="chip">{% if admin_role == 'master' %}{{ t('role_admin') }}{% else %}{{ t('role_doctor') }} · {{ admin_name }}{% endif %}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
+      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
+      <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
+      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
+      <span class="chip"><span class="avatar">{{ ('A' if admin_role == 'master' else (admin_name or 'D'))[:1]|upper }}</span>{% if admin_role == 'master' %}{{ t('role_admin') }}{% else %}{{ t('role_doctor') }} · {{ admin_name }}{% endif %}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
       {% elif student_code %}
       {% if not first_visit %}
-      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}">{{ t('nav_home') }}</a>
-      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}">{{ t('nav_ask') }}</a>
-      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}">{{ t('nav_practice') }}</a>
-      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}">{{ t('nav_progress') }}</a>
-      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}">{{ t('nav_exams') }}</a>
-      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}">{{ t('nav_materials') }}</a>
+      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
+      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
+      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}"><span class="ni">✏️</span><span class="nl">{{ t('nav_practice') }}</span></a>
+      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}"><span class="ni">📈</span><span class="nl">{{ t('nav_progress') }}</span></a>
+      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
+      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
       {% endif %}
-      <span class="chip">{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
+      <span class="chip"><span class="avatar">{{ (student_name or student_code)[:1]|upper }}</span>{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
       {% endif %}
     </nav>
     <div class="tools">

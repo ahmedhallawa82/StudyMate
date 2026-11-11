@@ -16,6 +16,7 @@
   setTimeout(function () {
     document.querySelectorAll('.ring[data-p]').forEach(function (r) { r.style.setProperty('--p', r.dataset.p); });
     document.querySelectorAll('.fill[data-w]').forEach(function (f) { f.style.width = f.dataset.w + '%'; });
+    document.querySelectorAll('.bar i[data-h]').forEach(function (f) { f.style.height = f.dataset.h + '%'; });
   }, 120);
   var d = document.getElementById('today');
   if (d) { try { d.textContent = new Date(d.dataset.iso + 'T12:00:00').toLocaleDateString(document.documentElement.lang === 'ar' ? 'ar-EG' : 'en-GB', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'}); } catch (e) {} }

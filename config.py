@@ -39,8 +39,8 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "studymate-dev-key-change-me")
 RANDOM_STATE = 42
 
 # Interface theme: teal | midnight | notebook | indigo | benha   (preview any page with ?theme=name)
-THEME = "indigo"
-THEMES = ["teal", "midnight", "notebook", "indigo", "benha"]
+THEME = "edu"
+THEMES = ["edu", "teal", "midnight", "notebook", "indigo", "benha"]
 
 
 # ---------------------------------------------------------------- multi-course support

@@ -405,10 +405,23 @@ def student_home():
     weak = sorted(items, key=lambda i: i["level"])[:4]
     recent_q = [{"q": q["question"], "found": q.get("found") == "yes"} for q in qs[-4:][::-1]]
     recent_e = [{"when": datetime_str(a["started"]), "pct": a["pct"], "score": a["score"], "max": a["max"], "id": a["id"]} for a in exams_done[:3]]
+    import datetime as _dt
+    td = _dt.date.today()
+    start = td - _dt.timedelta(days=(td.weekday() + 2) % 7)   # week starts Saturday
+    wk = []
+    for i in range(7):
+        d = start + _dt.timedelta(days=i)
+        n = sum(1 for x in days if x == d.isoformat())
+        wk.append({"iso": d.isoformat(), "day": d.day, "wd": d.weekday(), "n": n, "today": d == td})
+    wmax = max([w["n"] for w in wk] + [1])
+    for w in wk:
+        w["h"] = round(100 * w["n"] / wmax)
+    plan = sorted([i for i in items if i["colour"] != "green"], key=lambda i: i["level"])[:5]
+    cont = nxt if nxt.get("topic") else None
     hour = __import__("datetime").datetime.now().hour
     greet = "gm" if hour < 12 else "ga" if hour < 18 else "ge"
     name = session.get("student_name") or me
-    return render_template("home.html", stats=stats, items=items, weak=weak, nxt=nxt, recent_q=recent_q, recent_e=recent_e,
+    return render_template("home.html", stats=stats, items=items, weak=weak, week=wk, plan=plan, cont=cont, week_total=sum(w["n"] for w in wk), nxt=nxt, recent_q=recent_q, recent_e=recent_e,
                            greet=greet, name=name, exam_ready=len(EX.eligible(code)) > 0, today=__import__("datetime").date.today().isoformat())
 
 
