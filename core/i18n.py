@@ -441,6 +441,10 @@ T = {
     "search_courses": ("Search courses…", "ابحث عن مادة…"), "no_match": ("No matching course", "مفيش مادة مطابقة"),
 }
 
+# The doctors-sheet section of the Admin page is English only (both interface languages).
+for _k in [k for k in T if k.startswith("sheet_")]:
+    T[_k] = (T[_k][0], T[_k][0])
+
 
 def tr(key: str, lang: str = "en", **kw) -> str:
     en, ar = T.get(key, (key, key))
