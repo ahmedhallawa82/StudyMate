@@ -110,12 +110,13 @@
     });
     M.nodes.forEach(function (n) {
       var g = svgEl('g', { 'class': 'st-node ' + n.kind, tabindex: 0, role: 'button' });
-      var h = n.kind === 'root' ? 44 : n.kind === 'topic' ? 36 : 30;
-      var fill = n.kind === 'root' ? teal : card, stroke = n.kind === 'term' ? line : n.kind === 'topic' ? teal : teal;
+      var h = n.h;
+      var fill = n.kind === 'root' ? teal : card, stroke = n.kind === 'term' ? line : teal;
       g.appendChild(svgEl('rect', { x: n.x - n.w / 2, y: n.y - h / 2, width: n.w, height: h, rx: n.kind === 'term' ? 15 : 12, fill: fill, stroke: stroke, 'stroke-width': n.kind === 'topic' ? 2 : 1.5 }));
-      var t = svgEl('text', { x: n.x, y: n.y + 5, 'text-anchor': 'middle', 'font-size': n.kind === 'root' ? 16 : n.kind === 'topic' ? 14 : 13, 'font-weight': n.kind === 'term' ? 500 : 700, fill: n.kind === 'root' ? '#fff' : ink });
-      var lab = n.label.length > 24 ? n.label.slice(0, 23) + '…' : n.label;
-      t.textContent = lab; g.appendChild(t);
+      var fs = n.kind === 'root' ? 16 : n.kind === 'topic' ? 14 : 13, lh = fs + 6, y0 = n.y - (n.lines.length - 1) * lh / 2 + fs * 0.35;
+      var t = svgEl('text', { x: n.x, y: y0, 'text-anchor': 'middle', 'font-size': fs, 'font-weight': n.kind === 'term' ? 500 : 700, fill: n.kind === 'root' ? '#fff' : ink });
+      n.lines.forEach(function (ln, i) { var sp = svgEl('tspan', { x: n.x, dy: i ? lh : 0 }); sp.textContent = ln; t.appendChild(sp); });
+      g.appendChild(t);
       var pick = function () {
         $$('.st-node.sel', box).forEach(function (x) { x.classList.remove('sel'); }); g.classList.add('sel');
         var info = $('#stMapInfo');
@@ -201,15 +202,42 @@
     return y + 42;
   }
 
-  /* ---------- read aloud ---------- */
-  var synth = window.speechSynthesis, utter = null, paused = false;
-  function stopSpeak() { if (synth) synth.cancel(); utter = null; paused = false; var b = $('#stPlay'); if (b) b.textContent = '▶ ' + U.play; }
-  function listen() {
-    var b = $('#stPlay');
+  /* ---------- read aloud: notes one under the other, English or Arabic voice ---------- */
+  var synth = window.speechSynthesis, queue = [], qpos = -1, paused = false, playing = false;
+  function listLang() { var r = document.querySelector('input[name="stLang"]:checked'); return r ? r.value : 'en'; }
+  function stopSpeak() {
+    if (synth) synth.cancel(); queue = []; qpos = -1; paused = false; playing = false;
+    var b = $('#stPlay'); if (b) b.textContent = '▶ ' + U.play_all;
+    $$('.st-note.now').forEach(function (x) { x.classList.remove('now'); });
+  }
+  function arLead(i, n) { return U.ar_note.replace('{i}', i); }
+  function segmentsFor(i, lang) {                    // what to say for note i, as [{text, lang}]
+    var n = (K.notes || [])[i], out = [];
+    if (!n) return out;
+    if (lang === 'ar') {
+      out.push({ text: n.kind === 'term' ? U.ar_term : U.ar_note.replace('{i}', i + 1), lang: 'ar-EG' });
+      if (n.kind === 'term' && n.ar) out.push({ text: n.ar, lang: 'ar-EG' });
+    }
+    out.push({ text: n.text, lang: 'en-US' });
+    return out;
+  }
+  function speakFrom(idxs) {
     if (!synth) { $('#stVoiceNote').hidden = false; return; }
-    if (utter && synth.speaking) { if (paused) { synth.resume(); paused = false; b.textContent = '⏸ ' + U.pause; } else { synth.pause(); paused = true; b.textContent = '▶ ' + U.play; } return; }
-    utter = new SpeechSynthesisUtterance($('#stScript').textContent); utter.lang = 'en-US'; utter.rate = parseFloat($('#stRate').value) || 1;
-    utter.onend = stopSpeak; utter.onerror = stopSpeak; synth.speak(utter); b.textContent = '⏸ ' + U.pause;
+    stopSpeak(); playing = true; $('#stPlay').textContent = '⏸ ' + U.pause;
+    var lang = listLang(), rate = parseFloat($('#stRate').value) || 1, segs = [];
+    idxs.forEach(function (i) { segmentsFor(i, lang).forEach(function (s) { s.i = i; segs.push(s); }); });
+    queue = segs; qpos = 0;
+    (function next() {
+      if (!playing || qpos >= queue.length) { stopSpeak(); return; }
+      var s = queue[qpos++], u = new SpeechSynthesisUtterance(s.text); u.lang = s.lang; u.rate = rate;
+      $$('.st-note.now').forEach(function (x) { x.classList.remove('now'); });
+      var li = $('#stNote' + s.i); if (li) li.classList.add('now');
+      u.onend = next; u.onerror = next; synth.speak(u);
+    })();
+  }
+  function listenAll() {
+    if (playing && synth) { if (paused) { synth.resume(); paused = false; $('#stPlay').textContent = '⏸ ' + U.pause; } else { synth.pause(); paused = true; $('#stPlay').textContent = '▶ ' + U.play; } return; }
+    speakFrom((K.notes || []).map(function (_, i) { return i; }));
   }
 
   /* ---------- buttons ---------- */
@@ -221,7 +249,8 @@
     else if (k === 'quiz-reset') quizReset();
     else if (k === 'mind-png') downloadSvgPng();
     else if (k === 'info-png') { drawInfographic(); saveCanvas($('#stIg'), 'infographic'); }
-    else if (k === 'listen-play') listen();
+    else if (k === 'listen-play') listenAll();
+    else if (k === 'listen-one') speakFrom([parseInt(a.dataset.i, 10)]);
     else if (k === 'listen-stop') stopSpeak();
   });
   window.addEventListener('beforeunload', stopSpeak);

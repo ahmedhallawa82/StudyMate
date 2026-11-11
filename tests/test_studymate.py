@@ -162,9 +162,9 @@ def test_admin_and_student_areas_are_separate():
 # ---------------- language, dark mode, courses
 def test_arabic_interface_is_rtl_and_translated(client):
     html = client.get("/ask", query_string={"lang": "ar"}).get_data(as_text=True)
-    assert 'dir="rtl"' in html and "اسأل" in html and "تدرّب" in html
+    assert 'dir="rtl"' in html and "اسأل" in html and "الاستوديو" in html
     html = client.get("/ask", query_string={"lang": "en"}).get_data(as_text=True)
-    assert 'dir="ltr"' in html and "Practice" in html
+    assert 'dir="ltr"' in html and "Studio" in html
 
 
 def test_dark_mode_assets_and_toggle(client):

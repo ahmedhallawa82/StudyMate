@@ -30,7 +30,7 @@ _UNUSED = [
 ]
 
 
-GENERIC = set("""aka list types type yes true false value values case cases node nodes state states step steps same each other another
+GENERIC = set("""second output aka list types type yes true false value values case cases node nodes state states step steps same each other another
 many much more most less least only also well make makes made used uses using given take takes taken result results number numbers
 level levels example examples following follows consider considered called define defined defines general generally often usually them they details return returns insert empty generated finished
 consistent still update continue next reason more here there then thus given want like need needs""".split())
@@ -229,6 +229,9 @@ def keywords(passages, df, n_docs, top=12, per_topic=None):
 
 
 # ------------------------------------------------------------------ extractive summary
+_NOTE_JUNK = re.compile(r"^(Note|Notes|Next lecture|Reference|References|See)\b|\b\d(?:st|nd|rd|th) Ed\b|\bEd\.\)|Regulation No\.?$|\bISBN\b|©", re.I)
+
+
 def summarize(passages, df, n_docs, n=8):
     """The n most informative sentences of the lecture, in slide order. Each: {text, slide, lecture}."""
     c = Counter()
@@ -239,6 +242,8 @@ def summarize(passages, df, n_docs, n=8):
     for _, r in passages.iterrows():
         for i, s in enumerate(_sentences(str(r["body"]))):
             toks = _content(s)
+            if _NOTE_JUNK.search(s):
+                continue
             if len(toks) < 4 or len(s.split()) > 32 or s.split()[0].lower() in BAD_START - {"the", "this", "a", "an", "in"}:
                 continue
             score = sum(w.get(t, 0) for t in set(toks)) / (len(toks) ** 0.6)
@@ -322,7 +327,7 @@ def quiz(defs, summary, kws, seed=0, count=10, words=None, vocab=None):
 
 
 # ------------------------------------------------------------------ concept map
-def concept_map(passages, topics_df, df, n_docs, title, lang="en", width=1100, height=470, defs=None):
+def concept_map(passages, topics_df, df, n_docs, title, lang="en", width=1100, height=640, defs=None):
     """Radial map: lecture title in the middle, its topics around it, key terms around each topic.
 
     Returns {nodes:[{id,label,kind,x,y,w,slides:[..]}], links:[{a,b,kind}]}; kind: root | topic | term.
@@ -337,6 +342,19 @@ def concept_map(passages, topics_df, df, n_docs, title, lang="en", width=1100, h
     nodes = [{"id": "root", "label": title, "kind": "root", "x": cx, "y": cy, "slides": []}]
     links = []
 
+    alltext = " ".join(str(b) for b in passages["body"])
+    lower_words = set(re.findall(r"\b[a-z]{3,}\b", alltext))
+
+    def _ok_label(lab):                                       # drop author names / book credits (never written in lower case)
+        ws = [w for w in re.findall(r"[A-Za-z]{3,}", lab)]
+        return bool(ws) and any(w.lower() in lower_words for w in ws)
+
+    def _joined(lab):                                         # "mecha tronic" -> "mechatronic" when the slides write it as one word
+        j = lab.replace(" ", "").lower()
+        return j if " " in lab and re.search(r"\b" + re.escape(j) + r"\b", alltext.lower()) else lab
+
+    used = set()                                              # a term appears once on the whole map
+
     def pick_terms(sub, k):
         text = " ".join(sub["body"]).lower()
         slides_of = lambda lab: [[int(a), int(b)] for a, b, tx in zip(sub["lecture"], sub["slide"], sub["body"]) if lab.lower() in tx.lower()][:6]
@@ -344,10 +362,14 @@ def concept_map(passages, topics_df, df, n_docs, title, lang="en", width=1100, h
         cand += [(text.count(w) * (2 if " " in w else 1), w) for w in lec_kw if text.count(w) >= 2]
         out, seen = [], set()
         for _, lab in sorted(cand, key=lambda x: -x[0]):
-            if lab.lower() in seen or any(lab.lower() in o.lower() or o.lower() in lab.lower() for o in out):
+            lab = _joined(lab)
+            if not _ok_label(lab):
+                continue
+            if lab.lower() in used or lab.lower() in seen or any(lab.lower() in o.lower() or o.lower() in lab.lower() for o in out):
                 continue
             out.append(lab)
             seen.add(lab.lower())
+            used.add(lab.lower())
             if len(out) >= k:
                 break
         return [(lab, slides_of(lab)) for lab in out]
@@ -362,7 +384,7 @@ def concept_map(passages, topics_df, df, n_docs, title, lang="en", width=1100, h
             links.append({"a": "root", "b": f"k_{j}", "kind": "main"})
     else:
         per = 1 if n > 9 else 2 if n > 6 else 3
-        rx, ry = width * 0.30, height * 0.30
+        rx, ry = width * 0.27, height * 0.27
         for i, t in enumerate(present):
             ang = -math.pi / 2 + 2 * math.pi * i / n
             tx, ty = cx + rx * math.cos(ang), cy + ry * math.sin(ang)
@@ -374,18 +396,69 @@ def concept_map(passages, topics_df, df, n_docs, title, lang="en", width=1100, h
             spread = 0.5 if per > 1 else 0
             for j, (lab, sl) in enumerate(items):
                 a2 = ang + (j - (len(items) - 1) / 2) * spread * 0.9
-                nodes.append({"id": f"k_{t}_{j}", "label": lab, "kind": "term", "x": tx + width * 0.17 * math.cos(a2), "y": ty + height * 0.19 * math.sin(a2), "slides": sl})
+                nodes.append({"id": f"k_{t}_{j}", "label": lab, "kind": "term", "x": tx + width * 0.19 * math.cos(a2), "y": ty + height * 0.21 * math.sin(a2), "slides": sl})
                 links.append({"a": "t_" + t, "b": f"k_{t}_{j}", "kind": "term"})
         for t in present:                                      # prerequisites between topics (dashed)
             for p in prereq.get(t, []):
                 if p in present:
                     links.append({"a": "t_" + p, "b": "t_" + t, "kind": "prereq"})
-    for nd in nodes:                                           # keep every node inside the picture
-        nd["w"] = {"root": min(230, 26 + 9 * len(nd["label"])), "topic": min(200, 26 + 8 * len(nd["label"])), "term": min(170, 22 + 7 * len(nd["label"]))}[nd["kind"]]
-        half = nd["w"] / 2 + 4
-        nd["x"] = round(min(width - half, max(half, nd["x"])), 1)
-        nd["y"] = round(min(height - 22, max(22, nd["y"])), 1)
+    _finish_layout(nodes, width, height)
     return {"nodes": nodes, "links": links, "w": width, "h": height}
+
+
+def _wrap(label, width, max_lines=2):
+    """Split a label into at most `max_lines` lines of about `width` characters (the last line gets an ellipsis if cut)."""
+    words, lines, cur = label.split(), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > width:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = (cur + " " + w).strip()
+    lines.append(cur)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        lines[-1] = lines[-1][: max(1, width - 1)].rstrip() + "…"
+    return lines
+
+
+def _finish_layout(nodes, width, height):
+    """Give every node its text lines and box size, push overlapping boxes apart, keep all inside the picture."""
+    spec = {"root": (16, 9.2, 46), "topic": (22, 8.0, 0), "term": (16, 7.0, 0)}
+    for nd in nodes:
+        wch, cw, _ = spec[nd["kind"]]
+        nd["lines"] = _wrap(nd["label"], wch, 3 if nd["kind"] == "topic" else 2)
+        nd["w"] = int(max(len(l) for l in nd["lines"]) * cw + 28)
+        nd["h"] = 21 * len(nd["lines"]) + 14 if nd["kind"] != "term" else 20 * len(nd["lines"]) + 12
+    gap = 10
+    for _ in range(140):
+        moved = False
+        for i in range(len(nodes)):
+            for j in range(i + 1, len(nodes)):
+                a, b = nodes[i], nodes[j]
+                dx, dy = b["x"] - a["x"], b["y"] - a["y"]
+                ox = (a["w"] + b["w"]) / 2 + gap - abs(dx)
+                oy = (a["h"] + b["h"]) / 2 + gap - abs(dy)
+                if ox > 0 and oy > 0:
+                    moved = True
+                    fix_a, fix_b = a["kind"] == "root", b["kind"] == "root"
+                    share_a = 0 if fix_a else (1 if fix_b else .5)
+                    share_b = 0 if fix_b else (1 if fix_a else .5)
+                    if oy <= ox:                                   # push apart on the shorter way
+                        sgn = 1 if dy >= 0 else -1
+                        a["y"] -= sgn * oy * share_a
+                        b["y"] += sgn * oy * share_b
+                    else:
+                        sgn = 1 if dx >= 0 else -1
+                        a["x"] -= sgn * ox * share_a
+                        b["x"] += sgn * ox * share_b
+        for nd in nodes:
+            nd["x"] = min(width - nd["w"] / 2 - 4, max(nd["w"] / 2 + 4, nd["x"]))
+            nd["y"] = min(height - nd["h"] / 2 - 4, max(nd["h"] / 2 + 4, nd["y"]))
+        if not moved:
+            break
+    for nd in nodes:
+        nd["x"], nd["y"] = round(nd["x"], 1), round(nd["y"], 1)
 
 
 # ------------------------------------------------------------------ info cards
@@ -410,15 +483,16 @@ def build(passages, topics_df, glossary, lecture=None, lang="en", seed=0, n_summ
     title = str(sel["lecture_title"].iloc[0]) if lecture else ""
     return {"lecture": int(lecture) if lecture else None, "title": title, "summary": summ, "terms": defs, "keywords": kws,
             "cards": flashcards(defs, summ, seed, vocab), "quiz": quiz(defs, summ, kws, seed, words=keywords(sel, df, n_docs, top=40) + keywords(allp, df, n_docs, top=60), vocab=vocab), "info": info_cards(sel, defs, kws, tp),
-            "map": concept_map(sel, topics_df, df, n_docs, title or "Course", lang, defs=defs), "script": listen_script(title, summ, defs)}
+            "map": concept_map(sel, topics_df, df, n_docs, title or "Course", lang, defs=defs), "notes": listen_notes(title, summ, defs)}
 
 
-def listen_script(title, summary, defs):
-    parts = ([title + "."] if title else []) + [s["text"] for s in summary]
-    if defs:
-        parts.append("Key terms.")
-        parts += [f"{d['term']}: {d['definition']}" for d in defs[:6]]
-    return " ".join(parts)
+def listen_notes(title, summary, defs):
+    """The read-aloud material as separate notes: [{kind, text, slide, lecture, ar}]; shown one under the other."""
+    notes = [{"kind": "note", "text": x["text"], "slide": x["slide"], "lecture": x["lecture"]} for x in summary]
+    for d in defs[:6]:
+        notes.append({"kind": "term", "text": f"{d['term']}: {d['definition']}", "term": d["term"], "ar": d.get("ar", ""),
+                      "slide": d["slide"], "lecture": d["lecture"]})
+    return notes
 
 
 # ------------------------------------------------------------------ files

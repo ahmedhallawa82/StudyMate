@@ -365,3 +365,21 @@ nav a { position: relative; }
 /* ---- profile: delete the account ---- */
 .del-card { border: 1.5px solid #f1b5b2; } .del-card summary { cursor: pointer; font-weight: 700; color: #a03a36; }
 .del-card .btn.red { background: #d9534f; color: #fff; }
+
+/* ---- Studio hub bar (Exams, Progress, Materials live inside the Studio) ---- */
+.st-hub { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; padding: 6px; border: 1px solid var(--line); border-radius: 999px; background: var(--card); width: fit-content; max-width: 100%; }
+.st-hub a { padding: 8px 18px; border-radius: 999px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 14px; }
+.st-hub a:hover { background: var(--teal-soft); } .st-hub a.on { background: var(--teal); color: #fff; }
+.st-practice { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; padding: 14px 18px; border: 1.5px dashed var(--teal); border-radius: 14px; background: var(--teal-soft); color: var(--ink); text-decoration: none; }
+.st-practice .ic { font-size: 24px; } .st-practice b { display: block; } .st-practice small { color: var(--muted); } .st-practice .go { margin-inline-start: auto; font-size: 20px; color: var(--teal-dark); }
+/* ---- Studio: read-aloud notes ---- */
+.st-listen-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; margin: 6px 0 14px; }
+.st-listen-bar .st-seg { display: inline-flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; }
+.st-listen-bar .st-seg label { padding: 6px 16px; border-radius: 999px; cursor: pointer; font-weight: 600; }
+.st-listen-bar .st-seg label:has(input:checked) { background: var(--teal); color: #fff; } .st-listen-bar .st-seg input { display: none; }
+.st-notes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.st-note { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); }
+.st-note.now { border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal); }
+.st-note p { margin: 4px 0; line-height: 1.6; } .st-note b { color: var(--teal-dark); }
+.st-note-play { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--teal); background: transparent; color: var(--teal-dark); cursor: pointer; }
+.st-note-play:hover { background: var(--teal); color: #fff; }

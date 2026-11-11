@@ -42,11 +42,7 @@
       {% if not first_visit %}
       <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
       <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}" data-tip="{{ t('tip_nav_ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
-      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}" title="{{ t('nav_practice') }}" data-tip="{{ t('tip_nav_practice') }}"><span class="ni">✏️</span><span class="nl">{{ t('nav_practice') }}</span></a>
-      <a href="{{ url_for('studio') }}" class="{{ 'active' if path.startswith('/studio') }}" title="{{ t('nav_studio') }}" data-tip="{{ t('tip_nav_studio') }}"><span class="ni">🎓</span><span class="nl">{{ t('nav_studio') }}</span></a>
-      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}" title="{{ t('nav_progress') }}" data-tip="{{ t('tip_nav_progress') }}"><span class="ni">📈</span><span class="nl">{{ t('nav_progress') }}</span></a>
-      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}" title="{{ t('nav_materials') }}" data-tip="{{ t('tip_nav_materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
+      <a href="{{ url_for('studio') }}" class="{{ 'active' if path.startswith(('/studio', '/practice', '/progress', '/exams', '/materials')) }}" title="{{ t('nav_studio') }}" data-tip="{{ t('tip_nav_studio') }}"><span class="ni">🎓</span><span class="nl">{{ t('nav_studio') }}</span></a>
       {% if me_key %}<a href="{{ url_for('badges_page') }}" class="{{ 'active' if path.startswith('/badges') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_nav_badges') }}"><span class="ni">🏅</span><span class="nl">{{ t('nav_badges') }}</span>{% if badge_new %}<span class="badge nav-badge">{{ badge_new if badge_new < 10 else '9+' }}</span>{% endif %}</a>{% endif %}
       {% if me_key %}<a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">💬</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>{% endif %}
       {% endif %}
@@ -76,6 +72,14 @@
 </header>
 <main>
   {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
+  {% if student_code and not is_lecturer and path.startswith(('/studio', '/practice', '/progress', '/exams', '/materials')) %}
+  <nav class="st-hub" aria-label="{{ t('nav_studio') }}">
+    <a href="{{ url_for('studio') }}" class="{{ 'on' if path.startswith(('/studio', '/practice')) }}">🎓 {{ t('hub_tools') }}</a>
+    <a href="{{ url_for('exams') }}" class="{{ 'on' if path.startswith('/exams') }}">📝 {{ t('nav_exams') }}</a>
+    <a href="{{ url_for('progress') }}" class="{{ 'on' if path.startswith('/progress') }}">📈 {{ t('nav_progress') }}</a>
+    <a href="{{ url_for('materials') }}" class="{{ 'on' if path.startswith('/materials') }}">📚 {{ t('nav_materials') }}</a>
+  </nav>
+  {% endif %}
   {% block content %}{% endblock %}
 </main>
 <div class="modal" id="supportModal" hidden role="dialog" aria-modal="true" aria-labelledby="supTitle">

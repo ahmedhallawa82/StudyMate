@@ -79,6 +79,7 @@
     <div class="st-head"><div><h2>{{ t('st_quiz') }}</h2><p class="muted small">{{ t('st_quiz_s') }}</p></div>
       <div class="actions"><button type="button" class="btn ghost" data-act="quiz-reset">{{ t('st_reset') }}</button>
         <a class="btn" href="{{ url_for('studio', lecture=lecture or 'all', tool='quiz', seed=seed + 1) }}">{{ t('st_newquiz') }}</a></div></div>
+    <a class="st-practice" href="{{ url_for('practice') }}"><span class="ic">✏️</span><span><b>{{ t('st_practice_t') }}</b><small>{{ t('st_practice_s') }}</small></span><span class="go">→</span></a>
     <div class="st-quiz" id="stQuiz"></div>
   </div>
 
@@ -129,11 +130,23 @@
   <!-- Listen -->
   <div class="st-pane" data-pane="listen" {{ 'hidden' if tool != 'listen' }}>
     <div class="st-head"><div><h2>{{ t('st_listen') }}</h2><p class="muted small">{{ t('st_listen_s') }}</p></div>
-      <div class="actions"><button type="button" class="btn" id="stPlay" data-act="listen-play">▶ {{ t('st_play') }}</button>
+      <div class="actions"><button type="button" class="btn" id="stPlay" data-act="listen-play">▶ {{ t('st_play_all') }}</button>
         <button type="button" class="btn ghost" data-act="listen-stop">{{ t('st_stop') }}</button></div></div>
-    <p><label class="muted small">{{ t('st_speed') }}
-      <select id="stRate"><option value="0.8">0.8x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option></select></label></p>
-    <div class="st-script" dir="ltr" id="stScript">{{ kit.script }}</div>
+    <div class="st-listen-bar">
+      <span class="st-seg" role="radiogroup" aria-label="{{ t('st_voice') }}">
+        <label><input type="radio" name="stLang" value="en" checked> English</label>
+        <label><input type="radio" name="stLang" value="ar"> العربية</label>
+      </span>
+      <label class="muted small">{{ t('st_speed') }}
+        <select id="stRate"><option value="0.8">0.8x</option><option value="1" selected>1x</option><option value="1.25">1.25x</option><option value="1.5">1.5x</option></select></label>
+    </div>
+    <ol class="st-notes" dir="ltr">
+      {% for n in kit.notes %}<li class="st-note" id="stNote{{ loop.index0 }}">
+        <button type="button" class="st-note-play" data-act="listen-one" data-i="{{ loop.index0 }}" aria-label="{{ t('st_play') }}">▶</button>
+        <div><b>{{ (t('st_note_n', n=loop.index) if n.kind == 'note' else t('st_term')) }}</b>
+          <p>{{ n.text }}</p>{% if n.ar %}<p dir="rtl" class="muted">{{ n.ar }}</p>{% endif %}
+          <small class="muted">{{ t('lecture') }} {{ n.lecture }} · {{ t('st_slide', n=n.slide) }}</small></div></li>{% endfor %}
+    </ol>
     <p class="muted small" id="stVoiceNote" hidden>{{ t('st_no_voice') }}</p>
     <p class="muted small">{{ t('st_listen_note') }}</p>
   </div>
@@ -146,7 +159,7 @@
          'right': t('st_right'), 'wrong': t('st_wrong'), 'from_slide': t('st_from_slide', n='{n}'), 'score': t('st_score', a='{a}', b='{b}'), 'noquiz': t('st_noquiz'),
          'map_slides': t('st_map_slides', s='{s}'), 'map_pick': t('st_map_pick'), 'ig_points': t('st_ig_points'), 'ig_terms': t('st_key_terms'), 'ig_topics': t('st_topics'),
          'ig_footer': t('st_ig_footer'), 'slides_n': t('st_slides_n'), 'terms_n': t('st_terms_n'), 'minutes': t('st_minutes'), 'min': t('st_min', n='{n}'),
-         'play': t('st_play'), 'pause': t('st_pause'), 'no_voice': t('st_no_voice'), 'lecture': t('lecture'), 'course': course}}|tojson }}</script>
+         'play': t('st_play'), 'play_all': t('st_play_all'), 'ar_note': t('st_ar_note', i='{i}'), 'ar_term': t('st_ar_term'), 'pause': t('st_pause'), 'no_voice': t('st_no_voice'), 'lecture': t('lecture'), 'course': course}}|tojson }}</script>
 {% endif %}
 {% endblock %}
 {% block scripts %}{% if kit %}<script src="{{ url_for('static', filename='js/studio.js') }}"></script>{% endif %}{% endblock %}
