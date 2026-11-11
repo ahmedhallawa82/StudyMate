@@ -1,0 +1,40 @@
+{
+ "course": "AI",
+ "model": "small CNN from scratch (ImageNet weights not available here)",
+ "images": 250,
+ "classes": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7
+ ],
+ "test_accuracy": 0.26,
+ "search_index_used": "classic",
+ "search_comparison_pct": {
+  "CNN embedding": {
+   "exact image Top-1": 10.0,
+   "exact image Top-3": 16.0,
+   "correct lecture @1": 38.0
+  },
+  "Hand-made (pixels + colour)": {
+   "exact image Top-1": 24.0,
+   "exact image Top-3": 30.0,
+   "correct lecture @1": 38.0
+  }
+ },
+ "search_top1_exact": 0.1,
+ "search_top3_exact": 0.16,
+ "search_lecture_at_1": 0.38,
+ "per_class_f1": {
+  "lecture 1": 0.0,
+  "lecture 2": 0.286,
+  "lecture 3": 0.0,
+  "lecture 4": 0.0,
+  "lecture 5": 0.0,
+  "lecture 6": 0.407,
+  "lecture 7": 0.0
+ }
+}
