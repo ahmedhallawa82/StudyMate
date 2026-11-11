@@ -30,7 +30,9 @@
       <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
       <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
       <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
+      {% if is_master_user %}
       <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}" title="{{ t('nav_eval') }}" data-tip="{{ t('tip_nav_eval') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
+      {% endif %}
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
       <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}" data-tip="{{ t('tip_nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
       <a href="{{ url_for('badges_admin') }}" class="{{ 'active' if path.startswith('/badges-admin') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_badges_admin') }}"><span class="ni">🏅</span><span class="nl">{{ t('nav_badges') }}</span></a>

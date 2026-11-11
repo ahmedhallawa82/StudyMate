@@ -761,7 +761,7 @@ def progress():
 @app.route("/evaluation")
 @lecturer_required
 def evaluation():
-    if not can_manage(course_code()):
+    if not is_master() or not can_manage(course_code()):          # the evaluation page is for the main admin only
         return redirect(url_for("admin"))
     visit("evaluation")
     P = config.course_paths(course_code())

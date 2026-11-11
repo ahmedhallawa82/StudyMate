@@ -309,7 +309,7 @@ def test_doctor_codes_own_courses_and_search(admin, tmp_path, monkeypatch):
         d1.post("/admin", data={"action": "add_course", "code": "dct9", "name_en": "Doctor course", "name_ar": "",
                 "pdfs": [(io.BytesIO(p.read_bytes()), p.name) for p in pdfs]}, content_type="multipart/form-data")
         assert next(c for c in config.list_courses() if c["code"] == "DCT9")["meta"]["owner"] == did
-        assert d1.get("/dashboard").status_code == 200 and d1.get("/evaluation").status_code == 200
+        assert d1.get("/dashboard").status_code == 200 and d1.get("/evaluation").status_code == 302   # evaluation: main admin only
         assert d1.get("/dashboard/logs.xlsx").status_code == 200
         # he sees only his own course (not AI / MAM336) in the course list
         page = d1.get("/admin").get_data(as_text=True)
