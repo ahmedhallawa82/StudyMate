@@ -4,7 +4,7 @@
   var i = 1;
   document.querySelectorAll('main .card, main .kpi, main .result').forEach(function (el) {
     if (el.classList.contains('fade') || el.closest('.fade') || el.classList.contains('center-box')) return;
-    el.classList.add('fade'); el.style.setProperty('--i', Math.min(i++, 12));
+    el.classList.add('fade'); el.style.setProperty('--i', Math.min(i++, 6));
   });
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   document.querySelectorAll('[data-count]').forEach(function (el) {

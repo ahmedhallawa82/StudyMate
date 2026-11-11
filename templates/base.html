@@ -27,21 +27,21 @@
     <nav>
       {% set path = request.path %}
       {% if is_lecturer %}
-      <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
-      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
-      <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
+      <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}" title="{{ t('nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
+      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
+      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
+      <a href="{{ url_for('evaluation') }}" class="{{ 'active' if path.startswith('/evaluation') }}" title="{{ t('nav_eval') }}"><span class="ni">🧮</span><span class="nl">{{ t('nav_eval') }}</span></a>
+      <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
+      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
       <span class="chip"><span class="avatar">{{ ('A' if admin_role == 'master' else (admin_name or 'D'))[:1]|upper }}</span>{% if admin_role == 'master' %}{{ t('role_admin') }}{% else %}{{ t('role_doctor') }} · {{ admin_name }}{% endif %}<a href="{{ url_for('lecturer_logout') }}">{{ t('back_students') }}</a></span>
       {% elif student_code %}
       {% if not first_visit %}
-      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
-      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
-      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}"><span class="ni">✏️</span><span class="nl">{{ t('nav_practice') }}</span></a>
-      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}"><span class="ni">📈</span><span class="nl">{{ t('nav_progress') }}</span></a>
-      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
+      <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}"><span class="ni">🏠</span><span class="nl">{{ t('nav_home') }}</span></a>
+      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}"><span class="ni">🔎</span><span class="nl">{{ t('nav_ask') }}</span></a>
+      <a href="{{ url_for('practice') }}" class="{{ 'active' if path.startswith('/practice') }}" title="{{ t('nav_practice') }}"><span class="ni">✏️</span><span class="nl">{{ t('nav_practice') }}</span></a>
+      <a href="{{ url_for('progress') }}" class="{{ 'active' if path.startswith('/progress') }}" title="{{ t('nav_progress') }}"><span class="ni">📈</span><span class="nl">{{ t('nav_progress') }}</span></a>
+      <a href="{{ url_for('exams') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
+      <a href="{{ url_for('materials') }}" class="{{ 'active' if path.startswith('/materials') }}" title="{{ t('nav_materials') }}"><span class="ni">📚</span><span class="nl">{{ t('nav_materials') }}</span></a>
       {% endif %}
       <span class="chip"><span class="avatar">{{ (student_name or student_code)[:1]|upper }}</span>{{ student_name or student_code }}<a href="{{ url_for('logout') }}">{{ t('logout') }}</a></span>
       {% endif %}

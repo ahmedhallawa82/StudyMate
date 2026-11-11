@@ -185,7 +185,8 @@ def visible_courses():
 def visit(page):
     if session.get("lecturer"):                        # admin pages are not student visits
         return
-    log("Visits", {"student_code": student() or ("lecturer" if session.get("lecturer") else ""), "page": page})
+    from core.logger import log_async
+    log_async("Visits", {"student_code": student() or ("lecturer" if session.get("lecturer") else ""), "page": page, "course": course_code()})
 
 
 def my_mastery(code=None):

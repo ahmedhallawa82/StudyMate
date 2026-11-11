@@ -67,7 +67,7 @@ h2.sec { font-size: 17px; margin: 6px 0 10px; color: var(--teal-dark); }
 .qcard, .qres { transition: border-color .2s; }
 
 /* motion */
-.fade { opacity: 0; transform: translateY(14px); animation: up .55s ease forwards; animation-delay: calc(var(--i, 0) * 70ms); }
+.fade { opacity: 0; transform: translateY(14px); animation: up .3s ease forwards; animation-delay: calc(var(--i, 0) * 25ms); }
 @keyframes up { to { opacity: 1; transform: none; } }
 .fill { transition: width 1s cubic-bezier(.2,.8,.2,1); }
 @media (prefers-reduced-motion: reduce) { .fade { animation: none; opacity: 1; transform: none; } .ring, .fill { transition: none; } }

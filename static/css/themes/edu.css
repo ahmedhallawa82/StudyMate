@@ -1,9 +1,8 @@
 /* Theme 6 - Edu (clean light dashboard: teal, big white rounded cards, capsule icon navigation) */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 :root { --teal: #0f8a84; --teal-dark: #0b4f4c; --teal-soft: #e5f2f1; --orange: #0f8a84; --orange-dark: #0b6f6a;
   --ink: #15201f; --muted: #6b7776; --line: #e8eceb; --bg: #f1f3f3; --card: #ffffff; --mark: #bfe9e5; --chip: #f1f3f3;
   --c-purple: #8b5cf6; --c-orange: #f59e0b; --c-red: #ef4444; --radius: 24px; }
-body { font-family: Inter, "Segoe UI", sans-serif; }
+body { font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif; }
 html[lang="ar"] body { font-family: Cairo, Tahoma, "Segoe UI", sans-serif; }
 .card, .kpi, .result, .stat, .tile, .ccard { border: none; border-radius: var(--radius); box-shadow: 0 2px 14px rgba(15,60,57,.06); }
 .btn { border-radius: 999px; box-shadow: none; }
@@ -23,7 +22,7 @@ nav a { display: inline-flex; align-items: center; justify-content: center; gap:
 nav a .ni { font-size: 19px; line-height: 1; filter: grayscale(.2); }
 nav a .nl { max-width: 0; opacity: 0; white-space: nowrap; overflow: hidden; transition: max-width .3s ease, opacity .2s; font-size: 14px; }
 nav a:hover { background: var(--teal-soft); color: var(--teal-dark); }
-nav a:hover .nl, nav a.active .nl { max-width: 150px; opacity: 1; margin-inline-start: 8px; }
+nav a.active .nl { max-width: 150px; opacity: 1; margin-inline-start: 8px; }
 nav a.active { background: var(--teal); color: #fff; }
 nav a.active .ni { filter: none; }
 .chip { background: var(--card); color: var(--ink); border-radius: 999px; padding: 5px 14px 5px 6px; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 14px rgba(15,60,57,.06); }
