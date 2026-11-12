@@ -26,7 +26,7 @@
         <form method="post" action="{{ url_for('exams_start') }}" id="startForm">
           <p><b>{{ t('exam_choose_n') }}</b></p>
           <div class="actions" style="flex-wrap:wrap">
-            {% for c in choices %}<label class="btn ghost" style="cursor:pointer"><input type="radio" name="count" value="{{ c }}" {{ 'checked' if loop.first }} style="display:none"> {{ c if c != n else t('exam_all') ~ ' (' ~ c ~ ')' }}</label>{% endfor %}
+            {% for c in choices %}<label class="btn ghost" style="cursor:pointer"><input type="radio" name="count" value="{{ c }}" {{ 'checked' if loop.first }} style="display:none"> {{ c if c != n else t('exam_all') }}</label>{% endfor %}
           </div>
           <p class="small">{{ t('exam_custom') }}: <input type="number" name="custom" id="custom" min="1" max="{{ n }}" style="width:90px" dir="ltr"></p>
           <p class="small" id="est"></p>

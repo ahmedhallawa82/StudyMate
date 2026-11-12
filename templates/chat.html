@@ -27,16 +27,21 @@
     {% if cur %}
     <header class="chat-head">
       {% if cur.avatar %}<img class="avatar" src="{{ cur.avatar }}" alt="">{% else %}<span class="avatar">{{ cur.name[:1]|upper }}</span>{% endif %}
-      <div><b>{{ cur.name }}</b><small class="muted" dir="ltr"> @{{ cur.username }} · {{ cur.role }}</small></div>
+      <div style="flex:1;min-width:0"><b>{{ cur.name }}</b><small class="muted" dir="ltr"> @{{ cur.username }} · {{ cur.role }}</small></div>
+      <form method="post" action="{{ url_for('chat_close') }}" onsubmit="return confirm({{ t('chat_close_confirm')|tojson }})">
+        <input type="hidden" name="with" value="{{ cur.key }}"><button class="btn ghost small" type="submit" title="{{ t('chat_close_tip') }}">✕ {{ t('chat_close') }}</button>
+      </form>
     </header>
     <div class="chat-msgs" id="chatMsgs" data-with="{{ cur.key }}" data-poll="{{ url_for('chat_poll') }}" data-send="{{ url_for('chat_send') }}">
-      {% for m in msgs %}<div class="bubble {{ 'me' if m.mine else 'them' }}" data-id="{{ m.id }}"><span dir="auto">{{ m.text }}</span><small dir="ltr">{{ m.time }}</small></div>
+      {% for m in msgs %}<div class="bubble {{ 'me' if m.mine else 'them' }}" data-id="{{ m.id }}">{% if m.file %}{% if m.file.img %}<a href="{{ m.file.url }}" target="_blank"><img class="chat-img" src="{{ m.file.url }}" alt="{{ m.file.name }}"></a>{% else %}<a class="chat-file" href="{{ m.file.url }}" download>📎 {{ m.file.name }} <small>({{ (m.file.size / 1024)|round|int }} KB)</small></a>{% endif %}{% endif %}{% if m.text %}<span dir="auto">{{ m.text }}</span>{% endif %}<small dir="ltr">{{ m.time }}</small></div>
       {% else %}<p class="muted small chat-empty">{{ t('chat_say_hi') }}</p>{% endfor %}
     </div>
     <form class="chat-form" id="chatForm" autocomplete="off">
-      <textarea id="chatText" rows="1" maxlength="1000" placeholder="{{ t('chat_type') }}" dir="auto" required></textarea>
+      <label class="btn ghost chat-attach" title="{{ t('chat_attach') }}">📎<input type="file" id="chatFile" hidden></label>
+      <textarea id="chatText" rows="1" maxlength="1000" placeholder="{{ t('chat_type') }}" dir="auto"></textarea>
       <button class="btn" type="submit">{{ t('chat_send') }}</button>
     </form>
+    <p class="muted small" id="chatPicked" hidden style="padding:0 14px 8px"></p>
     <p class="muted small chat-err" id="chatErr" hidden></p>
     {% else %}
     <div class="chat-blank"><span style="font-size:48px">💬</span><p>{{ t('chat_pick') }}</p></div>
@@ -47,21 +52,29 @@
 (function () {
   var box = document.getElementById('chatMsgs'), form = document.getElementById('chatForm'), ta = document.getElementById('chatText'), err = document.getElementById('chatErr');
   var last = 0; box.querySelectorAll('.bubble').forEach(function (b) { last = Math.max(last, +b.dataset.id); });
-  var ERR = {rate: {{ t('chat_rate')|tojson }}, empty: '', user: {{ t('chat_not_found')|tojson }}};
+  var ERR = {rate: {{ t('chat_rate')|tojson }}, empty: '', user: {{ t('chat_not_found')|tojson }}, file_big: {{ t('chat_file_big')|tojson }}, file_type: {{ t('chat_file_type')|tojson }}};
+  var fileIn = document.getElementById('chatFile'), picked = document.getElementById('chatPicked');
+  fileIn.onchange = function () { picked.hidden = !fileIn.files.length; picked.textContent = fileIn.files.length ? '📎 ' + fileIn.files[0].name : ''; };
   function add(m) {
     if (m.id <= last) return; last = m.id;
     var e = box.querySelector('.chat-empty'); if (e) e.remove();
     var d = document.createElement('div'); d.className = 'bubble ' + (m.mine ? 'me' : 'them'); d.dataset.id = m.id;
-    var s = document.createElement('span'); s.dir = 'auto'; s.textContent = m.text;
+    if (m.file) {
+      var a = document.createElement('a'); a.href = m.file.url;
+      if (m.file.img) { a.target = '_blank'; var im = document.createElement('img'); im.className = 'chat-img'; im.src = m.file.url; im.alt = m.file.name; a.appendChild(im); }
+      else { a.className = 'chat-file'; a.setAttribute('download', ''); a.textContent = '📎 ' + m.file.name + ' (' + Math.round(m.file.size / 1024) + ' KB)'; }
+      d.appendChild(a);
+    }
+    if (m.text) { var s = document.createElement('span'); s.dir = 'auto'; s.textContent = m.text; d.appendChild(s); }
     var t = document.createElement('small'); t.dir = 'ltr'; t.textContent = m.time;
-    d.appendChild(s); d.appendChild(t); box.appendChild(d); box.scrollTop = box.scrollHeight;
+    d.appendChild(t); box.appendChild(d); box.scrollTop = box.scrollHeight;
   }
   box.scrollTop = box.scrollHeight;
   form.onsubmit = function (e) {
-    e.preventDefault(); var text = ta.value.trim(); if (!text) return;
-    var fd = new FormData(); fd.append('with', box.dataset.with); fd.append('text', text); ta.value = '';
+    e.preventDefault(); var text = ta.value.trim(), f = fileIn.files[0]; if (!text && !f) return;
+    var fd = new FormData(); fd.append('with', box.dataset.with); fd.append('text', text); if (f) fd.append('file', f); ta.value = '';
     fetch(box.dataset.send, {method: 'POST', body: fd}).then(function (r) { return r.json(); }).then(function (j) {
-      if (j.ok) { err.hidden = true; add(j.msg); } else { err.textContent = ERR[j.error] || ''; err.hidden = !err.textContent; ta.value = text; }
+      if (j.ok) { err.hidden = true; add(j.msg); fileIn.value = ''; picked.hidden = true; } else { err.textContent = ERR[j.error] || ''; err.hidden = !err.textContent; ta.value = text; }
     });
   };
   ta.addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
@@ -91,6 +104,9 @@
 .bubble.them { align-self: flex-start; background: var(--chip, #eef2f1); border-end-start-radius: 4px; }
 .chat-form { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--line, #e5e7eb); } .chat-form textarea { flex: 1; resize: none; min-height: 44px; max-height: 120px; }
 .chat-blank { margin: auto; text-align: center; color: var(--muted, #6b7a78); }
+.chat-img { max-width: 260px; max-height: 220px; border-radius: 10px; display: block; }
+.chat-file { color: inherit; font-weight: 600; text-decoration: underline; }
+.chat-attach { padding: 8px 12px; cursor: pointer; align-self: center; }
 .chat-err { padding: 0 14px 10px; color: #c0392b; }
 .chat .avatar { width: 38px; height: 38px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--teal, #0f8a82); color: #fff; font-weight: 700; object-fit: cover; flex: none; }
 @media (max-width: 800px) { .chat { grid-template-columns: 1fr; } .chat-side { max-height: 40vh; min-height: 0; } }

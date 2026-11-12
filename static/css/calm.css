@@ -8,7 +8,7 @@ html[data-theme="edu"] nav a.active { background: var(--teal); color: #fff; padd
 html[data-theme="edu"] nav a .ni { display: inline-flex; filter: none; } html[data-theme="edu"] nav a .ni svg { display: block; }
 html[data-theme="edu"] nav a .nl { display: none; max-width: none; opacity: 1; font-size: 14px; }
 html[data-theme="edu"] nav a.active .nl { display: inline; }
-@media (min-width: 1500px) { html[data-theme="edu"] nav a .nl { display: inline; } }
+@media (min-width: 1700px) { html[data-theme="edu"] nav a .nl { display: inline; } }
 html[data-theme="edu"] nav a .nav-badge { top: 4px; inset-inline-end: 6px; }
 html[data-theme="edu"] .brand { font-weight: 700; font-size: 24px; letter-spacing: -.03em; }
 html[data-theme="edu"] .tools .qs-pill { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 12px 0 16px; border-radius: 999px; color: var(--muted); font-weight: 500; width: auto; min-width: 240px; }
@@ -63,3 +63,9 @@ html.embed main { padding-top: 6px; max-width: none; }
 html[data-theme="edu"] .trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:0 0 16px}
 html[data-theme="edu"] .trio .card{margin:0;min-width:0}
 html[data-theme="edu"] .trio .pc-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+
+/* one row for everybody (student, doctor, admin): brand, links, then the tools; the search pill is a round icon like the other tools */
+@media (min-width: 1001px) { html[data-theme="edu"] header.top .bar { flex-wrap: nowrap; max-width: 1760px; } html[data-theme="edu"] nav { flex-wrap: nowrap; } }
+html[data-theme="edu"] .tools { flex-wrap: nowrap; }
+html[data-theme="edu"] .tools .qs-pill { min-width: 0; padding: 0; width: 44px; justify-content: center; }
+html[data-theme="edu"] .tools .qs-pill .qs-t, html[data-theme="edu"] .tools .qs-pill kbd { display: none; }

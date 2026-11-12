@@ -70,7 +70,7 @@
       {% endif %}
       <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" data-tip="{{ t('tip_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
       <div class="lang" id="langMenu">
-        <button type="button" class="tool lang-btn" aria-haspopup="listbox" aria-expanded="false" title="{{ t('toggle_lang') }}" data-tip="{{ t('tip_lang') }}" aria-label="{{ t('toggle_lang') }}"><span>{{ 'العربية' if lang == 'ar' else 'English' }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button type="button" class="tool lang-btn" aria-haspopup="listbox" aria-expanded="false" title="{{ t('toggle_lang') }}" aria-label="{{ t('toggle_lang') }}"><span>{{ 'العربية' if lang == 'ar' else 'English' }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="lang-panel" role="listbox" hidden>
           <a role="option" class="{{ 'on' if lang == 'en' }}" {% if lang == 'ar' %}href="{{ lang_url }}"{% else %}href="#" onclick="return false"{% endif %}>English</a>
           <a role="option" class="{{ 'on' if lang == 'ar' }}" {% if lang == 'en' %}href="{{ lang_url }}"{% else %}href="#" onclick="return false"{% endif %}>العربية</a>

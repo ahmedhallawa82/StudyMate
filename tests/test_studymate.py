@@ -460,6 +460,29 @@ def test_sub_admin_with_permissions_and_framed_tabs(admin, tmp_path, monkeypatch
     assert "①" not in admin.get("/exams/manage").get_data(as_text=True)
 
 
+def test_chat_files_and_close_for_good(admin, client, tmp_path, monkeypatch):
+    import io
+    from core import chat
+    monkeypatch.setattr(chat, "FILE", lambda: tmp_path / "chat.json")
+    monkeypatch.setattr(chat, "FILES", lambda: tmp_path / "files")
+    with client.session_transaction() as ss:
+        scode = ss["student_code"]
+    key = "s:" + scode
+    r = admin.post("/chat/send", data={"with": key, "text": "see file", "file": (io.BytesIO(b"hello"), "notes.txt")}, content_type="multipart/form-data")
+    j = r.get_json()
+    assert j["ok"] and j["msg"]["file"]["name"] == "notes.txt"
+    assert client.get(j["msg"]["file"]["url"]).data == b"hello"                         # the other side can download it
+    assert admin.post("/chat/send", data={"with": key, "file": (io.BytesIO(b"x"), "bad.exe")}, content_type="multipart/form-data").status_code == 400
+    assert admin.post("/chat/send", data={"with": key, "text": ""}).status_code == 400   # nothing to send
+    assert "notes.txt" in client.get("/chat?with=d:master").get_data(as_text=True)
+    client.post("/chat/close", data={"with": "d:master"})
+    assert client.get(j["msg"]["file"]["url"]).status_code == 404                        # gone for the one who closed it
+    assert "notes.txt" not in client.get("/chat?with=d:master").get_data(as_text=True)
+    assert admin.get(j["msg"]["file"]["url"]).status_code == 200                         # the other person keeps his copy
+    admin.post("/chat/close", data={"with": key})
+    assert not list((tmp_path / "files").iterdir())                                      # both closed: the file is deleted
+
+
 def test_materials_zip(client):
     r = client.get("/materials.zip")
     assert r.status_code == 200 and r.data[:2] == b"PK"

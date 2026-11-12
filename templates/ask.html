@@ -8,13 +8,6 @@
     <div class="card">
       <form class="inline" method="get" action="{{ url_for('ask') }}">
         <input type="text" name="q" value="{{ question }}" placeholder="{{ t('ask_ph') }}" autofocus required dir="auto">
-        <select name="method" title="{{ t('search_method') }}">
-          <option value="tfidf" {{ 'selected' if method == 'tfidf' }}>TF-IDF</option>
-          <option value="bm25" {{ 'selected' if method == 'bm25' }}>BM25</option>
-          <option value="hybrid" {{ 'selected' if method == 'hybrid' }}>{{ t('m_hybrid') }}</option>
-          <option value="lsa" {{ 'selected' if method == 'lsa' }}>{{ t('m_lsa') }}</option>
-          {% if neural_ok() %}<option value="neural" {{ 'selected' if method == 'neural' }}>{{ t('m_neural') }}</option>{% endif %}
-        </select>
         <button class="btn" type="submit">{{ t('ask_btn') }}</button>
       </form>
       <p class="muted small" style="margin:8px 0 0">{{ t('ask_hint') }}</p>

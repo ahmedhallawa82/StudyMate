@@ -706,13 +706,22 @@ def student_home():
 
 
 # ------------------------------------------------------------------ Ask
+def best_method():
+    """The search model with the best measured quality for this course (MRR, then top-1), from its last evaluation; BM25 when nothing was measured yet."""
+    try:
+        m = json.loads((config.course_paths(course_code()).reports / "auto_metrics.json").read_text(encoding="utf-8"))["methods"]
+        ok = [k for k in m if k in ("tfidf", "bm25", "lsa", "hybrid")]
+        return max(ok, key=lambda k: (m[k]["mrr"], m[k]["top1"], k == "bm25"))
+    except (OSError, ValueError, KeyError, TypeError):
+        return "bm25"
+
+
 @app.route("/ask", methods=["GET", "POST"])
 @student_required
 def ask():
     result = None
     question = request.values.get("q", "").strip()
-    method = request.values.get("method", "tfidf")
-    method = method if method in ("tfidf", "bm25", "lsa", "hybrid") or (method == "neural" and neural.available()) else "tfidf"
+    method = best_method()                                         # the site picks the most accurate search model itself
     if question:
         clf, eng = S()["clf"], S()["engine"]
         topic, conf = clf.predict(question)
@@ -2109,7 +2118,11 @@ def chat_suggestions(me):
 
 
 def _msg_json(m, me):
-    return {"id": m["id"], "mine": m["from"] == me, "text": m["text"], "time": m["time"]}
+    out = {"id": m["id"], "mine": m["from"] == me, "text": m["text"], "time": m["time"]}
+    f = m.get("file")
+    if f:
+        out["file"] = {"name": f["fname"], "size": f["size"], "img": f.get("img", False), "url": url_for("chat_file", fid=f["fid"])}
+    return out
 
 
 @app.route("/chat", methods=["GET", "POST"])
@@ -2129,7 +2142,7 @@ def chat_page():
     for t in chat.threads_for(me):
         p = person(t["with"])
         if p:
-            threads.append({**p, "last": t["last"]["text"][:60], "time": t["last"]["time"], "unread": t["unread"]})
+            threads.append({**p, "last": (t["last"]["text"] or "📎 " + t["last"].get("file", {}).get("fname", ""))[:60], "time": t["last"]["time"], "unread": t["unread"]})
     cur = person(request.args.get("with"))
     if request.args.get("with") and not cur:
         flash_t("chat_not_found")
@@ -2151,13 +2164,46 @@ def chat_send():
     if not me or not person(to):
         return jsonify(ok=False, error="user"), 400
     unread_before = next((t["unread"] for t in chat.threads_for(to) if t["with"] == me), 0)
-    msg, err = chat.send(me, to, request.form.get("text", ""))
+    saved = None
+    up = request.files.get("file")
+    if up and up.filename:
+        saved, ferr = chat.save_file(up)
+        if ferr:
+            return jsonify(ok=False, error=ferr), 400
+    msg, err = chat.send(me, to, request.form.get("text", ""), saved)
     if err:
         return jsonify(ok=False, error=err), 429 if err == "rate" else 400
     if unread_before == 0:                                         # one notification until he opens the conversation
         mine = person(me)
         notify.push([to], "chat", tr("chat_new_title", lang(), name=mine["name"]), tr("chat_new_body", lang()), url_for("chat_page", **{"with": me}))
     return jsonify(ok=True, msg=_msg_json(msg, me))
+
+
+@app.route("/chat/file/<fid>")
+@perm_required("chat")
+def chat_file(fid):
+    me = user_key()
+    m = chat.file_allowed(me, fid) if me else None
+    if not m or "/" in fid or ".." in fid:
+        abort(404)
+    f = m["file"]
+    path = chat.FILES() / fid
+    if not path.is_file():
+        abort(404)
+    resp = send_file(path, as_attachment=not f.get("img"), download_name=f["fname"])
+    resp.headers["X-Content-Type-Options"] = "nosniff"
+    return resp
+
+
+@app.route("/chat/close", methods=["POST"])
+@perm_required("chat")
+def chat_close():
+    me = user_key()
+    other_key = request.form.get("with", "")
+    if me and other_key:
+        chat.close(me, other_key)
+        flash_t("chat_closed")
+    return redirect(url_for("chat_page"))
 
 
 @app.route("/chat/poll")
