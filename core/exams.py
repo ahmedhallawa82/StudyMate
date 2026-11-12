@@ -134,6 +134,58 @@ def _is_ar(text):
     return ar > 0.3 * max(1, len(re.findall(r"[A-Za-z؀-ۿ]", text)))
 
 
+# ------------------------------------------------------------------ true / false detection
+_TF_TRUE = {"true", "t", "correct", "right", "yes", "✓", "✔", "☑", "صح", "صحيح", "صحيحة", "صواب", "نعم"}
+_TF_FALSE = {"false", "f", "incorrect", "wrong", "no", "✗", "✘", "✕", "خطأ", "خطا", "خاطئ", "خاطئة", "غلط", "لا"}
+_TF_ANS = re.compile(r"^\s*([^\s.,;:،؛\-–—()/]+)\s*([.,;:،؛\-–—(/].*)?$", re.S)
+_TF_HINT = re.compile(r"\(?\s*(?:\btrue\s*(?:/|or|\|)\s*false\b|\bt\s*/\s*f\b|صح\s*(?:/|أو|او|و|أم|ام)\s*(?:خطأ|خطا|غلط))\s*[?؟]?\s*\)?", re.I)
+_TF_HEADER = re.compile(r"^\s*(?:part\s+\w+\s*[:\-–]\s*|section\s+\w+\s*[:\-–]\s*)?(?:true\s*(?:/|or|and|&|-|–)\s*false|t\s*/\s*f|صح\s*(?:و|/|أو|او|أم|ام)\s*(?:خطأ|خطا|غلط))"
+                        r"\s*(?:questions?|statements?|section|items?|أسئلة|اسئلة|عبارات)?\s*(?:\(.*\))?\s*[:：]?\s*$", re.I)
+TF_OPTS = {"en": ["True", "False"], "ar": ["صح", "خطأ"]}
+
+
+def tf_value(raw):
+    """0 for a 'true' answer, 1 for 'false', None when the text is not a true/false answer (a model answer that merely starts with 'False positive ...')."""
+    m = _TF_ANS.match(str(raw or "").strip())
+    if not m:
+        return None
+    w = m.group(1).strip().lower()
+    return 0 if w in _TF_TRUE else 1 if w in _TF_FALSE else None
+
+
+def to_tf(it):
+    """Make a parsed item a true/false question (a multiple-choice question with the two options True / False)."""
+    raw = it.get("model") or it.get("answer_raw") or ""
+    it["q"] = _TF_HINT.sub(" ", it["q"]).strip(" \t") or it["q"]
+    it["options"], it["type"] = list(TF_OPTS[it.get("lang", "en")]), "mcq"
+    it["answer"], it["model"], it["keywords"] = tf_value(raw), "", []
+    return it
+
+
+def kind(q):
+    """'mcq' | 'tf' | 'essay' of a stored bank question."""
+    return "tf" if is_tf(q) else q.get("type", "essay")
+
+
+def reclassify(code):
+    """Fix a bank uploaded before: essays whose model answer is only True / False (or صح / خطأ) become true/false questions. Returns how many."""
+    bank = load_bank(code)
+    n = 0
+    for q in bank["questions"].values():
+        if q.get("type") != "essay":
+            continue
+        vals = [(l, tf_value(q[l].get("model", ""))) for l in ("en", "ar") if q.get(l)]
+        if not vals or any(v is None for _, v in vals):
+            continue
+        q["type"], q["answer"] = "mcq", vals[0][1]
+        for l, _ in vals:
+            q[l].update({"options": list(TF_OPTS[l]), "model": "", "keywords": []})
+        n += 1
+    if n:
+        save_bank(code, bank)
+    return n
+
+
 # ------------------------------------------------------------------ text -> questions
 _Q = re.compile(r"^\s*(?:(?:Q(?:uestion)?|س|السؤال|سؤال)\s*)?(\d{1,4})\s*[.):\-–]\s*(.*)$", re.I)
 _QPREFIX = re.compile(r"^\s*(?:Q(?:uestion)?|س|السؤال|سؤال)\s*\d", re.I)
@@ -197,19 +249,29 @@ def parse_text(text):
             cur["options"] = [re.sub(r"\s+", " ", o).strip() for o in cur["options"]]
             cur["type"] = "mcq" if len(cur["options"]) >= 2 else "essay"
             cur["lang"] = "ar" if _is_ar(cur["q"]) else "en"
-            if cur["type"] == "mcq" and cur["answer_raw"]:
-                cur["answer"] = _letter_index(cur["answer_raw"].split()[0]) if cur["answer_raw"].split() else None
-                if cur["answer"] is not None and cur["answer"] >= len(cur["options"]):
-                    cur["answer"] = None
-            else:
-                cur["model"] = re.sub(r"\s+", " ", cur["answer_raw"]).strip() if cur["type"] == "essay" else ""
+            raw = re.sub(r"\s+", " ", cur["answer_raw"]).strip()
+            if cur["type"] == "essay" and (tf_value(raw) is not None or _TF_HINT.search(cur["q"])):
+                cur["model"] = raw
+                to_tf(cur)                                   # "Answer: True" / "(True/False)" without options = true/false question
+            elif cur["type"] == "mcq" and raw:
+                first = raw.split()[0]
+                idx = _letter_index(first)
+                if idx is None or idx >= len(cur["options"]):               # "Answer: True" with options A) True B) False
+                    low = [re.sub(r"\W+", "", o).lower() for o in cur["options"]]
+                    word = re.sub(r"\W+", "", first).lower()
+                    idx = low.index(word) if word and word in low else None
+                    if idx is None and len(cur["options"]) == 2 and tf_value(raw) is not None:
+                        idx = tf_value(raw)
+                cur["answer"] = idx
+            elif cur["type"] == "essay":
+                cur["model"] = raw
             items.append(cur)
         cur = None
 
     for line in text.split("\n"):
         if not line.strip():
             continue
-        if _NOISE.match(line):
+        if _NOISE.match(line) or _TF_HEADER.match(line):
             field = None
             continue
         m = _Q.match(line)
@@ -263,6 +325,7 @@ def parse_table(data, filename):
         opts = [clean(str(r.get(c, ""))).strip() for c in ("a", "b", "c", "d", "e", "f") if str(r.get(c, "")).strip()]
         ans = str(r.get("answer", "")).strip()
         typ = "mcq" if len(opts) >= 2 else "essay"
+        want = str(r.get("type", "")).strip().lower()
         it = {"n": n, "q": q, "options": opts, "type": typ, "lang": "ar" if _is_ar(q) else "en", "answer": None, "model": "",
               "keywords": [x.strip() for x in re.split(r"[;,،؛]", str(r.get("keywords", ""))) if x.strip()]}
         if typ == "mcq":
@@ -270,6 +333,8 @@ def parse_table(data, filename):
             it["answer"] = idx if idx is not None and idx < len(opts) else None
         else:
             it["model"] = clean(ans)
+            if want in ("tf", "t/f", "true/false", "true false", "truefalse", "صح وغلط", "صح/خطأ", "صح وخطأ") or tf_value(ans) is not None or _TF_HINT.search(q):
+                to_tf(it)                                       # no options + a True/False answer (or the type column says so)
         items.append(it)
     return items
 

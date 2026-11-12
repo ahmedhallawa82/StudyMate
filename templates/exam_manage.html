@@ -14,7 +14,7 @@
 <!-- ① Questions -->
 <section class="ex-pane" id="pane-questions" {{ 'hidden' if tab != 'questions' }}>
   <div class="ex-sum card fade" style="--i:2">
-    {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_tf', sm.tf), ('ex_ready', sm.graded)] if v or k == 'ex_total' %}
+    {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_tf', sm.tf), ('ex_essay', sm.essay), ('ex_ready', sm.graded)] if v or k == 'ex_total' %}
     <div><b>{{ v }}</b><small>{{ t(k) }}</small></div>{% endfor %}
   </div>
   {% if sm.graded %}<p class="ex-ready fade">✅ {{ t('ex_ready_msg', n=sm.graded) }}</p>{% endif %}
@@ -31,20 +31,24 @@
         <label class="ex-opt"><input type="radio" name="action" value="upload_q" checked> <span><b>{{ t('exam_btn_q') }}</b><small>{{ t('ex_opt_q') }}</small></span></label>
         <label class="ex-opt"><input type="radio" name="action" value="upload_qa"> <span><b>{{ t('exam_btn_qa') }}</b><small>{{ t('ex_opt_qa') }}</small></span></label>
       </div>
-      <p class="ex-step"><b>3</b> <button class="btn" type="submit">⬆️ {{ t('ex_upload') }}</button>
+      <p class="ex-step"><b>3</b> {{ t('ex_qtype') }}</p>
+      <div class="actions">
+        <label class="ex-opt"><input type="radio" name="qtype" value="auto" checked> <span><b>{{ t('ex_qtype_auto') }}</b><small>{{ t('ex_qtype_auto_d') }}</small></span></label>
+        <label class="ex-opt"><input type="radio" name="qtype" value="tf"> <span><b>{{ t('ex_qtype_tf') }}</b><small>{{ t('ex_qtype_tf_d') }}</small></span></label>
+      </div>
+      <p class="ex-step"><b>4</b> <button class="btn" type="submit">⬆️ {{ t('ex_upload') }}</button>
         <a class="btn ghost small" href="{{ url_for('exams_template') }}">⬇️ {{ t('exam_template') }}</a></p>
     </form>
-    <details class="ex-fmt"><summary>{{ t('ex_format_q') }}</summary>
-      <p class="muted small">{{ t('exam_upload_note') }}</p>
-      <p class="muted small"><b>{{ t('exam_format') }}:</b> {{ t('exam_format_note') }}</p>
-    </details>
+    <p class="muted small">ℹ️ {{ t('ex_format_hint') }} <a href="{{ url_for('help_page') }}#formats">{{ t('ex_format_q') }}</a></p>
   </div>
 
   <div class="card fade" style="--i:4">
     <h2>{{ t('exam_bank') }}</h2>
+    {% if sm.essay %}<form method="post" class="ex-redetect"><input type="hidden" name="action" value="redetect"><input type="hidden" name="tab" value="questions">
+      <span class="muted small">{{ t('ex_redetect_note', n=sm.essay) }}</span> <button class="btn ghost small" type="submit">🔍 {{ t('ex_redetect') }}</button></form>{% endif %}
     {% if not rows %}<p class="muted">{{ t('ex_bank_empty') }}</p>{% else %}
     <div class="table-wrap"><table>
-      {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td>{% if sm.mcq and sm.essay %}<td>{{ t('exam_type_mcq') if r.type == 'mcq' else t('exam_type_essay') }}</td>{% endif %}
+      {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td><td><span class="tag {{ {'mcq': '', 'tf': 'green', 'essay': ''}[r.type] }}">{{ {'mcq': t('exam_type_mcq'), 'tf': t('ex_tf'), 'essay': t('exam_type_essay')}[r.type] }}</span></td>
         {% if sm.en and sm.ar %}<td dir="ltr">{{ 'EN' if r.en }} {{ 'AR' if r.ar }}</td>{% endif %}<td dir="auto">{{ r.q }}</td>
         <td>{% if not r.graded %}<span style="color:#c0392b">{{ t('exam_no_answer') }}</span>{% endif %}</td></tr>{% endfor %}
     </table></div>

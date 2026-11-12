@@ -57,6 +57,33 @@ def _other_course_questions(code, n=40, seed=0):
     return pool[:n]
 
 
+def topic_matrix(passages, seed=0):
+    """How well the slide text alone tells which topic / lecture a slide belongs to (cross-validated predictions).
+
+    Returns {"labels", "matrix", "accuracy", "per_class": [{"topic", "precision", "recall", "f1", "n"}], "n"} or None when there is too little data.
+    Plain Python lists, so the page can draw the confusion matrix as a table (no image library needed on the server).
+    """
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.metrics import confusion_matrix, precision_recall_fscore_support
+    from sklearn.model_selection import StratifiedKFold, cross_val_predict
+    from sklearn.pipeline import make_pipeline
+    d = passages[passages["text"].astype(str).str.len() > 40]
+    vc = d["topic"].value_counts()
+    d = d[d["topic"].isin(vc[vc >= 3].index)]
+    if d["topic"].nunique() < 2 or len(d) < 12:
+        return None
+    k = int(min(5, d["topic"].value_counts().min()))
+    pipe = make_pipeline(TfidfVectorizer(ngram_range=(1, 2), sublinear_tf=True, stop_words="english"), LogisticRegression(max_iter=2000, C=5))
+    pred = cross_val_predict(pipe, d["text"].astype(str), d["topic"], cv=StratifiedKFold(k, shuffle=True, random_state=seed))
+    labels = sorted(d["topic"].unique(), key=str)
+    cm = confusion_matrix(d["topic"], pred, labels=labels)
+    pr, rc, f1, sup = precision_recall_fscore_support(d["topic"], pred, labels=labels, zero_division=0)
+    return {"labels": [str(l) for l in labels], "matrix": cm.tolist(), "accuracy": round(float((np.array(d["topic"]) == pred).mean()), 3), "n": int(len(d)),
+            "per_class": [{"topic": str(l), "precision": round(float(a), 2), "recall": round(float(b), 2), "f1": round(float(c), 2), "n": int(n)}
+                          for l, a, b, c, n in zip(labels, pr, rc, f1, sup)]}
+
+
 def run(code, n_queries=150, seed=0):
     """Evaluate one course and save the result. Returns the result dict (or None when the course has too little text)."""
     P = config.course_paths(code)
@@ -90,6 +117,10 @@ def run(code, n_queries=150, seed=0):
     out = {"course": code, "when": datetime.now().strftime("%Y-%m-%d %H:%M"), "slides": int(len(passages)),
            "lectures": int(passages["lecture"].nunique()), "n_queries": len(queries), "methods": res,
            "offtopic": {"total": len(off), "rejected": rejected}}
+    try:
+        out["topic"] = topic_matrix(passages, seed)
+    except Exception:                                                # noqa: BLE001 - the matrix is a bonus, never break the evaluation
+        out["topic"] = None
     P.reports.mkdir(parents=True, exist_ok=True)
     f = P.reports / "auto_metrics.json"
     hist = []

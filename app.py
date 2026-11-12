@@ -967,7 +967,7 @@ def staff_home():
     docs = doctors.list_doctors()
     stats = {"courses": len(courses), "students": len(rows), "visits": len(visits),
              "visitors": len({v.get("student_code") for v in visits if v.get("student_code")}),
-             "doctors": len(docs), "exams": len(exams), "asked": len(qs)}
+             "doctors": len(docs), "admins": len(docs) + 1, "exams": len(exams), "asked": len(qs)}
     team = [{"name": d["name"], "courses": courses_of(d["id"]) or "–"} for d in docs] if master else []
     recent = sorted(rows, key=lambda r: str(r.get("created", "")), reverse=True)[:5]
     hour = _dt.datetime.now().hour
@@ -994,7 +994,7 @@ def doctors_page():
         mine = owned.get(d["id"], [])
         rows.append({**d, "courses": mine, "students": sum(per.get(c, 0) for c in mine), "avatar": profiles.avatar_path("d:" + d["id"]) is not None,
                      "key": profiles.safe("d:" + d["id"])})
-    return render_template("doctors.html", rows=rows)
+    return render_template("doctors.html", rows=rows, main={"name": session.get("admin_name") or tr("role_admin", lang()), "key": "d:" + doctors.MASTER})
 
 
 @app.route("/all-courses")
@@ -1955,6 +1955,8 @@ def chat_page():
         if p:
             threads.append({**p, "last": t["last"]["text"][:60], "time": t["last"]["time"], "unread": t["unread"]})
     cur = person(request.args.get("with"))
+    if request.args.get("with") and not cur:
+        flash_t("chat_not_found")
     if cur and cur["key"] == me:
         cur = None
     msgs = []
@@ -2147,11 +2149,18 @@ def exams_manage():
                 if not items:
                     flash_t("exam_file_empty", name=f.filename)
                     continue
+                if request.form.get("qtype") == "tf":                 # "every question without options is true / false"
+                    items = [EX.to_tf(it) if it["type"] == "essay" else it for it in items]
                 r = EX.add_items(code, items, with_answers=action == "upload_qa")
                 tot["added"] += r["added"]; tot["updated"] += r["updated"]
                 flash_t("exam_file_ok", name=f.filename, n=len(items), a=r["added"], u=r["updated"])
+                kinds = [("tf" if len(it["options"]) == 2 and it["type"] == "mcq" else it["type"]) for it in items]
+                flash_t("exam_detected", mcq=kinds.count("mcq"), tf=kinds.count("tf"), essay=kinds.count("essay"))
             if not files:
                 flash_t("choose_pdf")
+        elif action == "redetect":
+            n = EX.reclassify(code)
+            flash_t("exam_redetected", n=n) if n else flash_t("exam_redetect_none")
         elif action == "settings":
             try:
                 EX.save_settings(code, request.form.get("min_mcq", 1), request.form.get("min_essay"),
@@ -2171,7 +2180,7 @@ def exams_manage():
     for k in sorted(bank["questions"], key=int)[:60]:
         q = bank["questions"][k]
         side, _ = EX._pick_lang(q, lang())
-        rows.append({"n": k, "type": q["type"], "q": side["q"][:140], "en": "en" in q, "ar": "ar" in q, "graded": EX.is_graded(q)})
+        rows.append({"n": k, "type": EX.kind(q), "q": side["q"][:140], "en": "en" in q, "ar": "ar" in q, "graded": EX.is_graded(q)})
     attempts = EX.list_attempts(code)
     done = [a for a in attempts if a["status"] == "done"]
     stats = {"n": len(attempts), "done": len(done), "avg": round(sum(a["pct"] for a in done) / len(done)) if done else 0}

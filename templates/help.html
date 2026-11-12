@@ -24,6 +24,17 @@
     </div>
   </details>
 
+  {% if staff %}
+  <details class="card faq-item" id="formats">
+    <summary>🛠 {{ t('help_fmt_title') }}</summary>
+    <div class="faq-a">
+      <p class="muted small">{{ t('exam_upload_note') }}</p>
+      <p class="muted small"><b>{{ t('exam_format') }}:</b> {{ t('exam_format_note') }}</p>
+      <p class="muted small"><b>{{ t('ex_tf') }}:</b> {{ t('help_fmt_tf') }}</p>
+    </div>
+  </details>
+  {% endif %}
+
   {% for f in faq_items %}
   <details class="card faq-item">
     <summary>{{ f.q }}</summary>

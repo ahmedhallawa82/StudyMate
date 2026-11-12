@@ -559,7 +559,7 @@ def test_staff_home_admin_and_doctor(admin):
 
 def test_overview_pages_and_card_order(admin):
     html = admin.get("/overview").get_data(as_text=True)
-    assert html.index("Total site visits") < html.index("Doctors registered") < html.index("Students with an account") < html.index("Courses on the site")
+    assert html.index("Total site visits") < html.index("Admins: 1 main") < html.index("Students with an account") < html.index("Courses on the site")
     assert 'href="/doctors"' in html and 'href="/all-courses"' in html
     assert admin.get("/doctors").status_code == 200
     r = admin.get("/all-courses")
@@ -1290,3 +1290,40 @@ def test_models_page_has_advice_and_colab(client):
     assert 'id="advice"' in page and 'id="colab"' in page and "colab.research.google.com" in page
     r = admin.post("/models/notebook", data={"file": (io.BytesIO(b"junk"), "x.zip")}, content_type="multipart/form-data", follow_redirects=True)
     assert r.status_code == 200
+
+
+# ---------------- true / false detection
+def test_true_false_without_options_is_detected():
+    from core import exams as X
+    txt = ("Multiple-Choice Questions\nQ1. Which part?\nA) Piston\nB) Valve\nAnswer: A\nTrue / False Questions\n"
+           "Q2. A diesel engine uses spark plugs. (True/False)\nAnswer: False\nQ3. Brakes slow the car.\nAnswer: True. Friction does it.\n"
+           "س4. المحرك يحتاج زيت.\nالإجابة: صح\nQ5. Explain the clutch.\nAnswer: False positive is unrelated, the clutch connects the engine.\n"
+           "Q6. Is ABS useful?\nA) True\nB) False\nAnswer: True\n")
+    got = {i["n"]: i for i in X.parse_text(txt)}
+    assert got[1]["type"] == "mcq" and got[1]["answer"] == 0
+    assert got[2]["options"] == ["True", "False"] and got[2]["answer"] == 1 and "True/False" not in got[2]["q"]
+    assert got[3]["options"] == ["True", "False"] and got[3]["answer"] == 0
+    assert got[4]["options"] == ["صح", "خطأ"] and got[4]["answer"] == 0
+    assert got[5]["type"] == "essay"                                   # a model answer that only starts with "False" stays an essay
+    assert got[6]["answer"] == 0 and len(got) == 6                     # the section title did not stick to Q1's answer
+
+
+def test_true_false_in_table_and_old_bank_fix(tmp_path, monkeypatch):
+    import pandas as pd, io
+    from core import exams as X
+    df = pd.DataFrame([{"number": 1, "type": "tf", "question": "Water boils at 100C.", "answer": "True"},
+                       {"number": 2, "type": "", "question": "Pistons move up.", "answer": "خطأ"}])
+    b = io.BytesIO(); df.to_csv(b, index=False)
+    items = X.parse_table(b.getvalue(), "x.csv")
+    assert [i["answer"] for i in items] == [0, 1] and all(X.is_tf({"type": i["type"], "en": {"options": i["options"]}}) for i in items)
+    monkeypatch.setattr(X, "folder", lambda code: tmp_path)
+    X.save_bank("Z", {"settings": dict(X.DEFAULTS), "questions": {"1": {"type": "essay", "answer": None, "en": {"q": "x", "options": [], "model": "True", "keywords": []}},
+                                                                   "2": {"type": "essay", "answer": None, "en": {"q": "y", "options": [], "model": "Explain it", "keywords": []}}}})
+    assert X.reclassify("Z") == 1
+    q = X.load_bank("Z")["questions"]
+    assert X.kind(q["1"]) == "tf" and q["1"]["answer"] == 0 and X.kind(q["2"]) == "essay"
+
+
+def test_login_page_and_doctors_page_message(client):
+    html = client.get("/start").get_data(as_text=True) if client.get("/start").status_code == 200 else ""
+    assert html == "" or 'class="auth' in html

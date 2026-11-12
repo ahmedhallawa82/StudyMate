@@ -1,26 +1,36 @@
 {% extends "base.html" %}
 {% block title %}{{ t('welcome') }}{% endblock %}
 {% block content %}
-<div class="center-box card" style="max-width:560px">
-  <h2>{{ t('welcome') }}</h2>
-  <p class="muted">{{ t('intro', course=course) }}</p>
-  <form method="post">
-    <label class="small" for="username">{{ t('username_or_email') }}</label>
-    <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
-    <p style="margin:8px 0 0"></p>
-    <label class="small" for="password">{{ t('password') }}</label>
-    <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password" required>
-    <p class="small"><label><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></p>
-    <p class="muted small">{{ t('login_hint') }}</p>
-    <div class="actions" style="align-items:center">
-      <button class="btn" type="submit">{{ t('login_btn') }}</button>
-      <span class="muted small">{{ t('or') }}</span>
-      <button class="btn ghost" type="submit" name="guest" value="1" formnovalidate>{{ t('guest_btn') }}</button>
-    </div>
-    <p class="small" style="margin-top:10px">{{ t('no_account') }} <a href="{{ url_for('register') }}">{{ t('register_link') }}</a>
-      · <a href="{{ url_for('forgot') }}">{{ t('forgot_link') }}</a></p>
-    <p class="muted small">{{ t('privacy') }}</p>
-    <p class="muted small" style="margin-top:8px">{{ t('guest_note') }}</p>
-  </form>
+<div class="auth fade" style="--i:1">
+  <aside class="auth-brand" aria-hidden="true">
+    <div class="auth-logo">📚 StudyMate</div>
+    <h2>{{ t('auth_tag') }}</h2>
+    <ul>
+      <li><span>🔎</span><div><b>{{ t('auth_f1') }}</b><small>{{ t('auth_f1d') }}</small></div></li>
+      <li><span>🎯</span><div><b>{{ t('auth_f2') }}</b><small>{{ t('auth_f2d') }}</small></div></li>
+      <li><span>📈</span><div><b>{{ t('auth_f3') }}</b><small>{{ t('auth_f3d') }}</small></div></li>
+    </ul>
+  </aside>
+  <section class="auth-form">
+    <h1>{{ t('welcome') }}</h1>
+    <p class="muted">{{ t('auth_sub') }}</p>
+    <form method="post">
+      <label class="small" for="username">{{ t('username_or_email') }}</label>
+      <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
+      <label class="small" for="password" style="margin-top:12px">{{ t('password') }}</label>
+      <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password" required>
+      <div class="auth-row">
+        <label class="small"><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label>
+        <a class="small" href="{{ url_for('forgot') }}">{{ t('forgot_link') }}</a>
+      </div>
+      <button class="btn auth-main" type="submit">{{ t('login_btn') }}</button>
+      <div class="auth-or"><span>{{ t('or') }}</span></div>
+      <button class="btn ghost auth-main" type="submit" name="guest" value="1" formnovalidate>👤 {{ t('guest_btn') }}</button>
+      <p class="muted small auth-note">{{ t('guest_note') }}</p>
+      <p class="auth-new">{{ t('no_account') }} <a href="{{ url_for('register') }}"><b>{{ t('register_link') }}</b></a></p>
+      <details class="auth-info"><summary>🔒 {{ t('auth_privacy') }}</summary>
+        <p class="muted small">{{ t('login_hint') }}</p><p class="muted small">{{ t('privacy') }}</p></details>
+    </form>
+  </section>
 </div>
 {% endblock %}

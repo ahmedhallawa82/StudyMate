@@ -39,6 +39,25 @@
     {% for k, m in ae.methods.items() %}<tr><td>{{ m.name }}</td><td class="num">{{ (m.top1 * 100)|round(1) }}%</td><td class="num">{{ (m.top3 * 100)|round(1) }}%</td><td class="num">{{ m.mrr }}</td></tr>{% endfor %}
     <tr><td>{{ t('mdl_off') }}</td><td class="num" colspan="3">{{ ae.offtopic.rejected }}/{{ ae.offtopic.total }} {{ t('mdl_off_ok') }}</td></tr>
   </table>
+  <div class="bars" aria-label="{{ t('mdl_chart') }}">
+    {% for k, m in ae.methods.items() %}<div class="bar-row"><span>{{ m.name }}</span>
+      <div class="bar-track"><i class="b3" style="width:{{ (m.top3 * 100)|round }}%"></i><i class="b1" style="width:{{ (m.top1 * 100)|round }}%"></i></div>
+      <b>{{ (m.top1 * 100)|round|int }}% / {{ (m.top3 * 100)|round|int }}%</b></div>{% endfor %}
+    <p class="muted small"><i class="dot b1"></i> Top-1 &nbsp; <i class="dot b3"></i> Top-3</p>
+  </div>
+  {% if ae.topic %}
+  <h3 style="margin-top:18px">{{ t('mdl_cm_title') }}</h3>
+  <p class="muted small">{{ t('mdl_cm_sub', a=(ae.topic.accuracy * 100)|round(1), n=ae.topic.n, k=ae.topic.labels|length) }}</p>
+  {% set mx = ae.topic.matrix|map('max')|max or 1 %}
+  <div class="table-wrap"><table class="cm">
+    <tr><th>{{ t('mdl_cm_true') }} ↓ / {{ t('mdl_cm_pred') }} →</th>{% for l in ae.topic.labels %}<th class="num">{{ l }}</th>{% endfor %}</tr>
+    {% for row in ae.topic.matrix %}{% set ri = loop.index0 %}<tr><th>{{ ae.topic.labels[ri] }}</th>
+      {% for v in row %}<td class="num {{ 'diag' if loop.index0 == ri }}" style="--a:{{ (v / mx)|round(2) }}">{{ v if v else '' }}</td>{% endfor %}</tr>{% endfor %}
+  </table></div>
+  <details style="margin-top:8px"><summary>{{ t('mdl_cm_per') }}</summary>
+    <table><tr><th>{{ t('ev_topic') }}</th><th class="num">Precision</th><th class="num">Recall</th><th class="num">F1</th><th class="num">n</th></tr>
+      {% for c in ae.topic.per_class %}<tr><td>{{ c.topic }}</td><td class="num">{{ c.precision }}</td><td class="num">{{ c.recall }}</td><td class="num">{{ c.f1 }}</td><td class="num">{{ c.n }}</td></tr>{% endfor %}</table></details>
+  {% endif %}
   {% if ae.history|length > 1 %}
   <details style="margin-top:10px"><summary>{{ t('mdl_history') }}</summary>
     <table><tr><th>{{ t('mdl_when') }}</th><th class="num">{{ t('mdl_slides') }}</th><th class="num">TF-IDF</th><th class="num">BM25</th><th class="num">Hybrid</th><th class="num">LSA</th></tr>

@@ -47,3 +47,42 @@
     });
   });
 })();
+
+
+/* upload progress: every form with a file field shows a progress bar, then "reading the file" while the server works */
+(function () {
+  var L = document.documentElement.lang === 'ar'
+    ? {up: 'جاري رفع الملف…', read: 'اكتمل الرفع، جاري قراءة الملف…', keep: 'من فضلك متقفلش الصفحة.', err: 'فشل الرفع. جرّب تاني.', file: 'ملف'}
+    : {up: 'Uploading…', read: 'Upload finished, reading the file…', keep: 'Please keep this page open.', err: 'Upload failed. Please try again.', file: 'file'};
+  document.querySelectorAll('form[enctype="multipart/form-data"]').forEach(function (f) {
+    if (f.hasAttribute('data-noprogress') || !window.XMLHttpRequest || !window.FormData) return;
+    f.addEventListener('submit', function (e) {
+      var files = f.querySelectorAll('input[type=file]'), has = false;
+      files.forEach(function (i) { if (i.files && i.files.length) has = true; });
+      if (!has || (f.checkValidity && !f.checkValidity())) return;
+      e.preventDefault();
+      var box = document.createElement('div'); box.className = 'up-overlay'; box.setAttribute('role', 'status');
+      box.innerHTML = '<div class="up-card"><div class="up-spin"></div><b class="up-t"></b><div class="up-bar"><i></i></div><small class="up-p"></small><small>' + L.keep + '</small></div>';
+      document.body.appendChild(box);
+      var t = box.querySelector('.up-t'), bar = box.querySelector('i'), pct = box.querySelector('.up-p');
+      t.textContent = L.up;
+      f.querySelectorAll('button[type=submit]').forEach(function (b) { b.disabled = true; });
+      var fd = new FormData(f);
+      if (e.submitter && e.submitter.name) fd.append(e.submitter.name, e.submitter.value);
+      var x = new XMLHttpRequest();
+      x.open((f.getAttribute('method') || 'post').toUpperCase(), f.getAttribute('action') || location.href);   // not f.action: a field named "action" shadows it
+      x.upload.onprogress = function (ev) {
+        if (!ev.lengthComputable) return;
+        var p = Math.round(ev.loaded / ev.total * 100); bar.style.width = p + '%';
+        pct.textContent = p + '%  (' + (ev.loaded / 1048576).toFixed(1) + ' / ' + (ev.total / 1048576).toFixed(1) + ' MB)';
+        if (p >= 100) t.textContent = L.read;
+      };
+      x.onload = function () {
+        try { history.replaceState(null, '', x.responseURL || location.href); } catch (er) {}
+        document.open(); document.write(x.responseText); document.close();
+      };
+      x.onerror = function () { box.remove(); f.querySelectorAll('button[type=submit]').forEach(function (b) { b.disabled = false; }); alert(L.err); };
+      x.send(fd);
+    });
+  });
+})();
