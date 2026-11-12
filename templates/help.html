@@ -35,6 +35,11 @@
   </details>
   {% endif %}
 
+  <details class="card faq-item" id="privacy">
+    <summary>🔒 {{ t('auth_privacy') }}</summary>
+    <div class="faq-a"><p>{{ t('login_hint') }}</p><p>{{ t('privacy') }}</p></div>
+  </details>
+
   {% for f in faq_items %}
   <details class="card faq-item">
     <summary>{{ f.q }}</summary>
