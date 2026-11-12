@@ -25,11 +25,12 @@
         <a class="small" href="{{ url_for('forgot') }}">{{ t('forgot_link') }}</a>
       </div>
       <button class="btn auth-main" type="submit">{{ t('login_btn') }}</button>
-      <div class="auth-or"><span>{{ t('or') }}</span></div>
-      <button class="btn ghost auth-main" type="submit" name="guest" value="1" formnovalidate>👤 {{ t('guest_btn') }}</button>
-      <p class="muted small auth-note">{{ t('guest_note') }}</p>
-      <p class="auth-new">{{ t('no_account') }} <a href="{{ url_for('register') }}"><b>{{ t('register_link') }}</b></a></p>
-      <details class="auth-info"><summary>🔒 {{ t('auth_privacy') }}</summary>
+      <p class="auth-alt">
+        <a href="{{ url_for('register') }}"><b>{{ t('register_link') }}</b></a>
+        <span aria-hidden="true">·</span>
+        <button class="linkish" type="submit" name="guest" value="1" formnovalidate title="{{ t('guest_note') }}">{{ t('guest_btn') }}</button>
+      </p>
+      <details class="auth-info"><summary>{{ t('auth_privacy') }}</summary>
         <p class="muted small">{{ t('login_hint') }}</p><p class="muted small">{{ t('privacy') }}</p></details>
     </form>
   </section>

@@ -91,6 +91,7 @@ html[data-theme="edu"] input[type="file"]::file-selector-button:hover { backgrou
   html[data-theme="edu"] header.top .bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 18px; }
   html[data-theme="edu"] header.top .bar nav { justify-self: center; }
   html[data-theme="edu"] header.top .bar .brand { margin: 0; }
+  html[data-theme="edu"] header.top .bar .tools { grid-column: 3; justify-self: end; }
 }
 /* admin / doctor home: both columns end at the same line, cards in a row have the same height */
 html[data-theme="edu"] .edu-grid.wide { align-items: stretch; }
@@ -101,3 +102,59 @@ html[data-theme="edu"] .trio .card { display: flex; flex-direction: column; }
 html[data-theme="edu"] .more-row { display: block; margin-top: 8px; font-size: 13px; color: var(--teal); text-align: center; }
 html[data-theme="edu"] .edu-grid.wide .col-side > :last-child { flex: 1; }
 html[data-theme="edu"] .trio .pc-row > span:only-child { max-width: 100%; }
+
+/* ================= phones, tablets, laptops ================= */
+.mob-out, .lang-btn .lg-short { display: none; }
+html[data-theme="edu"] #modeBtn .mi { font-size: 15px; }
+/* tablets: the menu drops under the brand + tools and scrolls sideways if it must */
+@media (max-width: 1000px) and (min-width: 701px) { html[data-theme="edu"] header.top .bar { display: flex; flex-wrap: wrap; } html[data-theme="edu"] header.top .bar nav { order: 3; width: 100%; justify-self: auto; } }
+/* phones: brand + small tools on top, the menu becomes a bar fixed to the bottom of the screen (thumb reach) */
+@media (max-width: 700px) {
+  html[data-theme="edu"] header.top { backdrop-filter: none; -webkit-backdrop-filter: none; }   /* a blur would make the fixed menu stick to the header */
+  html[data-theme="edu"] header.top .bar { display: flex; flex-wrap: nowrap; align-items: center; gap: 8px; padding: 10px 12px; }
+  html[data-theme="edu"] .brand { font-size: 19px; margin-inline-end: auto; }
+  html[data-theme="edu"] .tools { gap: 6px; flex-wrap: nowrap; }
+  html[data-theme="edu"] .tools .tool, html[data-theme="edu"] .tools .icon-btn { height: 40px; min-width: 40px; padding: 0 10px; }
+  html[data-theme="edu"] .tools .qs-pill, html[data-theme="edu"] .tools a.icon-btn[href*="calendar"] { display: none; }
+  html[data-theme="edu"] #modeBtn .ml { display: none; }
+  html[data-theme="edu"] .lang-btn { padding: 0 12px; height: 40px; }
+  html[data-theme="edu"] .lang-btn .lg-full { display: none; } .lang-btn .lg-short { display: inline; }
+  html[data-theme="edu"] .tools .mob-out { display: inline-grid; place-items: center; }
+  html[data-theme="edu"] .lang-panel { inset-inline-end: 0; }
+  html[data-theme="edu"] header.top .bar nav { position: fixed; z-index: 60; inset-inline: 8px; bottom: 8px; width: auto; order: 0; margin: 0; padding: 6px; border-radius: 22px; justify-content: space-around; gap: 2px; overflow: visible;
+    box-shadow: 0 8px 30px rgba(30, 45, 80, .22); padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+  html[data-theme="edu"] header.top .bar nav a { min-width: 0; flex: 1; height: 44px; padding: 0 4px; justify-content: center; }
+  html[data-theme="edu"] header.top .bar nav a .nl { display: none !important; }
+  html[data-theme="edu"] nav .chip { padding: 0; background: none; box-shadow: none; flex: 0 0 auto; }
+  html[data-theme="edu"] nav .chip .who-t, html[data-theme="edu"] nav .chip .exit-link, html[data-theme="edu"] nav .chip > a:not(.who) { display: none; }
+  html[data-theme="edu"] nav .chip .who { padding: 0 6px; }
+  html[data-theme="edu"] main { padding-bottom: 96px; }
+  html[data-theme="edu"] .help-fab { bottom: 86px; width: 42px; height: 42px; inset-inline-end: 12px; }
+  html[data-theme="edu"] .edu-head { flex-direction: column; align-items: stretch; gap: 12px; }
+  html[data-theme="edu"] .edu-actions .btn { width: 100%; text-align: center; }
+  html[data-theme="edu"] .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html[data-theme="edu"] .trio { grid-template-columns: 1fr; }
+  html[data-theme="edu"] .auth { margin: 0; }
+  html[data-theme="edu"] .adm-tabs, html[data-theme="edu"] .ex-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  html[data-theme="edu"] .adm-tabs button, html[data-theme="edu"] .ex-tabs button { flex: none; }
+  html[data-theme="edu"] .chat { grid-template-columns: 1fr; }
+  html[data-theme="edu"] .bubble { max-width: 88%; }
+}
+html[dir="rtl"][data-theme="edu"] .lang-panel { inset-inline-end: 0; }
+/* touch screens: tappable sizes, no zoom-on-focus on iPhones */
+@media (hover: none) and (pointer: coarse) { html[data-theme="edu"] input, html[data-theme="edu"] select, html[data-theme="edu"] textarea { font-size: 16px; } html[data-theme="edu"] .btn { min-height: 44px; } }
+
+/* login: fewer things on the page - sign in, then one quiet line for "create account / guest", privacy folded away */
+.auth-alt { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 6px; font-size: 15px; }
+.auth-alt .linkish { background: none; border: 0; padding: 0; font: inherit; font-weight: 700; color: var(--teal); cursor: pointer; text-decoration: underline; }
+.auth-info { margin-top: 8px; text-align: center; } .auth-info summary { cursor: pointer; color: var(--muted); font-size: 13px; list-style: none; } .auth-info summary::before { content: "🔒 "; }
+@media (max-width: 700px) {
+  html[data-theme="edu"] .help-fab { display: none; }
+  .auth { grid-template-columns: 1fr; }
+  .auth-brand { padding: 18px 20px; } .auth-brand ul, .auth-brand h2 { display: none; }
+  .auth-form { padding: 20px; }
+}
+
+/* never let form controls push the page wider than the screen */
+select, input, textarea { max-width: 100%; }
+html, body { overflow-x: clip; }

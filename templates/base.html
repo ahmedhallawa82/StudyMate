@@ -70,12 +70,14 @@
       {% endif %}
       <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" data-tip="{{ t('tip_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
       <div class="lang" id="langMenu">
-        <button type="button" class="tool lang-btn" aria-haspopup="listbox" aria-expanded="false" title="{{ t('toggle_lang') }}" aria-label="{{ t('toggle_lang') }}"><span>{{ 'العربية' if lang == 'ar' else 'English' }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+        <button type="button" class="tool lang-btn" aria-haspopup="listbox" aria-expanded="false" title="{{ t('toggle_lang') }}" aria-label="{{ t('toggle_lang') }}"><span class="lg-full">{{ 'العربية' if lang == 'ar' else 'English' }}</span><span class="lg-short">{{ 'ع' if lang == 'ar' else 'EN' }}</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
         <div class="lang-panel" role="listbox" hidden>
           <a role="option" class="{{ 'on' if lang == 'en' }}" {% if lang == 'ar' %}href="{{ lang_url }}"{% else %}href="#" onclick="return false"{% endif %}>English</a>
           <a role="option" class="{{ 'on' if lang == 'ar' }}" {% if lang == 'en' %}href="{{ lang_url }}"{% else %}href="#" onclick="return false"{% endif %}>العربية</a>
         </div>
       </div>
+      {% if is_lecturer %}<a class="tool mob-out" href="{{ url_for('lecturer_logout') }}" title="{{ t('logout') }}" aria-label="{{ t('logout') }}">⏻</a>
+      {% elif student_code or me_key %}<a class="tool mob-out" href="{{ url_for('logout') }}" title="{{ t('logout') }}" aria-label="{{ t('logout') }}">⏻</a>{% endif %}
     </div>
   </div>
 </header>
@@ -139,7 +141,7 @@
 <script>
 (function () {
   var btn = document.getElementById('modeBtn'), L = {light: '{{ t("mode_light") }}', dark: '{{ t("mode_dark") }}'};
-  function paint() { var m = document.documentElement.getAttribute('data-mode'); btn.textContent = m === 'dark' ? '☀ ' + L.light : '☾ ' + L.dark; }
+  function paint() { var m = document.documentElement.getAttribute('data-mode'); btn.innerHTML = m === 'dark' ? '<span class="mi">☀</span><span class="ml"> ' + L.light + '</span>' : '<span class="mi">☾</span><span class="ml"> ' + L.dark + '</span>'; }
   btn.addEventListener('click', function () {
     var m = document.documentElement.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-mode', m);
