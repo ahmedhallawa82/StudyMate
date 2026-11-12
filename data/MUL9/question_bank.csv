@@ -1,0 +1,7 @@
+﻿q_id,topic,question,hint1,hint2,answer,keywords,lecture,slide
+MUL9-Q001,lec2,Fill in the blank: _____ Agent ~ : e te@ Environment ™ Era me works,It starts with “A” and has 6 letters.,The word looks like: Ag_n_a,Agenda Agent ~ : e te@ Environment ™ Era me works,agenda,2,3
+MUL9-Q002,lec2,"Fill in the blank: In order to know the right thing,we need a performance _____.",It starts with “m” and has 7 letters.,The word looks like: me_s_r_,"In order to know the right thing,we need a performance measure.",measure,2,9
+MUL9-Q003,lec2,Fill in the blank: _____: World waits for agent vs.,It starts with “s” and has 12 letters.,The word looks like: se_i_d_n_m_c,semi-dynamic: World waits for agent vs.,semi-dynamic,2,14
+MUL9-Q004,lec2,"Fill in the blank: Sequential if current _____ affect future decisions, or rely on previous ones",It starts with “d” and has 9 letters.,The word looks like: de_i_i_n_,"Sequential if current decisions affect future decisions, or rely on previous ones",decisions,2,17
+MUL9-Q005,lec2,Fill in the blank: _____ Competitive AI environments face AI agents against each other in order to optimize a specific outcome.,It starts with “C” and has 13 letters.,The word looks like: Co_l_b_r_t_v_,Collaborative Competitive AI environments face AI agents against each other in order to optimize a specific outcome.,collaborative,2,20
+MUL9-Q006,lec2,Fill in the blank: Simple but has a limited _____!,It starts with “i” and has 12 letters.,The word looks like: in_e_l_g_n_e,Simple but has a limited intelligence!,intelligence,2,25

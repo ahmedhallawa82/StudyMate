@@ -80,3 +80,23 @@ def normalize_question(q: str) -> str:
     q = re.sub(r"alpha\s*-\s*beta", "alpha beta", q)
     q = re.sub(r"[^a-z0-9؀-ۿ\s]", " ", q)
     return re.sub(r"\s+", " ", q).strip()
+
+
+_BULLET_LEAD = re.compile(r"^\s*([▪▫●•◦➢❑■□]|[-–*](?=\s))\s*")
+
+
+def clean_line(line: str) -> str:
+    """One slide line for DISPLAY: symbol fonts fixed, glued words split, bullets kept as '• ' (no trailing-number rule)."""
+    s = line or ""
+    bullet = bool(_BULLET_LEAD.match(s))
+    s = _BULLET_LEAD.sub("", s)
+    for k, v in _SYMBOL_FONT.items():
+        s = s.replace(k, v)
+    s = re.sub(r"[-\x00-\x08\x0b-\x1f]", " ", s)
+    s = re.sub(r"alpha\s*-\s*beta\s*Pruning", "Alpha-Beta Pruning", s)
+    s = re.sub(r"[▪▫●•◦➢❑■□]", " ", s)
+    s = re.sub(r"\s+", " ", s).strip()
+    if not s:
+        return ""
+    s = re.sub(r"\s+", " ", fix_glued_words(s)).strip()
+    return ("• " + s) if bullet else s

@@ -1,0 +1,9 @@
+Summary of Uniformed search
+Criterion BFS UCS DFS DLS _ IDS
+Complete? || Yes Yes" No No Yes
+Optimal? || Yes* Yes No No Yes?
+Time |] (64), o(e'+S1) ol") O(b')-_—-O(b4)
+Space || 0(b4) O(b't|S!)  O(bm) O(bI) O(bd)
+@ Note 1: assuming finite branching factor b.
+@ Note 2: assuming minimum step cost < > 0.
+@ Note 3: assuming equal step costs.

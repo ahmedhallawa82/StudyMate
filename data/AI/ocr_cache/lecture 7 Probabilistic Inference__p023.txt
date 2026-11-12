@@ -1,0 +1,2 @@
+Approximate Inference
+Second method for probabilistic inference

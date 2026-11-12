@@ -1,0 +1,14 @@
+PAR sear OOO
+@ Aconsistent heuristic function /(n) never
+overestimates the true cost of action a taken from
+to n’: a
+h(n) — h(n’) < e(n,a,n’)
+@ With some mathematical arrangements:
+f(n) = h(n) + g(n)
+< h(n’) + c(n,a,n') + g(n)
+< h(n’) + g(n’)
+<f(n’)
+So, f(m) never decreases as we approach the goal.
+@ Consistency guarantees that states are always visited
+by the cheapest path first; no need to check if
+subsequent paths are better than the first.

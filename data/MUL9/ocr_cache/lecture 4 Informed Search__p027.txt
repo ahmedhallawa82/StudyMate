@@ -1,0 +1,11 @@
+@ Consistency (monotonicity) means that for every node
+n and child node n’ reachable from n by action a, the
+estimated cost /(n) is never greater than the estimated
+cost /(n’) plus the step cost of getting to n’:
+
+h(n) < h(n’) + e(n,a,n’)
+\
+o~ >
+— ~~. A(n)
+hiny
+wo \

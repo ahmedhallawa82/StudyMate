@@ -1,0 +1,4 @@
+Check whether /: is consistent, and perform A* search.
+1 (3) Lays
+lA. h=7 h=8 i!
+fs)

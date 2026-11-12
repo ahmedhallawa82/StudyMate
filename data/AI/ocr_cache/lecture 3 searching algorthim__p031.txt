@@ -1,0 +1,12 @@
+Uniform-cost search
+Uniform-cost search properties:
+@ Upper-bound case: goal has path cost C%, all other
+actions have minimum cost of ¢:
+e Goal is detected once goal node is popped from frontier.
+e Depth explored before popping goal node: | + [S| .
+e Number of generated nodes: O(b!+ SJ).
+e@ Space and time complexity: all generated nodes.
+€ € eo
+Sc
+€ € ‘\
+«

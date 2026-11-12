@@ -24,14 +24,42 @@
       {% if result.found %}
         <p class="muted">{{ t('detected') }}: <b>{{ result.topic_name }}</b> ({{ result.confidence }}% {{ t('confidence') }})
           · {{ result.hits|length }} {{ t('passages_found') }}</p>
-        {% for h in result.hits %}
-        <div class="result">
-          <span class="score">{{ t('similarity') }} {{ h.score }}</span>
-          <div class="src">{{ t('lecture') }} {{ h.lecture }} · {{ t('slide') }} {{ h.slide }}
-            <span class="tag">{{ names.get(h.topic, h.topic) }}</span></div>
-          <div dir="auto" style="text-align:start" data-tr>{{ h.html }}</div>
+        {% set v = result.view %}
+        {% if v and v.summary %}
+        <div class="card sv-sum">
+          <h3>💡 {{ t('sv_summary') }}</h3>
+          {% for x in v.summary %}<p dir="auto" data-tr>{{ x.html }} <a class="sv-src" href="#s-{{ x.passage_id }}">{{ x.src }}</a></p>{% endfor %}
+        </div>
+        {% endif %}
+        {% if v %}
+        {% for g in v.groups %}
+        <div class="sv-group">
+          <div class="sv-lec">{{ t('lecture') }} {{ g.lecture }}{% if g.title %} · {{ g.title }}{% endif %}</div>
+          {% for h in g.slides %}
+          <div class="result sv-slide{{ ' adj' if h.adj }}" id="s-{{ h.passage_id }}">
+            <span class="score">{{ t('similarity') }} {{ h.score }}</span>
+            <div class="src">{{ t('slide') }} {{ h.slide }} <span class="tag">{{ names.get(h.topic, h.topic) }}</span></div>
+            <div class="sv-body">
+              <a class="sv-thumb" href="{{ url_for('slide_image', pid=h.passage_id, size='big') }}" data-big title="{{ t('sv_zoom') }}"><img loading="lazy" src="{{ url_for('slide_image', pid=h.passage_id) }}" alt="{{ t('lecture') }} {{ h.lecture }} · {{ t('slide') }} {{ h.slide }}" onerror="this.parentNode.remove()"></a>
+              <div class="sv-text" dir="auto" style="text-align:start" data-tr>
+                {% if h.title %}<h4>{{ h.title_html }}</h4>{% endif %}
+                {% macro item(it) %}{% if it.kind == 'li' %}<li class="{{ 'best' if it.best }}">{{ it.html }}</li>{% elif it.kind == 'note' %}<p class="sv-note">{{ it.html }}</p>{% else %}<p class="{{ 'best' if it.best }}">{{ it.html }}</p>{% endif %}{% endmacro %}
+                {% set ns = namespace(open=false) %}
+                {% for it in h.shown %}{% if it.kind == 'li' and not ns.open %}<ul>{% set ns.open = true %}{% elif it.kind != 'li' and ns.open %}</ul>{% set ns.open = false %}{% endif %}{{ item(it) }}{% endfor %}{% if ns.open %}</ul>{% endif %}
+                {% if h.rest %}
+                <details class="sv-more"><summary>{{ t('sv_more', n=h.rest|length) }}</summary>
+                  {% set ns2 = namespace(open=false) %}
+                  {% for it in h.rest %}{% if it.kind == 'li' and not ns2.open %}<ul>{% set ns2.open = true %}{% elif it.kind != 'li' and ns2.open %}</ul>{% set ns2.open = false %}{% endif %}{{ item(it) }}{% endfor %}{% if ns2.open %}</ul>{% endif %}
+                </details>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
         </div>
         {% endfor %}
+        {% if v.hidden %}<p class="muted small">{{ t('sv_hidden', n=v.hidden) }}</p>{% endif %}
+        {% endif %}
         <div class="muted small" id="helpful">{{ t('was_helpful') }}
           <form method="post" action="{{ url_for('helpful', log_id=result.log_id, answer='yes') }}" style="display:inline">
             <button class="btn ghost small" type="submit">{{ t('yes') }}</button></form>
@@ -63,6 +91,15 @@
 </div>
 {% endblock %}
 {% block scripts %}
+<script>
+// click a slide picture -> large view
+document.querySelectorAll('[data-big]').forEach(a => a.addEventListener('click', e => {
+  e.preventDefault();
+  const o = document.createElement('div'); o.className = 'sv-lightbox'; o.innerHTML = '<img alt="">'; o.querySelector('img').src = a.href;
+  o.addEventListener('click', () => o.remove()); document.addEventListener('keydown', function k(ev) { if (ev.key === 'Escape') { o.remove(); document.removeEventListener('keydown', k); } });
+  document.body.appendChild(o);
+}));
+</script>
 <script>
 // send the helpful vote without reloading the page
 document.querySelectorAll('form[action*="/helpful/"]').forEach(f => f.addEventListener('submit', e => {

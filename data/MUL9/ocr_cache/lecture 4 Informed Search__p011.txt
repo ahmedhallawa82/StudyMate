@@ -1,0 +1,25 @@
+Greedy best-first search example
+466
+Straight-line distance
+71 Oradea tb Bucharest
+Neamt Arad 66
+Bucharest oO”
+87
+75/ Zerind \ 151 Craiova 160
+sl Dobreta 242
+Arad 440 92 Tore 16L
+agaras 176
+‘14 Sibiu 99 Fagaras Giu rgiu >
+80 Vaslul Hirsova Bt
+sl 226
+Timisoara Rimnicu Vikes Lugoj 244
+214 142 Mehadia 341
+1 u Pitesti Neamt aWyM
+Ugo} Oradea 390
+: 85 98 Hirsova Pitesti 10
+Menadia 10 Urieeni Rimnku Vikea 193
+7 438 86 Sibiu 353
+420 Bucharest Timisoara 329
+Dobreta ‘90 Urziceni f)
+Craiova Efore Vaslui 199
+Giurgiu Zerind 374

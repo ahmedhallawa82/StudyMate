@@ -1,0 +1,11 @@
+Dependent events rules cont.
+Continue with the cancer example
+¢ P(C|+)=? ; P(C)=0.01
+© = P(C, +) = P(+) * P(C|+) Perl nc )=02
+0 =P(C) * P(+|c)
+— — P(C,+)
+* P(C|+) = P(+)
+= P(C)*P(+|C)
+~ P(C)*P(+|C) + P(AC)*P(+|AC)
+0.01+0.9
+= 0019 +0.99702 ~ 0-0434

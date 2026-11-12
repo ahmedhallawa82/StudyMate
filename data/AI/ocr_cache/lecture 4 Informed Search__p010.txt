@@ -1,0 +1,16 @@
+GBFS example - Romania map
+Find a route from Arad to Bucharest.
+LJ Oradea
+i
+i i 151 a7 _
+aaa lasi
+92
+- Sibiu 90 ants
+118 ep ft Vastui
+] Timisoara a Rimnicu Vileea
+111 Bl Ligoi 211 142
+70 z 5 a
+O) Mehadia 101 . Fe nicani
+s 138 pine
+Drobeta 120 1 oo -
+Craiova D Giurgiu Eforie

@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from functools import wraps
 
 import pandas as pd
-from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, g, abort, send_file
 from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
@@ -18,6 +18,8 @@ from core import doctors, sheet_sync, students, mailer, notify, profiles, suppor
 from core import studio as STU
 from core import accountdel
 from core import faq, modelspw, autoeval, followup, videos, neural, insights, nbresults
+from core import slideview
+from core.passages import lecture_number
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -676,6 +678,7 @@ def ask():
             conf = votes[topic] / sum(votes.values())
         for h in hits:
             h["html"] = Markup(highlight(h["text"], question))
+        view = slideview.build_view(hits, question, lambda t, q: Markup(highlight(t, q))) if found and hits else None
         log_id = log("Questions", {
             "student_code": student(), "question": question, "topic": topic if found else "",
             "confidence": round(conf, 3), "first_slide": hits[0]["passage_id"] if hits else "",
@@ -683,12 +686,28 @@ def ask():
         })
         award()
         result = {"found": found, "hits": hits, "topic": topic, "topic_name": topic_name(topic),
-                  "confidence": round(conf * 100), "log_id": log_id}
+                  "confidence": round(conf * 100), "log_id": log_id, "view": view}
     else:
         visit("ask")
     items, nxt = topic_panel(my_mastery())
     return render_template("ask.html", question=question, method=method, result=result, items=items, nxt=nxt,
                            examples=examples())
+
+
+@app.route("/slide-image/<pid>.png")
+def slide_image(pid):
+    """Picture of one slide (made from the lecture PDF the first time and then cached); 404 when it cannot be made."""
+    if not (student() or session.get("lecturer")) or not re.fullmatch(r"L\d{2,3}S\d{1,3}", pid):
+        abort(404)
+    lec, slide = (int(x) for x in re.findall(r"\d+", pid))
+    P = config.course_paths(course_code())
+    pdf = next((f for f in sorted(P.lectures.glob("*.pdf")) if lecture_number(f.name) == lec), None)
+    png = slideview.slide_png(pdf, slide, P.data / "slides", big=request.args.get("size") == "big") if pdf else None
+    if not png:
+        abort(404)
+    resp = send_file(png, mimetype="image/png")
+    resp.headers["Cache-Control"] = "private, max-age=86400"
+    return resp
 
 
 def examples():

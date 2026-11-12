@@ -1,0 +1,13 @@
+Bayes rule adaptation
+_ P(BIA)*P(A)
+* P(A|B)= PB) =P(A)*P(B|A)+P(—A)*P(— BIA)
+° P(B) is complex to calculate.
+m P(AA|B) = P(B|AA)*P(AA)
+° rane aie
+Noma P(A|B) =P(BJA)*P(A)
+me © P(A|B) =n P*(A[B)
+e P(— AJB) =n P*(— AJB)
+. Hh= ?
+e n( P*(A|B)+ P*(— AJB) ) = P(A|B)+P(— AJB)
+° n( P*(A|B)+ P*(—AJB))=1
+° 1 =(P (A|B)+ P*(—A|B)

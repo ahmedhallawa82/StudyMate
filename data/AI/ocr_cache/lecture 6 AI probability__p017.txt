@@ -1,0 +1,11 @@
+Bayes rule
+
+. _ P(B|A)*P(A)
+P(A|B)= PB)
+
+* P(A) called the prior, P(A|B) called the posterior,
+P(B|A) is called likelihood, and P(B) is called
+marginal likelihood.
+
+* P(B) is calculated with the total probability
+> P(B) =X; P(BIA)) * P(Ai)

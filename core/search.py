@@ -183,6 +183,7 @@ class SearchEngine:
                 "passage_id": row.passage_id, "lecture": int(row.lecture), "slide": int(row.slide),
                 "lecture_title": row.get("lecture_title", ""), "topic": row.topic,
                 "text": row.text, "score": round(float(s[i]), 3),
+                "display": row.get("display", "") if isinstance(row.get("display", ""), str) else "",
             })
         return True, results
 

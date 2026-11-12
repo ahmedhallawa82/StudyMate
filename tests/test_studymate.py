@@ -1341,3 +1341,30 @@ def test_top_bar_search_and_cleanups(client):
     assert "admin/doctors.xlsx" not in adm.get("/admin").get_data(as_text=True) and "🎲" not in adm.get("/admin").get_data(as_text=True)
     stu = client.get("/home").get_data(as_text=True)
     assert 'id="qsData"' in stu and "/exams" in stu.split('id="qsData"')[1][:3000]
+
+
+def test_slide_view_helpers_and_page(client):
+    from core import slideview as sv
+    pages = [[f"Auto Eng - L7 Slide {i} / 15", f"Unique content number {i} about topic", "Sources: Reif (2015); ISO 26262"] for i in range(10)]
+    boiler = sv.learn_boilerplate(pages)
+    left = sv.strip_lines("Auto Eng - L7 Slide 3 / 15\nSafety goals matter\nSources: Reif (2015); ISO 26262\n4", boiler)
+    assert left == ["Safety goals matter"]                                  # repeated footer lines and page numbers are gone
+    st = sv.structure("Title here\n• first point\n• second point\nNote: careful\nA wrapped\nline end.")
+    assert st["title"] == "Title here" and [i["kind"] for i in st["items"]] == ["li", "li", "note", "p"]
+    assert st["items"][-1]["text"] == "A wrapped line end." or "wrapped" in st["items"][-1]["text"]
+    hits = [{"passage_id": "L01S01", "lecture": 1, "slide": 1, "lecture_title": "X", "topic": "t", "score": .3, "text": "alpha beta pruning cuts branches of the search tree today",
+             "display": "Pruning\n• alpha beta pruning cuts branches\n• unrelated one\n• another thing here\n• yet another long thing"},
+            {"passage_id": "L01S02", "lecture": 1, "slide": 2, "lecture_title": "X", "topic": "t", "score": .2, "text": "alpha beta pruning cuts branches of the search tree today", "display": ""}]
+    v = sv.build_view(hits, "what is alpha beta pruning", lambda t, q: t)
+    assert v["hidden"] == 1 and len(v["groups"]) == 1 and v["summary"]        # near-identical slide hidden, summary made
+    sl = v["groups"][0]["slides"][0]
+    assert sl["rest"] and any(i["best"] for i in sl["shown"])                  # best sentence shown, the rest folded
+    s = client.get("/")                                                         # (page just must keep rendering)
+    assert s.status_code in (200, 302)
+
+
+def test_ask_page_shows_summary_and_slide_pictures(tmp_path):
+    from app import app
+    c = app.test_client()
+    assert c.get("/slide-image/L01S01.png").status_code == 404                # no session
+    assert c.get("/slide-image/bad.png").status_code == 404

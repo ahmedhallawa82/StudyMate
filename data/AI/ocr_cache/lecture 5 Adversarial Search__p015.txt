@@ -1,0 +1,28 @@
+Minimax Algorithm
+The minimax search algorithm
+function Minimax-SEARCH(s) returns an action
+
+v + MAx-VALUE(s)
+
+return the action in ACTIONS(s) with value v
+function MAx-VALUE(Ss) returns a utility value
+
+if TERMINAL-TEST(s) then return UTILITY(s)
+
+V+ —oco
+
+for each ain AcTIONS(s) do
+
+v+ Max(v,MIn-VALUE(RESULT(S,a)))
+
+return v
+function Min-VALUE(s) returns a utility value
+
+if TERMINAL-TEST(s) then return UTILITY(s)
+
+V+—+co
+
+for each ain AcTIONS(s) do
+
+v+ MiINn(v,MAx-VALUE(RESULT(S,a)))
+return Vv
