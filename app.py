@@ -337,7 +337,6 @@ def quick_links():
         if master:
             add("🛡️", "doc_title", "doctors_page", "admins doctors add doctor دكاترة ادمن")
             add("🛟", "support_inbox", "support_inbox", "support help requests دعم")
-            add("🧮", "mdl_title", "evaluation", "models accuracy colab confusion matrix evaluation نماذج دقة")
     elif student():
         add("🏠", "nav_home", "student_home", "home الرئيسية")
         add("🔎", "nav_ask", "ask", "ask question search slides اسأل سؤال بحث")
