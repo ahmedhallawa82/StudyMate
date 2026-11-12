@@ -214,6 +214,7 @@ T = {
     "help_title": ('Help & questions', 'المساعدة والأسئلة'),
     "help_sub": ('Quick answers about how StudyMate works.', 'إجابات سريعة عن طريقة شغل الموقع.'),
     "tile_progress": ('Your level in every topic', 'مستواك في كل موضوع'),
+    "faq_title": ("Help & frequently asked questions", "المساعدة والأسئلة الشائعة"),
     "faq_need_both": ('Write a question and its answer (in English or Arabic).', 'اكتب السؤال وإجابته (بالإنجليزي أو العربي).'),
     "faq_add": ('Add a question', 'إضافة سؤال'),
     "faq_add_sub": ('Fill English, Arabic or both. Users see the one that matches their language.', 'املأ الإنجليزي أو العربي أو الاتنين. المستخدم بيشوف اللي بلغته.'),

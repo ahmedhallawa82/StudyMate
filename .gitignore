@@ -27,3 +27,8 @@ data/atrisk_notified.json
 data/chat_files/
 data/colab_token.txt
 data/*/slides/
+data/weekly_sent.json
+data/audit.jsonl
+data/announcements.json
+data/bookmarks.json
+data/doctor_requests.json
