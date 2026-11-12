@@ -194,3 +194,38 @@ html, body { overflow-x: clip; }
 .photo-msg.bad { background: rgba(224,138,60,.14); color: #8a4b0b; }
 .photo-msg.busy { opacity: .85; }
 @media (max-width: 640px) { .photo-btn span { display: none; } }
+
+/* ---- data vault ---- */
+.vlt-lock { max-width: 640px; }
+.vlt-bar { display: flex; gap: 10px; flex-wrap: wrap; margin: 0 0 14px; }
+.vlt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.vlt-chips a { padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); text-decoration: none; color: inherit; font-size: 14px; }
+.vlt-chips a.on { background: var(--teal); color: #fff; border-color: var(--teal); }
+.vlt-chips b { margin-inline-start: 4px; }
+.vlt-table tbody tr { cursor: pointer; }
+.vlt-table tbody tr:hover td { background: rgba(80,120,200,.07); }
+.vlt-who { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.vlt-who .avatar { width: 34px; height: 34px; flex: none; }
+.vlt-who small { display: block; color: var(--muted); }
+.vlt-role { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: #e7eefb; color: #2f5d9e; }
+.vlt-role.r-doctor { background: #e6f5ee; color: #1f7a4d; } .vlt-role.r-admin { background: #fff1e0; color: #a05a00; } .vlt-role.r-main { background: #fde8ea; color: #b4232c; }
+.vlt-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.vlt-av { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; flex: none; }
+.vlt-av.ph { display: grid; place-items: center; background: var(--teal); color: #fff; font-size: 34px; font-weight: 700; }
+.vlt-id { flex: 1; min-width: 220px; } .vlt-id h1 { margin: 0 0 4px; font-size: 24px; } .vlt-id p { margin: 2px 0; }
+.vlt-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.vlt-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.vlt-sec { margin-bottom: 14px; } .vlt-grid .vlt-sec { margin-bottom: 0; }
+.kv { width: 100%; } .kv th { text-align: start; width: 38%; color: var(--muted); font-weight: 600; vertical-align: top; padding: 6px 8px 6px 0; } .kv td { padding: 6px 0; }
+.vlt-pw { font-size: 15px; background: rgba(80,120,200,.1); padding: 2px 8px; border-radius: 6px; user-select: all; }
+.vlt-thumb { width: 110px; height: 110px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.vlt-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.vlt-gallery figure { margin: 0; } .vlt-gallery img { width: 100%; height: 110px; object-fit: contain; background: #fff; border-radius: 10px; border: 1px solid var(--line); }
+.vlt-gallery figcaption { font-size: 12.5px; line-height: 1.35; margin-top: 4px; }
+.vlt-files { list-style: none; padding: 0; margin: 4px 0 10px; } .vlt-files li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+.vlt-files img { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; }
+.vlt-thread { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 6px 0; }
+.vlt-msgs { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; max-height: 360px; overflow: auto; }
+.vlt-msgs > div { max-width: 85%; padding: 6px 10px; border-radius: 10px; background: rgba(120,140,170,.12); display: flex; flex-direction: column; font-size: 14px; }
+.vlt-msgs > div.me { align-self: flex-end; background: rgba(47,93,158,.14); } .vlt-msgs small { color: var(--muted); font-size: 11px; }
+.tag { display: inline-block; padding: 1px 8px; border-radius: 6px; background: rgba(80,120,200,.1); font-size: 13px; margin: 1px 0; }

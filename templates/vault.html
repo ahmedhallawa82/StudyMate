@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('vlt_title') }}{% endblock %}
+{% block content %}
+{{ page_head('🔐', t('vlt_title'), t('vlt_sub')) }}
+{% if locked %}
+<section class="card vlt-lock">
+  <h2>🔒 {{ t('vlt_locked') }}</h2>
+  <p class="muted">{{ t('vlt_locked_sub') }}</p>
+  <form method="post" class="inline" style="max-width:460px">
+    <input type="password" name="pw" placeholder="{{ t('vlt_pw') }}" required autofocus autocomplete="current-password">
+    <button class="btn" type="submit">{{ t('vlt_open') }}</button>
+  </form>
+  <p class="muted small" style="margin-top:10px">{{ t('vlt_pw_hint') }}</p>
+</section>
+{% else %}
+<div class="vlt-bar">
+  <form method="post" action="{{ url_for('vault_lock') }}"><button class="btn ghost" type="submit">🔒 {{ t('vlt_close') }}</button></form>
+  <a class="btn" href="{{ url_for('vault_all_xlsx') }}">⬇️ {{ t('vlt_xlsx_all') }}</a>
+</div>
+<section class="card" style="margin-bottom:14px">
+  <form method="get" class="inline">
+    <input type="search" name="q" value="{{ q }}" placeholder="{{ t('vlt_search') }}" autofocus>
+    {% if role %}<input type="hidden" name="role" value="{{ role }}">{% endif %}
+    <button class="btn" type="submit">{{ t('vlt_find') }}</button>
+  </form>
+  <div class="vlt-chips">
+    <a class="{{ 'on' if not role }}" href="{{ url_for('vault_page', q=q or None) }}">{{ t('vlt_all') }} <b>{{ total }}</b></a>
+    {% for r, lab in [('student', t('role_student')), ('doctor', t('role_doctor')), ('admin', t('vlt_subadmin')), ('main', t('role_admin'))] %}
+    <a class="{{ 'on' if role == r }}" href="{{ url_for('vault_page', role=r, q=q or None) }}">{{ lab }} <b>{{ counts.get(r, 0) }}</b></a>{% endfor %}
+  </div>
+</section>
+<section class="card">
+  <p class="muted small" style="margin-top:0">{{ t('vlt_n_found', n=rows|length) }} · {{ t('vlt_click') }}</p>
+  <div class="table-wrap"><table class="vlt-table">
+    <thead><tr><th>{{ t('vlt_person') }}</th><th>{{ t('vlt_role') }}</th><th>{{ t('email') }}</th><th>{{ t('vlt_code_dept') }}</th><th>{{ t('vlt_courses') }}</th><th>{{ t('vlt_last') }}</th><th class="num">{{ t('vlt_q') }}</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+    <tr onclick="location.href='{{ url_for('vault_user', key=r.key) }}'">
+      <td><a href="{{ url_for('vault_user', key=r.key) }}" class="vlt-who"><span class="avatar">{{ (r.name or r.username or '?')[:1]|upper }}</span><span><b dir="auto">{{ r.name or '–' }}</b><small dir="ltr">@{{ r.username }}</small></span></a></td>
+      <td><span class="vlt-role r-{{ r.role }}">{{ {'student': t('role_student'), 'doctor': t('role_doctor'), 'admin': t('vlt_subadmin'), 'main': t('role_admin')}[r.role] }}</span></td>
+      <td dir="ltr">{{ r.email or '–' }}</td>
+      <td dir="auto">{{ r.uni_code or r.dept or '–' }}</td>
+      <td dir="auto" class="small">{{ r.courses|join(', ') or '–' }}</td>
+      <td dir="ltr" class="small">{{ r.last or '–' }}</td>
+      <td class="num">{{ r.n_q if r.kind == 'student' else '–' }}</td>
+    </tr>
+    {% else %}<tr><td colspan="7" class="muted">{{ t('vlt_none') }}</td></tr>{% endfor %}
+    </tbody>
+  </table></div>
+</section>
+<details class="card" style="margin-top:14px"><summary><b>🔑 {{ t('vlt_change_pw') }}</b></summary>
+  <form method="post" action="{{ url_for('vault_password') }}" class="stack" style="max-width:420px;margin-top:10px">
+    <input type="password" name="old" placeholder="{{ t('vlt_pw_current') }}" required autocomplete="current-password">
+    <input type="password" name="new" placeholder="{{ t('vlt_pw_new') }}" required minlength="8" autocomplete="new-password">
+    <button class="btn" type="submit">{{ t('save') }}</button>
+  </form>
+</details>
+{% endif %}
+{% endblock %}

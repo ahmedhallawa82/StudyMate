@@ -18,7 +18,7 @@
     <tr>{% if master %}<th style="width:34px"><input type="checkbox" id="selAll" aria-label="{{ t('perm_all') }}"></th>{% endif %}<th>{{ t('students_name') }}</th><th>{{ t('username') }}</th><th>{{ t('uni_code') }}</th><th>{{ t('email') }}</th><th>{{ t('students_courses') }}</th><th></th></tr>
     {% for r in rows %}<tr data-q="{{ (r.first ~ ' ' ~ r.last ~ ' ' ~ r.username ~ ' ' ~ r.email ~ ' ' ~ r.uni_code)|lower }}">
       {% if master %}<td><input type="checkbox" name="codes" value="{{ r.code }}" class="pick"></td>{% endif %}
-      <td><b>{{ r.first }} {{ r.last }}</b></td><td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.uni_code or '–' }}</td><td dir="ltr" class="mail">{{ r.email }}</td>
+      <td>{% if admin_role == 'master' %}<a href="{{ url_for('vault_user', key='s:' ~ r.code) }}" title="{{ t('vlt_title') }}"><b>{{ r.first }} {{ r.last }}</b> 🔐</a>{% else %}<b>{{ r.first }} {{ r.last }}</b>{% endif %}</td><td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.uni_code or '–' }}</td><td dir="ltr" class="mail">{{ r.email }}</td>
       <td>{% for c in r.courses %}<span class="tag">{{ c[1] }}{% if master and c[2] %} · {{ c[2] }}{% endif %}</span> {% endfor %}</td>
       <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 's:' ~ r.code}) }}">💬 {{ t('students_message') }}</a></td></tr>{% endfor %}
   </table></div>

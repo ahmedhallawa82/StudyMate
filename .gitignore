@@ -32,3 +32,5 @@ data/audit.jsonl
 data/announcements.json
 data/bookmarks.json
 data/doctor_requests.json
+data/uploads/
+data/vault_auth.json

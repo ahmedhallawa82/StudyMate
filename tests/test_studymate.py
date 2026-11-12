@@ -1622,3 +1622,32 @@ def test_ask_with_photo(client):
     buf = io.BytesIO(); im.save(buf, "PNG")
     j = c.post("/ask/photo", data={"image": (io.BytesIO(buf.getvalue()), "q.png")}).get_json()
     assert j["ok"] and "admissible" in j["text"].lower()
+
+
+def test_data_vault_main_admin_only(client, tmp_path):
+    """Only the main admin, after the vault password, sees everything about a person (incl. his uploads); others get nothing."""
+    import app as A, io
+    from core import vault, uploads, students as STU
+    vault.FILE = lambda: tmp_path / "vault.json"
+    uploads.DIR = lambda: tmp_path / "uploads"
+    st = A.app.test_client()
+    as_student(st, "Vaulty")
+    code = STU.find("vaulty@test.com")["code"]
+    uploads.save("s:" + code, "photo_question", b"\x89PNG fake", "q.png", note="what is minimax")
+    sub = A.app.test_client()
+    with sub.session_transaction() as ss:
+        ss["lecturer"], ss["admin_id"] = True, "SUBX"
+    assert sub.get("/vault").status_code == 404 and sub.get("/vault/u/s:" + code).status_code == 404
+    adm = A.app.test_client()
+    with adm.session_transaction() as ss:
+        ss["lecturer"], ss["admin_id"], ss["admin_name"] = True, "master", ""
+    assert adm.get("/vault/u/s:" + code).status_code == 302                       # locked
+    vault.verify = lambda pw: pw == "vault-pass-1"
+    adm.post("/vault", data={"pw": "wrong"})
+    assert "vlt-lock" in adm.get("/vault").get_data(as_text=True)
+    adm.post("/vault", data={"pw": "vault-pass-1"})
+    assert "vaulty" in adm.get("/vault?q=vaulty").get_data(as_text=True).lower()
+    page = adm.get("/vault/u/s:" + code).get_data(as_text=True)
+    assert "what is minimax" in page and "Vaulty" in page
+    assert adm.get(f"/vault/x/s:{code}.xlsx").status_code == 200 and adm.get("/vault/all.xlsx").status_code == 200
+    assert adm.get("/vault/file/upload/../../config.py").status_code == 404

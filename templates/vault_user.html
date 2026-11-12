@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} · {{ t('vlt_title') }}{% endblock %}
+{% block content %}
+{% set roles = {'student': t('role_student'), 'doctor': t('role_doctor'), 'admin': t('vlt_subadmin'), 'main': t('role_admin')} %}
+<section class="card vlt-head">
+  {% if av %}<a href="{{ url_for('vault_file', kind='avatar', name=p.key) }}" target="_blank"><img class="vlt-av" src="{{ av }}" alt=""></a>{% else %}<span class="vlt-av ph">{{ (p.name or p.username or '?')[:1]|upper }}</span>{% endif %}
+  <div class="vlt-id">
+    <h1 dir="auto">{{ p.name or '–' }}</h1>
+    <p><span class="vlt-role r-{{ p.role }}">{{ roles[p.role] }}</span> <span dir="ltr">@{{ p.username }}</span>{% if p.email %} · <span dir="ltr">{{ p.email }}</span>{% endif %}</p>
+    <p class="muted small">{{ t('vlt_last') }}: <span dir="ltr">{{ p.last or '–' }}</span>{% if p.created %} · {{ t('vlt_created') }}: <span dir="ltr">{{ p.created }}</span>{% endif %}</p>
+  </div>
+  <div class="vlt-actions">
+    <a class="btn" href="{{ url_for('vault_user_xlsx', key=p.key) }}">⬇️ {{ t('vlt_xlsx_one') }}</a>
+    <a class="btn ghost" href="{{ url_for('vault_page') }}">← {{ t('vlt_title') }}</a>
+  </div>
+</section>
+
+{% set n_files = p.uploads|length + p.chat.files|selectattr('from_me')|list|length + (1 if av else 0) + (p.lectures|length if p.lectures else 0) %}
+<div class="grid-4 rep-kpis" style="margin:14px 0">
+  {% if p.kind == 's' %}
+  <div class="kpi"><div class="v">{{ p.questions|length }}</div><div class="l">{{ t('vlt_q') }}</div></div>
+  <div class="kpi"><div class="v">{{ p.answers|length }}</div><div class="l">{{ t('vlt_a') }}</div></div>
+  <div class="kpi"><div class="v">{{ p.attempts|length }}</div><div class="l">{{ t('nav_exams') }}</div></div>
+  {% else %}
+  <div class="kpi"><div class="v">{{ p.courses|length }}</div><div class="l">{{ t('vlt_courses') }}</div></div>
+  <div class="kpi"><div class="v">{{ p.audit|length }}</div><div class="l">{{ t('vlt_actions') }}</div></div>
+  <div class="kpi"><div class="v">{{ p.announcements|length }}</div><div class="l">{{ t('ann_title') }}</div></div>
+  {% endif %}
+  <div class="kpi"><div class="v">{{ n_files }}</div><div class="l">{{ t('vlt_files') }}</div></div>
+</div>
+
+<div class="vlt-grid">
+<section class="card">
+  <h2>👤 {{ t('vlt_account') }}</h2>
+  <table class="kv">
+    <tr><th>{{ t('vlt_role') }}</th><td>{{ roles[p.role] }}</td></tr>
+    <tr><th>{{ t('vlt_name') }}</th><td dir="auto">{{ p.name or '–' }}</td></tr>
+    <tr><th>{{ t('vlt_username') }}</th><td dir="ltr">@{{ p.username }}</td></tr>
+    <tr><th>{{ t('email') }}</th><td dir="ltr">{{ p.email or '–' }}</td></tr>
+    {% if p.kind == 's' %}<tr><th>{{ t('uni_code') }}</th><td dir="ltr">{{ p.uni_code or '–' }}</td></tr><tr><th>{{ t('vlt_scode') }}</th><td dir="ltr">{{ p.code }}</td></tr>{% endif %}
+    {% if p.dept %}<tr><th>{{ t('doc_dept') }}</th><td dir="auto">{{ p.dept }}</td></tr>{% endif %}
+    <tr><th>{{ t('vlt_courses') }}</th><td dir="auto">{% for c, title in p.courses %}<span class="tag">{{ title }}</span> {% else %}–{% endfor %}</td></tr>
+    {% if p.perms %}<tr><th>{{ t('vlt_perms') }}</th><td>{{ p.perms|join(', ') }}</td></tr>{% endif %}
+    <tr><th>{{ t('vlt_password') }}</th><td>
+      {% if p.pw_plain %}<code dir="ltr" class="vlt-pw">{{ p.pw_plain }}</code><br><small class="muted">{{ t('vlt_pw_sys') }}</small>
+      {% elif p.role == 'main' %}<small class="muted">{{ t('vlt_pw_env') }}</small>
+      {% else %}🔒 <small class="muted">{{ t('vlt_pw_hash') }}</small>{% endif %}
+      {% if p.role != 'main' %}<form method="post" action="{{ url_for('vault_reset', key=p.key) }}" onsubmit="return confirm({{ t('vlt_reset_confirm')|tojson }})" style="margin-top:8px">
+        <button class="btn ghost small" type="submit">🔁 {{ t('vlt_reset') }}</button></form>{% endif %}
+    </td></tr>
+    <tr><th>{{ t('vlt_key') }}</th><td dir="ltr"><code>{{ p.key }}</code></td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>📁 {{ t('vlt_uploads') }}</h2>
+  {% if av %}<h3>{{ t('vlt_avatar') }}</h3><a href="{{ url_for('vault_file', kind='avatar', name=p.key) }}" target="_blank"><img class="vlt-thumb" src="{{ av }}" alt=""></a>{% endif %}
+  {% if p.uploads %}<h3>{{ t('vlt_photoq') }} ({{ p.uploads|length }})</h3>
+  <div class="vlt-gallery">{% for u in p.uploads %}
+    <figure><a href="{{ url_for('vault_file', kind='upload', name=u.file) }}" target="_blank"><img src="{{ url_for('vault_file', kind='upload', name=u.file) }}" alt="" loading="lazy"></a>
+      <figcaption><small dir="ltr">{{ u.time }}</small><br><span dir="auto">“{{ u.note }}”</span></figcaption></figure>{% endfor %}</div>{% endif %}
+  {% set sent = p.chat.files|selectattr('from_me')|list %}{% set got = p.chat.files|rejectattr('from_me')|list %}
+  {% if sent %}<h3>{{ t('vlt_chat_sent') }} ({{ sent|length }})</h3>
+  <ul class="vlt-files">{% for f in sent %}<li>{% if f.img %}<img src="{{ url_for('vault_file', kind='chat', name=f.fid) }}" alt="" loading="lazy">{% else %}📎{% endif %}
+    <a href="{{ url_for('vault_file', kind='chat', name=f.fid, dl=1, n=f.fname) }}" dir="auto">{{ f.fname }}</a> <small class="muted">· {{ (f.size / 1024)|round|int }} KB · {{ t('vlt_to') }} {{ f.with }} · <span dir="ltr">{{ f.time }}</span></small></li>{% endfor %}</ul>{% endif %}
+  {% if got %}<details><summary>{{ t('vlt_chat_got') }} ({{ got|length }})</summary><ul class="vlt-files">{% for f in got %}<li>📎 <a href="{{ url_for('vault_file', kind='chat', name=f.fid, dl=1, n=f.fname) }}" dir="auto">{{ f.fname }}</a> <small class="muted">· {{ t('vlt_from') }} {{ f.with }} · <span dir="ltr">{{ f.time }}</span></small></li>{% endfor %}</ul></details>{% endif %}
+  {% if p.lectures %}<h3>{{ t('vlt_lectures') }} ({{ p.lectures|length }})</h3>
+  <ul class="vlt-files">{% for c, fn in p.lectures %}<li>📄 <a href="{{ url_for('vault_file', kind='lecture', name=c ~ '/' ~ fn, dl=1) }}" dir="auto">{{ fn }}</a> <small class="muted">· {{ titles.get(c, c) }}</small></li>{% endfor %}</ul>{% endif %}
+  {% if p.videos %}<h3>{{ t('vlt_videos') }} ({{ p.videos|length }})</h3>
+  <ul class="vlt-files">{% for v in p.videos %}<li>🎬 <span dir="auto">{{ v.title }}</span> <small class="muted">· {{ titles.get(v.course, v.course) }} · {{ v.added }}</small></li>{% endfor %}</ul>{% endif %}
+  {% if not (av or p.uploads or p.chat.files or p.lectures or p.videos) %}<p class="muted">{{ t('vlt_no_files') }}</p>{% endif %}
+</section>
+</div>
+
+{% if p.kind == 's' %}
+<section class="card vlt-sec">
+  <h2>❓ {{ t('vlt_q') }} ({{ p.questions|length }})</h2>
+  {% if p.questions %}<div class="table-wrap"><table><thead><tr><th>{{ t('vlt_time') }}</th><th>{{ t('vlt_course') }}</th><th>{{ t('vlt_question') }}</th><th>{{ t('vlt_topic') }}</th><th>{{ t('vlt_slide') }}</th><th>{{ t('vlt_result') }}</th><th>👍/👎</th></tr></thead><tbody>
+  {% for r in p.questions[:100] %}<tr><td dir="ltr" class="small">{{ (r.time|string)[:16] }}</td><td>{{ r.course }}</td><td dir="auto">{{ r.question }}</td><td class="small">{{ r.topic if r.topic and r.topic != 'None' else '–' }}</td><td dir="ltr">{{ r.first_slide or '–' }}</td><td>{{ '✔' if r.found != 'no' else '✘ ' ~ t('vlt_nf') }}</td><td>{{ {'yes': '👍', 'no': '👎'}.get(r.helpful, '–') }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endif %}
+</section>
+<div class="vlt-grid">
+<section class="card vlt-sec">
+  <h2>✏️ {{ t('vlt_a') }} ({{ p.answers|length }})</h2>
+  {% if p.answers %}<div class="table-wrap"><table><thead><tr><th>{{ t('vlt_time') }}</th><th>{{ t('vlt_topic') }}</th><th>{{ t('vlt_result') }}</th><th>{{ t('vlt_hints') }}</th></tr></thead><tbody>
+  {% for r in p.answers[:60] %}<tr><td dir="ltr" class="small">{{ (r.time|string)[:16] }}</td><td class="small">{{ r.topic }}</td><td>{{ '✔' if (r.correct|string) in ('1', 'True') else '✘' }}</td><td>{{ r.hints_used }}</td></tr>{% endfor %}
+  </tbody></table></div>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endif %}
+</section>
+<section class="card vlt-sec">
+  <h2>📝 {{ t('nav_exams') }} ({{ p.attempts|length }})</h2>
+  {% for a in p.attempts %}<p>{{ titles.get(a.course, a.course) }} · <span dir="ltr">{{ (a.started|string)[:16] }}</span> · <b>{{ a.pct if a.pct is not none else '–' }}%</b> <small class="muted">{{ a.status }}</small></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+  <h2 style="margin-top:14px">⭐ {{ t('sv_link') }} ({{ p.saved|length }})</h2>
+  {% for s in p.saved[:30] %}<p dir="auto">{{ s.question }} <small class="muted">· {{ s.slide }}</small></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+  {% if p.badges %}<h2 style="margin-top:14px">🏅 {{ t('nav_badges') }} ({{ p.badges|length }})</h2>
+  {% for b in p.badges %}<p class="small">{{ b.badge }} · <span dir="ltr">{{ b.time }}</span></p>{% endfor %}{% endif %}
+  <p class="muted small" style="margin-top:10px">{{ t('vlt_visits', n=p.visits|length) }}</p>
+</section>
+</div>
+{% else %}
+<div class="vlt-grid">
+<section class="card vlt-sec">
+  <h2>🧾 {{ t('vlt_actions') }} ({{ p.audit|length }})</h2>
+  {% for r in p.audit[:80] %}<p class="small"><span dir="ltr" class="muted">{{ r.time }}</span> · <b>{{ r.action }}</b> <span dir="auto">{{ r.target }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+</section>
+<section class="card vlt-sec">
+  <h2>📢 {{ t('ann_title') }} ({{ p.announcements|length }})</h2>
+  {% for a in p.announcements %}<p><b dir="auto">{{ a.title }}</b> <small class="muted">· {{ titles.get(a.course, a.course) }} · <span dir="ltr">{{ a.time }}</span></small><br><span dir="auto" class="small">{{ a.body }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+  {% if p.events %}<h2 style="margin-top:14px">📅 {{ t('nav_calendar') }} ({{ p.events|length }})</h2>{% for e in p.events %}<p class="small" dir="auto">{{ e.title }} · <span dir="ltr">{{ e.when }}</span></p>{% endfor %}{% endif %}
+  {% if p.made_badges %}<h2 style="margin-top:14px">🏅 {{ t('vlt_badges_made') }} ({{ p.made_badges|length }})</h2>{% for b in p.made_badges %}<p class="small">{{ b.icon }} <span dir="auto">{{ b.name }}</span> · <span dir="ltr">{{ b.created }}</span></p>{% endfor %}{% endif %}
+</section>
+</div>
+{% endif %}
+
+<div class="vlt-grid">
+<section class="card vlt-sec">
+  <h2>💬 {{ t('nav_chat') }} <small class="muted">{{ t('vlt_chat_sum', n=p.chat.threads|length, m=p.chat.sent) }}</small></h2>
+  {% for th in p.chat.threads %}
+  <details class="vlt-thread"><summary><b dir="auto">{{ th.with }}</b> <small class="muted">· {{ th.n }} · <span dir="ltr">{{ th.last }}</span></small></summary>
+    <div class="vlt-msgs">{% for m in th.msgs %}<div class="{{ 'me' if m.from == p.key else 'them' }}"><small dir="ltr">{{ m.time }}</small><span dir="auto">{{ m.text }}</span>{% if m.file %}<a href="{{ url_for('vault_file', kind='chat', name=m.file.fid, dl=1, n=m.file.fname) }}">📎 {{ m.file.fname }}</a>{% endif %}</div>{% endfor %}</div>
+  </details>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+  {% if p.chat.requests %}<p class="small" style="margin-top:10px"><b>{{ t('vlt_requests') }}:</b> {% for r in p.chat.requests %}{{ r.with }} ({{ r.state }}{{ ', ' ~ t('vlt_by_me') if r.asked_by_me }}){{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
+  {% if p.chat.blocked %}<p class="small"><b>{{ t('vlt_blocked') }}:</b> {{ p.chat.blocked|join(', ') }}</p>{% endif %}
+</section>
+<section class="card vlt-sec">
+  <h2>🛟 {{ t('vlt_support') }} ({{ p.support|length }})</h2>
+  {% for m in p.support %}<p><small dir="ltr" class="muted">{{ m.time }} · {{ m.status }}</small><br><span dir="auto">{{ m.message }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+  <h2 style="margin-top:14px">🔔 {{ t('notif_title') }} ({{ p.notifs|length }})</h2>
+  {% for n in p.notifs[:15] %}<p class="small"><span dir="ltr" class="muted">{{ n.time }}</span> · <span dir="auto">{{ n.title }}</span>{{ ' •' if n.unread }}</p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
+</section>
+</div>
+{% endblock %}

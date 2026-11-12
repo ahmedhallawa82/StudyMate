@@ -2,7 +2,7 @@
 import json
 
 import config
-from core import students, doctors, profiles, notify, chat, badges, custom_badges, bookmarks
+from core import students, doctors, profiles, notify, chat, badges, custom_badges, bookmarks, uploads
 from core import exams as EX
 from core.logger import delete_student_rows
 
@@ -12,6 +12,7 @@ def delete_student(code):
     EX.purge_student(code)
     delete_student_rows(code)
     profiles.delete(key)
+    uploads.purge(key)
     notify.purge(key)
     chat.purge(key)
     bookmarks.drop_student(code)
@@ -31,6 +32,7 @@ def delete_doctor(did):
             (config.BASE_DIR / "data" / c["code"] / "course.json").write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
     custom_badges.purge_owner(did)
     profiles.delete(key)
+    uploads.purge(key)
     notify.purge(key)
     chat.purge(key)
     return True

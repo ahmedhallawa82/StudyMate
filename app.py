@@ -15,7 +15,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import photoq
+from core import photoq, uploads, vault
 from core import doctor_requests, bookmarks, audit, announce, plan as planlib, doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
@@ -804,8 +804,9 @@ def ask_photo():
     f = request.files.get("image")
     if not f or not f.filename:
         return jsonify(ok=False, error=tr("ph_none", lang())), 400
+    data = f.read()
     try:
-        text = photoq.read(f.read())
+        text = photoq.read(data)
     except ValueError:
         return jsonify(ok=False, error=tr("ph_bad", lang())), 400
     except Exception as e:                                   # noqa: BLE001 - OCR timeout / crash
@@ -814,6 +815,8 @@ def ask_photo():
     if len(text) < 4:
         return jsonify(ok=False, error=tr("ph_empty", lang())), 200
     visit("ask_photo")
+    if user_key():
+        uploads.save(user_key(), "photo_question", data, f.filename, note=text)
     return jsonify(ok=True, text=text)
 
 
@@ -2559,6 +2562,192 @@ def chat_poll():
     if new:
         chat.mark_read(me, with_key)
     return jsonify(ok=True, msgs=new, unread=chat.unread_total(me), seen=seen)
+
+
+# ------------------------------------------------------------------ Data vault (main admin only, own password)
+def vault_ok():
+    import time as _t
+    if not (session.get("lecturer") and is_main()):
+        return False
+    at = session.get("vault_at", 0)
+    if not at or _t.time() - at > vault.IDLE:
+        session.pop("vault_at", None)
+        return False
+    session["vault_at"] = _t.time()                               # every vault page keeps it open
+    return True
+
+
+def vault_required(view):
+    @wraps(view)
+    def wrapper(*a, **kw):
+        if not (session.get("lecturer") and is_main()):
+            abort(404)                                            # nobody else even learns the page exists
+        if not vault_ok():
+            return redirect(url_for("vault_page", next=request.full_path))
+        return view(*a, **kw)
+    return wrapper
+
+
+def _vault_sheets():
+    return {s: read_sheet(s) for s in ("Questions", "Answers", "Visits", "Exams")}
+
+
+def _titles():
+    ar = lang() == "ar"
+    return {c["code"]: (c["name_ar"] or c["name_en"]) if ar else c["name_en"] for c in config.list_courses()}
+
+
+def _key_name(k):
+    p = person(k)
+    return f"{p['name']} (@{p['username']})" if p else k
+
+
+@app.route("/vault", methods=["GET", "POST"])
+@lecturer_required
+def vault_page():
+    import time as _t
+    if not is_main():
+        abort(404)
+    if request.method == "POST":                                  # unlock
+        if vault.verify(request.form.get("pw", "")):
+            session["vault_at"] = _t.time()
+            audit.record(actor(), "vault_opened")
+            nxt = request.args.get("next", "")
+            return redirect(nxt if nxt.startswith("/vault") else url_for("vault_page"))
+        audit.record(actor(), "vault_wrong_password")
+        flash_t("mdl_wrong")
+    if not vault_ok():
+        return render_template("vault.html", locked=True)
+    rows = vault.people(_vault_sheets(), _titles())
+    q, role = request.args.get("q", "").strip().lower(), request.args.get("role", "")
+    counts = Counter(r["role"] for r in rows)
+    if role:
+        rows = [r for r in rows if r["role"] == role]
+    if q:
+        rows = [r for r in rows if q in " ".join(str(r[k]) for k in ("name", "username", "email", "uni_code", "dept", "key")).lower()]
+    return render_template("vault.html", locked=False, rows=rows, q=request.args.get("q", ""), role=role, counts=counts, total=sum(counts.values()))
+
+
+@app.route("/vault/lock", methods=["POST"])
+@lecturer_required
+def vault_lock():
+    session.pop("vault_at", None)
+    return redirect(url_for("staff_home"))
+
+
+@app.route("/vault/password", methods=["POST"])
+@vault_required
+def vault_password():
+    err = vault.change(request.form.get("old", ""), request.form.get("new", ""))
+    if not err:
+        audit.record(actor(), "vault_password_changed")
+    flash_t(err or "vlt_pw_changed", n=vault.MIN_LEN)
+    return redirect(url_for("vault_page"))
+
+
+@app.route("/vault/u/<path:key>")
+@vault_required
+def vault_user(key):
+    p = vault.profile(key, _vault_sheets(), _titles(), _key_name)
+    if not p:
+        flash_t("vlt_gone")
+        return redirect(url_for("vault_page"))
+    audit.record(actor(), "vault_viewed", key)
+    av = person(key)
+    return render_template("vault_user.html", p=p, av=(av or {}).get("avatar"), titles=_titles())
+
+
+@app.route("/vault/u/<path:key>/reset", methods=["POST"])
+@vault_required
+def vault_reset(key):
+    """Give the person a new password (the old one cannot be read: it is stored as a one-way hash)."""
+    kind, _, ident = key.partition(":")
+    pw = passgen.generate()
+    ok = students.set_password(ident, pw) if kind == "s" else (doctors.set_password(ident, pw) if kind == "d" and ident != doctors.MASTER else False)
+    if ok:
+        audit.record(actor(), "vault_password_reset", key)
+        notify.push([key], "security", tr("vlt_reset_note", lang()), "", url_for("profile"))
+        flash_t("vlt_reset_done", pw=pw)
+    else:
+        flash_t("vlt_reset_no")
+    return redirect(url_for("vault_user", key=key))
+
+
+@app.route("/vault/file/<kind>/<path:name>")
+@vault_required
+def vault_file(kind, name):
+    if kind == "avatar":
+        p = profiles.avatar_path(name)
+    elif kind == "chat":
+        p = chat.FILES() / name.replace("/", "").replace("..", "")
+    elif kind == "upload":
+        p = uploads.path(name)
+    elif kind == "lecture":
+        code, _, fn = name.partition("/")
+        p = config.course_paths(code).lectures / fn.replace("/", "").replace("..", "") if code in course_codes() else None
+    else:
+        p = None
+    if not p or not p.is_file():
+        abort(404)
+    return send_file(p, as_attachment=request.args.get("dl") == "1", download_name=request.args.get("n") or p.name)
+
+
+def _xlsx(sheets):
+    import io as _io
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+    wb = Workbook()
+    wb.remove(wb.active)
+    for title, head, rows in sheets:
+        ws = wb.create_sheet(title[:31])
+        ws.append(head)
+        for c in ws[1]:
+            c.font, c.fill = Font(bold=True, color="FFFFFF"), PatternFill("solid", fgColor="2F5D9E")
+        for r in rows:
+            ws.append([("" if v is None else (", ".join(map(str, v)) if isinstance(v, (list, tuple)) else v)) for v in r])
+        for col in ws.columns:
+            ws.column_dimensions[col[0].column_letter].width = min(50, max(10, *(len(str(c.value or "")) for c in col)) + 2)
+    buf = _io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf
+
+
+@app.route("/vault/all.xlsx")
+@vault_required
+def vault_all_xlsx():
+    rows = vault.people(_vault_sheets(), _titles())
+    head = ["Role", "Name", "Username", "E-mail", "University code", "Department", "Courses", "Created", "Last activity", "Questions", "Practice answers", "Visits", "Key"]
+    data = [[r["role"], r["name"], r["username"], r["email"], r["uni_code"], r["dept"], r["courses"], r["created"], r["last"], r["n_q"], r["n_a"], r["n_v"], r["key"]] for r in rows]
+    by = lambda role: [d for d, r in zip(data, rows) if r["role"] == role]
+    audit.record(actor(), "vault_export_all")
+    return send_file(_xlsx([("All users", head, data), ("Students", head, by("student")), ("Doctors", head, by("doctor")), ("Admins", head, by("admin") + by("main"))]),
+                     as_attachment=True, download_name="StudyMate_all_users.xlsx")
+
+
+@app.route("/vault/x/<path:key>.xlsx")
+@vault_required
+def vault_user_xlsx(key):
+    p = vault.profile(key, _vault_sheets(), _titles(), _key_name)
+    if not p:
+        abort(404)
+    sh = [("Account", ["Field", "Value"], [[k, p.get(k, "")] for k in ("role", "name", "username", "email", "uni_code", "code", "dept", "created", "last", "key")]
+           + [["courses", [t for _, t in p.get("courses", [])]], ["password", p.get("pw_plain") or "stored as a one-way hash (cannot be read)"]])]
+    if p.get("questions") is not None:
+        sh.append(("Questions", ["time", "course", "question", "topic", "found", "first_slide", "helpful"], [[r.get(k) for k in ("time", "course", "question", "topic", "found", "first_slide", "helpful")] for r in p["questions"]]))
+        sh.append(("Practice", ["time", "course", "question_id", "topic", "correct", "hints_used", "mastery_after"], [[r.get(k) for k in ("time", "course", "question_id", "topic", "correct", "hints_used", "mastery_after")] for r in p["answers"]]))
+        sh.append(("Visits", ["time", "page", "course"], [[r.get(k) for k in ("time", "page", "course")] for r in p["visits"]]))
+        sh.append(("Exams", ["started", "course", "status", "pct"], [[a.get("started"), a.get("course"), a.get("status"), a.get("pct")] for a in p["attempts"]]))
+        sh.append(("Saved answers", ["time", "course", "question", "slide"], [[r.get(k) for k in ("time", "course", "question", "slide")] for r in p["saved"]]))
+    if p.get("audit") is not None:
+        sh.append(("Actions", ["time", "action", "target"], [[r.get(k) for k in ("time", "action", "target")] for r in p["audit"]]))
+        sh.append(("Announcements", ["time", "course", "title", "body"], [[r.get(k) for k in ("time", "course", "title", "body")] for r in p["announcements"]]))
+    sh.append(("Uploads", ["time", "kind", "name", "size", "text read"], [[u["time"], u["kind"], u["name"], u["size"], u["note"]] for u in p["uploads"]]
+               + [[f["time"], "chat file" + (" (sent)" if f["from_me"] else " (received)"), f.get("fname"), f.get("size"), "with " + f["with"]] for f in p["chat"]["files"]]))
+    sh.append(("Chat", ["with", "time", "from", "text", "file"], [[t["with"], m.get("time"), "me" if m.get("from") == key else t["with"], m.get("text"), (m.get("file") or {}).get("fname", "")] for t in p["chat"]["threads"] for m in t["msgs"]]))
+    sh.append(("Support", ["time", "message", "status"], [[m.get("time"), m.get("message"), m.get("status")] for m in p["support"]]))
+    audit.record(actor(), "vault_export_user", key)
+    return send_file(_xlsx(sh), as_attachment=True, download_name=f"StudyMate_{(p.get('username') or 'user')}.xlsx")
 
 
 @app.route("/students")
