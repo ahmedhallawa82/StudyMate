@@ -2497,6 +2497,29 @@ def students_page():
     return render_template("students.html", rows=students_for_admin(), master=is_master())
 
 
+@app.route("/students/delete", methods=["POST"])
+@lecturer_required
+@perm_required("students")
+def students_delete():
+    """Delete registered student accounts (the main admin or a sub-admin with the Students permission) with everything that belongs to them."""
+    if not is_master():
+        flash_t("master_only")
+        return redirect(url_for("students_page"))
+    n = 0
+    for code in dict.fromkeys(request.form.getlist("codes")):
+        st = students.get(code)
+        if not st:
+            continue
+        did = doctors.by_student(code)                           # a student made an admin loses that role too
+        if did:
+            doctors.remove(did)
+        accountdel.delete_student(code)
+        audit.record(actor(), "student_deleted", f"{st['username']} ({code})")
+        n += 1
+    flash_t("stu_deleted", n=n) if n else flash_t("stu_none_picked")
+    return redirect(url_for("students_page"))
+
+
 @app.route("/students.<fmt>")
 @lecturer_required
 @perm_required("students")

@@ -1539,3 +1539,19 @@ def test_saved_plan_announcements_report_and_audit(client, admin, tmp_path, monk
     assert any(r["action"] == "announcement" for r in audit.rows(50))
     assert "Exam moved" in client.get("/home").get_data(as_text=True)
     assert "Please type your password" in client.application.test_client().post("/start", data={"username": "x", "password": ""}).get_data(as_text=True)
+
+
+def test_admin_deletes_registered_students(admin):
+    import app as A
+    from core import students
+    c = A.app.test_client()
+    as_student(c, "GONE1")
+    code = students.find("gone1@test.com")["code"]
+    with admin.session_transaction() as ss:
+        ss["lecturer"], ss["admin_id"], ss["admin_name"] = True, "master", ""
+    assert "selAll" in admin.get("/students").get_data(as_text=True)
+    assert admin.post("/students/delete", data={}).status_code == 302
+    assert students.get(code)
+    admin.post("/students/delete", data={"codes": [code]})
+    assert students.get(code) is None
+    assert c.get("/home").status_code == 302                                   # his session no longer works

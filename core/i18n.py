@@ -804,6 +804,8 @@ T = {
     "thr_save": ("Save number", "حفظ الرقم"), "thr_note": ("Higher = stricter: more questions get \"Not found\". Lower = the site answers more, with a bit more risk of a wrong slide. Test a few questions after changing it.", "أعلى = أشد: أسئلة أكتر بتطلع «مش موجود». أقل = الموقع بيجاوب أكتر مع احتمال أكبر لسلايد غلط. جرّب كام سؤال بعد التغيير."),
     "thr_bad": ("Enter a number between 0.01 and 0.9.", "اكتب رقم بين 0.01 و 0.9."), "thr_saved": ("The \"Not found\" threshold is now {v}.", "حد «غير موجود» بقى {v}."),
     "perm_all": ("Select all", "تحديد الكل"),
+    "stu_del_sel": ("Delete selected", "حذف المحدد"), "stu_del_confirm": ("Delete the selected accounts for good? Their questions, answers, exams, badges and chats are deleted too. This cannot be undone.", "تحذف الحسابات المحددة نهائياً؟ أسئلتهم وإجاباتهم وامتحاناتهم وشاراتهم ومحادثاتهم هتتحذف كمان. مفيش رجوع."),
+    "stu_deleted": ("{n} account(s) deleted.", "اتحذف {n} حساب."), "stu_none_picked": ("Tick at least one student first.", "حدد طالب واحد على الأقل الأول."),
     "wrong_login": ("Wrong username or password.", "اسم المستخدم أو كلمة السر غلط."),
     "register_title": ("Create a student account", "إنشاء حساب طالب"),
     "first_name": ("First name", "الاسم الأول"), "last_name": ("Last name", "الاسم الأخير"), "email": ("E-mail", "الإيميل"),
