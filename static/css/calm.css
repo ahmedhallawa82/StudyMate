@@ -182,3 +182,7 @@ html, body { overflow-x: clip; }
 .ct-nums { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0; font-size: 13px; color: var(--muted); }
 .ct-nums b { font-size: 20px; color: var(--teal); }
 .ct-go { font-weight: 600; font-size: 13px; color: var(--teal); }
+
+.tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.tile-grid .course-tile { margin: 0; }
+@media (max-width: 640px) { .rep-kpis { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; } .rep-kpis .kpi .v { font-size: 22px; } }

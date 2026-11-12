@@ -6,7 +6,7 @@
 {% if tot %}
 <section class="card" style="margin-bottom:16px">
   <h2>{{ t('rep_total') }} <small class="muted">{{ t('rep_courses_n', n=tot.courses) }}</small></h2>
-  <div class="grid-4">
+  <div class="grid-4 rep-kpis">
     <a class="kpi kpi-link" href="#courses"><div class="v">{{ tot.questions }}</div><div class="l">{{ t('rep_q') }}</div></a>
     <a class="kpi kpi-link" href="#courses"><div class="v">{{ tot.not_found }}</div><div class="l">{{ t('rep_nf') }}</div></a>
     <a class="kpi kpi-link" href="#courses"><div class="v">{{ tot.students }}</div><div class="l">{{ t('rep_st') }}</div></a>
@@ -14,7 +14,7 @@
   </div>
 </section>
 <h2 id="courses" style="margin:6px 0 10px">{{ t('rep_by_course') }}</h2>
-<div class="grid" style="margin-bottom:18px">
+<div class="tile-grid" style="margin-bottom:18px">
   {% for c in cards %}
   <a class="card course-tile" href="{{ url_for('report_course', code=c.code) }}">
     <b>📚 {{ c.title }}</b> <small class="muted">{{ c.code }}</small>
@@ -27,7 +27,7 @@
 {% for c in (cards if detail else []) %}
 <section class="card" style="margin-bottom:16px" id="c-{{ c.code }}">
   <h2>📚 {{ c.title }} <small class="muted">{{ c.code }} · {{ c['from'] }} → {{ c.to }}</small></h2>
-  <div class="grid-4" style="margin-bottom:12px">
+  <div class="grid-4 rep-kpis" style="margin-bottom:12px">
     <div class="kpi"><div class="v">{{ c.questions }}</div><div class="l">{{ t('rep_q') }}</div></div>
     <div class="kpi"><div class="v">{{ c.not_found }}</div><div class="l">{{ t('rep_nf') }}</div></div>
     <div class="kpi"><div class="v">{{ c.students }}</div><div class="l">{{ t('rep_st') }}</div></div>
