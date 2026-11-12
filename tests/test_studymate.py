@@ -483,6 +483,39 @@ def test_chat_files_and_close_for_good(admin, client, tmp_path, monkeypatch):
     assert not list((tmp_path / "files").iterdir())                                      # both closed: the file is deleted
 
 
+def test_read_ticks_make_student_admin_and_doctor_username(admin, tmp_path, monkeypatch):
+    import app as A
+    from core import chat, doctors, notify
+    monkeypatch.setattr(chat, "FILE", lambda: tmp_path / "chat.json")
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    st = A.app.test_client()
+    as_student(st, "TICK1")
+    with st.session_transaction() as ss:
+        code = ss["student_code"]
+    r = admin.post("/chat/send", data={"with": "s:" + code, "text": "hi"}).get_json()
+    assert r["msg"]["seen"] is False
+    assert admin.get("/chat/poll?with=s:" + code).get_json()["seen"] == 0               # not read yet: grey ticks
+    st.get("/chat?with=d:master")                                                       # the student opens it
+    assert admin.get("/chat/poll?with=s:" + code).get_json()["seen"] == r["msg"]["id"]   # now they turn colour
+    assert 'class="ticks seen"' in admin.get("/chat?with=s:" + code).get_data(as_text=True)
+    # a doctor with a chosen username
+    admin.post("/admin", data={"action": "add_doctor", "doctor_name": "Dr U", "doctor_email": "", "doctor_username": "dr.ulysses"})
+    assert doctors.list_doctors("doctor")[0]["username"] == "dr.ulysses"
+    # the users list: search, make admin, notification, sign in as admin, remove
+    page = admin.get("/admins?q=tick1").get_data(as_text=True)
+    assert "TICK1" in page or "tick1" in page.lower()
+    admin.post("/admins", data={"action": "make_admin", "student": code, "perms": ["exams"]})
+    assert doctors.by_student(code) and doctors.list_doctors("admin")[0]["perms"] == ["exams"]
+    assert any("d:" in k or "s:" in k for n in notify._load() for k in n["to"])
+    again = A.app.test_client()
+    got = again.post("/start", data={"username": f"tick1@test.com", "password": "secret1"})
+    assert "/overview" in got.headers["Location"]
+    assert again.get("/exams/manage").status_code == 200 and again.get("/admin").status_code == 302
+    admin.post("/admins", data={"action": "delete_admin", "admin": doctors.by_student(code)})
+    back = A.app.test_client()
+    assert "/overview" not in back.post("/start", data={"username": "tick1@test.com", "password": "secret1"}).headers["Location"]
+
+
 def test_materials_zip(client):
     r = client.get("/materials.zip")
     assert r.status_code == 200 and r.data[:2] == b"PK"

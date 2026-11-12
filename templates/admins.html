@@ -45,6 +45,34 @@
   </details>
   {% else %}<p class="muted">{{ t('adms_none') }}</p>{% endfor %}
 </div>
+<div class="card">
+  <h3>👥 {{ t('adms_users') }} <span class="pill">{{ total_students }}</span></h3>
+  <p class="muted small">{{ t('adms_users_sub') }}</p>
+  <form method="get" class="adm-edit" style="margin:0 0 10px">
+    <input type="text" name="q" value="{{ q }}" placeholder="{{ t('adms_search_ph') }}" style="flex:1;min-width:200px">
+    <button class="btn small" type="submit">{{ t('doc_search_btn') }}</button>
+    {% if q %}<a class="btn ghost small" href="{{ url_for('admins_page') }}">✕</a>{% endif %}
+  </form>
+  {% for u in people %}
+  <details class="adm-row">
+    <summary><b>{{ u.first }} {{ u.last }}</b> <span class="muted" dir="ltr">@{{ u.username }} · {{ u.email }}</span>
+      {% if u.admin %}<span class="tag green">{{ t('adms_is_admin') }}</span>{% endif %}</summary>
+    {% if u.admin %}
+    <form method="post" class="adm-edit" onsubmit="return confirm('{{ t('adms_confirm_remove') }}')">
+      <input type="hidden" name="action" value="delete_admin"><input type="hidden" name="admin" value="{{ u.admin }}"><input type="hidden" name="q" value="{{ q }}">
+      <button class="btn ghost small" type="submit">➖ {{ t('adms_remove') }}</button>
+    </form>
+    {% else %}
+    <form method="post" class="adm-edit">
+      <input type="hidden" name="action" value="make_admin"><input type="hidden" name="student" value="{{ u.code }}"><input type="hidden" name="q" value="{{ q }}">
+      <div class="adm-perms">{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
+      <button class="btn small" type="submit">🛡️ {{ t('adms_make') }}</button>
+    </form>
+    {% endif %}
+  </details>
+  {% else %}<p class="muted">{{ t('adms_no_users') }}</p>{% endfor %}
+  {% if found > people|length %}<p class="muted small">{{ t('adms_more', n=found - people|length) }}</p>{% endif %}
+</div>
 <style>
 .adm-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0}
 .adm-fields label{display:flex;flex-direction:column;gap:4px;font-weight:600}

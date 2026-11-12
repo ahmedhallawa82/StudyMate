@@ -99,6 +99,11 @@ def messages(me, with_key, after=0):
     return [m for m in _visible(th, me) if m["id"] > after]
 
 
+def seen_upto(me, with_key):
+    """Id of the last message the other person has read in this conversation."""
+    return _read()["threads"].get(tid(me, with_key), {}).get("read", {}).get(with_key, 0)
+
+
 def file_allowed(me, fid):
     """The message that carries this file, if me is in that conversation and has not deleted it."""
     for t, th in _read()["threads"].items():

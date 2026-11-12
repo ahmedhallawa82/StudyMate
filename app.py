@@ -456,6 +456,9 @@ def try_login(ident, pw):
     if ident:
         st = students.check(ident, pw)
         if st:
+            did = doctors.by_student(st["code"])              # a student the main admin made an admin signs in to the admin side
+            if did:
+                return "doctor", did, doctors.get(did)["name"]
             return "student", st, ""
     return None
 
@@ -1165,13 +1168,30 @@ def admins_page():
                 else:
                     doctors.set_password(a["id"], new)
                     flash_t("adms_pw_set", user=a["username"])
+        elif action == "make_admin":                                      # a registered student becomes an admin
+            st = students.get(request.form.get("student", ""))
+            if st:
+                did = doctors.add_linked(st, picked)
+                notify.push(["s:" + st["code"], "d:" + did], "security", tr("adms_note_title", lang()), tr("adms_note_body", lang()), url_for("staff_home"))
+                flash_t("adms_made", name=f"{st['first']} {st['last']}".strip())
         elif action == "delete_admin":
             a = doctors.get(request.form.get("admin", ""))
             if a and a["role"] == "admin":
                 doctors.remove(a["id"])
+                if a.get("student"):
+                    notify.push(["s:" + a["student"]], "security", tr("adms_note_off_title", lang()), tr("adms_note_off_body", lang()), url_for("student_home"))
                 flash_t("adms_deleted")
-        return redirect(url_for("admins_page", **({"embed": 1} if request.args.get("embed") or request.headers.get("Sec-Fetch-Dest") == "iframe" else {})))
-    return render_template("admins.html", rows=doctors.list_doctors("admin"), perms=doctors.PERMS, labels=PERM_LABEL, pw_min=doctors.MIN_LEN)
+        q = request.form.get("q", "")
+        kw = {"q": q} if q else {}
+        if request.args.get("embed") or request.headers.get("Sec-Fetch-Dest") == "iframe":
+            kw["embed"] = 1
+        return redirect(url_for("admins_page", **kw))
+    q = request.args.get("q", "").strip().lower()
+    allst = sorted(students.list_students(), key=lambda x: str(x.get("created", "")), reverse=True)
+    hits = [x for x in allst if not q or q in f"{x['first']} {x['last']} {x['username']} {x['email']} {x['code']}".lower()]
+    people = [{**x, "admin": doctors.by_student(x["code"])} for x in hits[:10]]
+    return render_template("admins.html", rows=doctors.list_doctors("admin"), perms=doctors.PERMS, labels=PERM_LABEL, pw_min=doctors.MIN_LEN,
+                           people=people, q=request.args.get("q", ""), total_students=len(allst), found=len(hits))
 
 
 @app.route("/all-courses")
@@ -1571,7 +1591,11 @@ def admin():
                 name = request.form.get("doctor_name", "").strip()
                 email = request.form.get("doctor_email", "").strip()
                 if name:
-                    did, new_code = doctors.add(name, email)
+                    try:
+                        did, new_code = doctors.add(name, email, request.form.get("doctor_username", "").strip())
+                    except ValueError as e:
+                        flash_t(str(e), n=doctors.MIN_LEN)
+                        return redirect(url_for("admin"))
                     flash_t("doctor_added", name=name, code=new_code)
                     flash(f"{tr('doctor_username', lang())}: {doctors.get(did)['username']}")
                     if email and mailer.send(email, "StudyMate - your doctor account",
@@ -1739,9 +1763,9 @@ def admin():
     visit("admin")
     if not mine or not code:                                 # doctor without a course (or no course at all): only the "add a course" card
         return render_template("admin.html", no_course=True, lectures=[], total=0, full=False, code="", can_delete_course=False,
-                               bank=0, threshold="", model="", lecture_dir="", doctors=doctors.list_doctors() if is_master() else [], owner=None, is_owner_view=False,
+                               bank=0, threshold="", model="", lecture_dir="", doctors=doctors.list_doctors("doctor") if is_master() else [], owner=None, is_owner_view=False,
                                sheet=sheet_view(), pw_min=doctors.MIN_LEN, catalog=catalog.load(), used_codes=course_codes(),
-                               doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {})
+                               doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors("doctor")} if is_master() else {})
     names = S()["names_ar"] if lang() == "ar" else S()["names"]
     passages = pd.read_csv(P.passages)
     lectures = (passages.groupby(["lecture", "lecture_title"]).agg(passages=("passage_id", "count"),
@@ -1749,8 +1773,8 @@ def admin():
                 .reset_index().to_dict("records"))
     return render_template("admin.html", vids=videos.items(code), lectures=lectures, total=len(passages), full=full, code=code,
                            can_delete_course=True, no_course=False, catalog=catalog.load(), used_codes=course_codes(),
-                           doctors=doctors.list_doctors() if is_master() else [], owner=course_owner(code),
-                           doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors()} if is_master() else {},
+                           doctors=doctors.list_doctors("doctor") if is_master() else [], owner=course_owner(code),
+                           doctor_courses={d["id"]: sum(c["meta"].get("owner") == d["id"] for c in config.list_courses()) for d in doctors.list_doctors("doctor")} if is_master() else {},
                            bank=len(S()["bank"]), threshold=S()["engine"].threshold,
                            model=KIND_NAME.get(S()["clf"].kind, S()["clf"].kind), lecture_dir=str(P.lectures.relative_to(config.BASE_DIR)),
                            sheet=sheet_view(), pw_min=doctors.MIN_LEN)
@@ -2104,8 +2128,8 @@ def find_person(username):
     return None
 
 
-def _msg_json(m, me):
-    out = {"id": m["id"], "mine": m["from"] == me, "text": m["text"], "time": m["time"]}
+def _msg_json(m, me, seen=0):
+    out = {"id": m["id"], "mine": m["from"] == me, "text": m["text"], "time": m["time"], "seen": m["id"] <= seen}
     f = m.get("file")
     if f:
         out["file"] = {"name": f["fname"], "size": f["size"], "img": f.get("img", False), "url": url_for("chat_file", fid=f["fid"])}
@@ -2138,7 +2162,8 @@ def chat_page():
     msgs = []
     if cur:
         chat.mark_read(me, cur["key"])
-        msgs = [_msg_json(m, me) for m in chat.messages(me, cur["key"])]
+        seen = chat.seen_upto(me, cur["key"])
+        msgs = [_msg_json(m, me, seen) for m in chat.messages(me, cur["key"])]
     return render_template("chat.html", threads=threads, cur=cur, msgs=msgs)
 
 
@@ -2199,10 +2224,11 @@ def chat_poll():
     if not me:
         return jsonify(ok=False), 401
     with_key = request.args.get("with", "")
-    new = [_msg_json(m, me) for m in chat.messages(me, with_key, int(request.args.get("after", 0) or 0))] if person(with_key) else []
+    seen = chat.seen_upto(me, with_key)
+    new = [_msg_json(m, me, seen) for m in chat.messages(me, with_key, int(request.args.get("after", 0) or 0))] if person(with_key) else []
     if new:
         chat.mark_read(me, with_key)
-    return jsonify(ok=True, msgs=new, unread=chat.unread_total(me))
+    return jsonify(ok=True, msgs=new, unread=chat.unread_total(me), seen=seen)
 
 
 @app.route("/students")

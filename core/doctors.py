@@ -48,7 +48,7 @@ def username_of(d):
 def list_doctors(role=None):
     """All staff accounts; role="doctor" / "admin" keeps one kind."""
     return [{"id": d["id"], "name": d["name"], "email": d.get("email", ""), "username": username_of(d),
-             "created": d.get("created", ""), "role": d.get("role", "doctor"), "perms": [p for p in d.get("perms", []) if p in PERMS]} for d in _load()
+             "created": d.get("created", ""), "role": d.get("role", "doctor"), "perms": [p for p in d.get("perms", []) if p in PERMS], "student": d.get("student", "")} for d in _load()
             if role is None or d.get("role", "doctor") == role]
 
 
@@ -84,6 +84,28 @@ def add(name, email="", username="", password="", role="doctor", perms=None):
         rows.append(rec)
         _save(rows)
     return did, pw
+
+
+def by_student(code):
+    """The admin account made from this student, if any."""
+    return next((d["id"] for d in _load() if code and d.get("student") == code), None)
+
+
+def add_linked(student, perms):
+    """Turn a registered student into an admin (he keeps signing in with his own username and password). Returns the admin id."""
+    if by_student(student["code"]):
+        return by_student(student["code"])
+    with _lock:
+        rows = _load()
+        ids = {d["id"] for d in rows}
+        did = _rand(4)
+        while did in ids:
+            did = _rand(4)
+        rows.append({"id": did, "name": (f"{student['first']} {student['last']}").strip()[:60] or did, "email": student.get("email", ""),
+                     "username": "adm." + student["username"][:25], "hash": generate_password_hash(secrets.token_hex(16)), "created": datetime.now().strftime("%Y-%m-%d"),
+                     "initial": "", "new": "", "role": "admin", "perms": [p for p in (perms or []) if p in PERMS], "student": student["code"]})
+        _save(rows)
+    return did
 
 
 def set_perms(doctor_id, perms):

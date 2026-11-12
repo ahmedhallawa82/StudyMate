@@ -126,6 +126,7 @@
       <form method="post"><input type="hidden" name="action" value="add_doctor">
         <input type="text" name="doctor_name" placeholder="{{ t('doctor_name_ph') }}" required maxlength="60">
         <p></p><input type="text" name="doctor_email" placeholder="{{ t('doctor_email_ph') }}" maxlength="120" dir="ltr">
+        <p></p><input type="text" name="doctor_username" placeholder="{{ t('doctor_user_ph') }}" maxlength="30" dir="ltr" pattern="[A-Za-z0-9._\-]{3,30}" autocomplete="off">
         <p></p><button class="btn teal" type="submit">{{ t('add_doctor') }}</button></form>
     </div>
     {% if not no_course %}

@@ -31,7 +31,7 @@
       </form>
     </header>
     <div class="chat-msgs" id="chatMsgs" data-with="{{ cur.key }}" data-poll="{{ url_for('chat_poll') }}" data-send="{{ url_for('chat_send') }}">
-      {% for m in msgs %}<div class="bubble {{ 'me' if m.mine else 'them' }}" data-id="{{ m.id }}">{% if m.file %}{% if m.file.img %}<a href="{{ m.file.url }}" target="_blank"><img class="chat-img" src="{{ m.file.url }}" alt="{{ m.file.name }}"></a>{% else %}<a class="chat-file" href="{{ m.file.url }}" download>📎 {{ m.file.name }} <small>({{ (m.file.size / 1024)|round|int }} KB)</small></a>{% endif %}{% endif %}{% if m.text %}<span dir="auto">{{ m.text }}</span>{% endif %}<small dir="ltr">{{ m.time }}</small></div>
+      {% for m in msgs %}<div class="bubble {{ 'me' if m.mine else 'them' }}" data-id="{{ m.id }}">{% if m.file %}{% if m.file.img %}<a href="{{ m.file.url }}" target="_blank"><img class="chat-img" src="{{ m.file.url }}" alt="{{ m.file.name }}"></a>{% else %}<a class="chat-file" href="{{ m.file.url }}" download>📎 {{ m.file.name }} <small>({{ (m.file.size / 1024)|round|int }} KB)</small></a>{% endif %}{% endif %}{% if m.text %}<span dir="auto">{{ m.text }}</span>{% endif %}<small dir="ltr">{{ m.time }}{% if m.mine %} <span class="ticks{{ ' seen' if m.seen }}" title="{{ t('chat_seen') if m.seen else t('chat_sent') }}">✓✓</span>{% endif %}</small></div>
       {% else %}<p class="muted small chat-empty">{{ t('chat_say_hi') }}</p>{% endfor %}
     </div>
     <form class="chat-form" id="chatForm" autocomplete="off">
@@ -65,6 +65,7 @@
     }
     if (m.text) { var s = document.createElement('span'); s.dir = 'auto'; s.textContent = m.text; d.appendChild(s); }
     var t = document.createElement('small'); t.dir = 'ltr'; t.textContent = m.time;
+    if (m.mine) { var k = document.createElement('span'); k.className = 'ticks' + (m.seen ? ' seen' : ''); k.textContent = ' ✓✓'; t.appendChild(k); }
     d.appendChild(t); box.appendChild(d); box.scrollTop = box.scrollHeight;
   }
   box.scrollTop = box.scrollHeight;
@@ -79,7 +80,10 @@
   setInterval(function () {
     if (document.hidden) return;
     fetch(box.dataset.poll + '?with=' + encodeURIComponent(box.dataset.with) + '&after=' + last).then(function (r) { return r.json(); })
-      .then(function (j) { if (j.ok) j.msgs.forEach(add); }).catch(function () {});
+      .then(function (j) {
+        if (!j.ok) return; j.msgs.forEach(add);
+        box.querySelectorAll('.bubble.me').forEach(function (b) { if (+b.dataset.id <= j.seen) { var k = b.querySelector('.ticks'); if (k) k.classList.add('seen'); } });   // the other person read them: ticks turn colour
+      }).catch(function () {});
   }, 4000);
 })();
 </script>{% endif %}
@@ -105,6 +109,8 @@
 .chat-img { max-width: 260px; max-height: 220px; border-radius: 10px; display: block; }
 .chat-file { color: inherit; font-weight: 600; text-decoration: underline; }
 .chat-attach { padding: 8px 12px; cursor: pointer; align-self: center; }
+.ticks { letter-spacing: -3px; margin-inline-start: 4px; opacity: .75; font-weight: 700; }
+.ticks.seen { color: #5eead4; opacity: 1; }
 .chat-err { padding: 0 14px 10px; color: #c0392b; }
 .chat .avatar { width: 38px; height: 38px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--teal, #0f8a82); color: #fff; font-weight: 700; object-fit: cover; flex: none; }
 @media (max-width: 800px) { .chat { grid-template-columns: 1fr; } .chat-side { max-height: 40vh; min-height: 0; } }
