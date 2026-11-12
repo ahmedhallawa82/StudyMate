@@ -7,6 +7,7 @@
   {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
 
 {{ course_picker(url_for('admin')) }}
+<p class="fade"><a class="btn ghost small" href="{{ url_for('badges_admin') }}">🏅 {{ t('adm_badges_link') }}</a></p>
 <nav class="adm-tabs fade" role="tablist">
   {% if not no_course %}<button type="button" role="tab" data-tab="lectures">① {{ t('adm_tab_lec') }}</button>{% endif %}
   <button type="button" role="tab" data-tab="courses">{{ '②' if not no_course else '①' }} {{ t('adm_tab_courses') }}</button>

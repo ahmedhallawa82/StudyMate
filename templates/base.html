@@ -36,7 +36,7 @@
       <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">{{ ic('dash') }}</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
       <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">{{ ic('tools') }}</span><span class="nl">{{ t('nav_content') }}</span></a>
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">{{ ic('exam') }}</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('badges_admin') }}" class="{{ 'active' if path.startswith('/badges-admin') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_badges_admin') }}"><span class="ni">{{ ic('badge') }}</span><span class="nl">{{ t('nav_badges') }}</span></a>
+      {% if quick_links %}<a href="#" id="qsBtn" role="button" onclick="return false" aria-haspopup="dialog" title="{{ t('qs_title') }} (Ctrl K)" data-tip="{{ t('qs_title') }}"><span class="ni">{{ ic('search') }}</span><span class="nl">{{ t('qs_title') }}</span></a>{% endif %}
       <a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">{{ ic('chat') }}</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>
       <a href="{{ url_for('help_page') }}" class="{{ 'active' if path.startswith('/help') }}" title="{{ t('nav_help') }}" data-tip="{{ t('tip_nav_help') }}"><span class="ni">{{ ic('help') }}</span><span class="nl">{{ t('nav_help') }}</span></a>
       <span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}" data-tip="{{ t('tip_nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a class="exit-link" href="{{ url_for('lecturer_logout') }}"><span>{{ t('back_students') }}</span><b dir="auto">{{ me_name }}</b></a></span>
@@ -56,9 +56,9 @@
     </nav>
     <div class="tools">
       {% if not is_master_user %}<button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>{% endif %}
-      {% if quick_links %}<button type="button" class="tool qs-pill" id="qsBtn" aria-haspopup="dialog" title="{{ t('qs_title') }} (Ctrl K)" data-tip="{{ t('qs_title') }}" aria-label="{{ t('qs_title') }}">{{ ic('search') }}<span class="qs-t">{{ t('qs_title') }}</span><kbd>Ctrl K</kbd></button>{% endif %}
+      {% if quick_links and not is_lecturer %}<button type="button" class="tool qs-pill" id="qsBtn" aria-haspopup="dialog" title="{{ t('qs_title') }} (Ctrl K)" data-tip="{{ t('qs_title') }}" aria-label="{{ t('qs_title') }}">{{ ic('search') }}<span class="qs-t">{{ t('qs_title') }}</span><kbd>Ctrl K</kbd></button>{% endif %}
       {% if me_key %}
-      <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
+      {% if not is_lecturer %}<a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>{% endif %}
       <div class="bell" id="bell">
         <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}" data-tip="{{ t('tip_bell') }}">🔔{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
         <div class="bell-panel" hidden>
@@ -70,7 +70,10 @@
       </div>
       {% endif %}
       <button type="button" class="tool" id="modeBtn" title="{{ t('toggle_mode') }}" data-tip="{{ t('tip_mode') }}" aria-label="{{ t('toggle_mode') }}"></button>
-      <a class="tool" href="{{ lang_url }}" title="{{ t('toggle_lang') }}" data-tip="{{ t('tip_lang') }}">{{ t('lang_name') }}</a>
+      <select class="tool lang-sel" id="langSel" title="{{ t('toggle_lang') }}" data-tip="{{ t('tip_lang') }}" aria-label="{{ t('toggle_lang') }}" onchange="if(this.value)location.href=this.value">
+        <option value="{{ lang_url if lang == 'ar' else '' }}" {{ 'selected' if lang == 'en' }}>English</option>
+        <option value="{{ lang_url if lang == 'en' else '' }}" {{ 'selected' if lang == 'ar' }}>العربية</option>
+      </select>
     </div>
   </div>
 </header>

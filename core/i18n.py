@@ -121,6 +121,7 @@ T = {
     "help_fmt_title": ("For doctors: which question files are accepted?", "للدكاترة: إيه ملفات الأسئلة المقبولة؟"),
     "help_fmt_tf": ("True / false: write the statement as a question, then «Answer: True» or «Answer: False» (Arabic: «الإجابة: صح» / «خطأ»). You can also add «(True/False)» at the end of the statement, or use an Excel column «type» = tf. The site detects them without options and shows them as true / false, not as essays.",
                     "صح وغلط: اكتب العبارة كسؤال وبعدها «Answer: True» أو «Answer: False» (بالعربي «الإجابة: صح» / «خطأ»). ممكن كمان تكتب «(True/False)» في آخر العبارة، أو عمود «type» = tf في الإكسيل. الموقع بيتعرّف عليها من غير اختيارات ويعرضها صح وغلط مش مقالي."),
+    "sh_admins_card": ("Admins", "الأدمنز"), "adm_badges_link": ("Badges and awards", "الشارات والجوايز"),
     "sh_admins": ("Admins: 1 main + {n} doctors", "الأدمنز: 1 أساسي + {n} دكتور"),
     "doc_main": ("Main admin", "الأدمن الأساسي"), "doc_main_all": ("all courses, everything", "كل المواد وكل الصلاحيات"),
     "auth_tag": ("Study smarter from your own lecture slides", "ذاكر بذكاء من سلايدات محاضراتك"),

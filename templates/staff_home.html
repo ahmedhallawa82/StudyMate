@@ -14,12 +14,35 @@
   </div>
 </div>
 
+<div class="card cal-big fade" style="--i:1" id="home-cal">
+  <div class="card-top"><h3>📅 {{ t('cal_title') }}</h3><a href="{{ url_for('calendar_page') }}">{{ t('cal_schedule') }} →</a></div>
+  <div class="cal-grid">
+    <section>
+      <div class="cal-bar">
+        <button type="button" class="btn ghost small" id="prev" aria-label="‹">{{ '›' if lang == 'ar' else '‹' }}</button>
+        <select id="month" aria-label="month"></select>
+        <input id="year" type="number" min="2000" max="2100" aria-label="year">
+        <button type="button" class="btn ghost small" id="next" aria-label="›">{{ '‹' if lang == 'ar' else '›' }}</button>
+        <button type="button" class="btn small" id="calToday">{{ t('cal_today') }}</button>
+      </div>
+      <div class="cal" id="cal"></div>
+      <div class="cal-legend"><span><i class="dot-s"></i>{{ t('cal_legend_sched') }}</span><span><i class="dot-a"></i>{{ t('cal_legend_attempt') }}</span></div>
+    </section>
+    <aside class="cal-side">
+      <h3 id="dayTitle"></h3><div id="dayList"></div>
+      <h3>{{ t('cal_upcoming') }}</h3><div id="upList"></div>
+    </aside>
+  </div>
+  <script type="application/json" id="events">{{ events|tojson }}</script>
+  <form id="delForm" method="post" action="{{ url_for('calendar_page') }}" hidden><input type="hidden" name="action" value="delete"><input type="hidden" name="id" id="delId"></form>
+</div>
+
 <div class="edu-grid">
   <section class="col-main">
     <div class="stats">
       {% if master %}
       <div class="stat fade" style="--i:1"><div class="ic">🌐</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }} · {{ t('sh_visitors', n=stats.visitors) }}</div></div></div>
-      <a class="stat fade click" style="--i:2" href="{{ url_for('doctors_page') }}" title="{{ t('doc_manage') }}"><div class="ic">🛡️</div><div><div class="v" data-count="{{ stats.admins }}">0</div><div class="l">{{ t('sh_admins', n=stats.doctors) }}</div></div></a>
+      <a class="stat fade click" style="--i:2" href="{{ url_for('doctors_page') }}" title="{{ t('doc_manage') }}"><div class="ic">👨‍🏫</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></a>
       <button type="button" class="stat fade click" style="--i:3" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
       <a class="stat fade click" style="--i:4" href="{{ url_for('all_courses') }}"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></a>
       {% else %}
@@ -52,6 +75,12 @@
   <aside class="col-side">
     {% if master %}
     <div class="card fade" style="--i:2">
+      <div class="card-top"><h3>🛡️ {{ t('sh_admins_card') }}</h3><a href="{{ url_for('doctors_page') }}">→</a></div>
+      <div class="pc-row"><span>{{ t('role_admin') }} <span class="tag">{{ t('doc_main') }}</span></span><small class="muted">{{ t('doc_main_all') }}</small></div>
+    </div>
+    {% endif %}
+    {% if master %}
+    <div class="card fade" style="--i:2">
       <div class="card-top"><h3>👨‍🏫 {{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
       {% for d in team %}<div class="pc-row"><span>{{ d.name }}</span><small class="muted" dir="ltr">{{ d.courses }}</small></div>
       {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
@@ -70,4 +99,8 @@
     </div>
   </aside>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>window.CAL = {lang: '{{ lang }}', del: '{{ t("cal_delete") }}', none: '{{ t("cal_nothing_day") }}', noneUp: '{{ t("cal_nothing_up") }}'};</script>
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}

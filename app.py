@@ -1027,7 +1027,7 @@ def staff_home():
     name = tr("role_admin", lang()) if master else session.get("admin_name") or tr("role_doctor", lang())
     return render_template("staff_home.html", stats=stats, week=wk, week_total=sum(w["n"] for w in wk), master=master,
                            by_course=by_course, team=team, recent=recent, greet=greet, name=name,
-                           today=td.isoformat(), courses=courses)
+                           today=td.isoformat(), courses=courses, events=_calendar_events())
 
 
 # ------------------------------------------------------------------ doctors / courses overview pages (admin + doctor home cards)

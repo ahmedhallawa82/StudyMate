@@ -20,3 +20,10 @@ html[data-theme="edu"] .tools .qs-pill:hover { color: var(--ink); }
 html[data-theme="edu"][data-mode="dark"] .tools .qs-pill kbd { background: #0f141c; }
 html[data-theme="edu"][data-mode="dark"] nav a { background: transparent; }
 html[data-theme="edu"][data-mode="dark"] nav a.active { background: var(--teal); }
+html[data-theme="edu"] .tools select.lang-sel { appearance: none; -webkit-appearance: none; height: 44px; padding: 0 34px 0 18px; border-radius: 999px; cursor: pointer; font-weight: 600; width: auto;
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; }
+html[dir="rtl"][data-theme="edu"] .tools select.lang-sel { padding: 0 18px 0 34px; background-position: left 14px center; }
+.cal-big { padding: 22px 26px; }
+.cal-big .cal-grid { grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); }
+.cal-big .cal-d { min-height: 64px; }
+@media (max-width: 900px) { .cal-big .cal-grid { grid-template-columns: 1fr; } }

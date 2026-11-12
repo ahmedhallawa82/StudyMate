@@ -559,7 +559,7 @@ def test_staff_home_admin_and_doctor(admin):
 
 def test_overview_pages_and_card_order(admin):
     html = admin.get("/overview").get_data(as_text=True)
-    assert html.index("Total site visits") < html.index("Admins: 1 main") < html.index("Students with an account") < html.index("Courses on the site")
+    assert html.index("Total site visits") < html.index("Doctors registered") < html.index("Students with an account") < html.index("Courses on the site")
     assert 'href="/doctors"' in html and 'href="/all-courses"' in html
     assert admin.get("/doctors").status_code == 200
     r = admin.get("/all-courses")
