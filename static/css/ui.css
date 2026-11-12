@@ -460,3 +460,12 @@ a.st-tile { text-decoration: none; } .st-emoji { font-size: 22px; }
 .auth-note{text-align:center;margin:8px 0 0}.auth-new{text-align:center;margin:18px 0 6px}
 .auth-info{margin-top:10px}.auth-info summary{cursor:pointer;color:var(--muted,#7a8699);font-size:.85rem}
 @media(max-width:760px){.auth{grid-template-columns:1fr;margin:12px}.auth-brand{padding:22px}.auth-brand ul{display:none}.auth-form{padding:24px 20px}}
+
+.qs{position:fixed;inset:0;background:rgba(20,30,50,.45);z-index:9998;display:flex;justify-content:center;align-items:flex-start;padding-top:12vh;backdrop-filter:blur(2px)}
+.qs[hidden]{display:none}
+.qs-box{background:var(--card,#fff);color:var(--ink,#1c2536);width:min(560px,92vw);border-radius:20px;padding:14px;box-shadow:0 24px 70px rgba(0,0,0,.3)}
+.qs-box input{width:100%;font-size:1.05rem;padding:13px 16px;border-radius:14px;margin:0}
+#qsList{list-style:none;margin:10px 0 4px;padding:0;max-height:48vh;overflow:auto}
+#qsList li a{display:flex;gap:12px;align-items:center;padding:10px 12px;border-radius:12px;color:inherit;text-decoration:none}
+#qsList li.on a,#qsList li a:hover{background:rgba(74,111,165,.14)}
+.qs-ic{font-size:1.25rem;width:28px;text-align:center}.qs-none{padding:14px;text-align:center;color:var(--muted,#7a8699)}.qs-hint{margin:6px 8px 2px}

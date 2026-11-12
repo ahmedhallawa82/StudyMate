@@ -45,7 +45,7 @@
         <button class="btn" type="submit">{{ t('upload_rebuild') }}</button>
       </form>
     </div>
-    <div class="card">
+    <div class="card" id="videos">
       <h2>🎬 {{ t('vid_title') }} · {{ course }}</h2>
       <p class="muted small">{{ t('vid_sub') }}</p>
       <div class="grid-2" style="gap:16px">
@@ -119,10 +119,6 @@
         <input type="text" name="doctor_name" placeholder="{{ t('doctor_name_ph') }}" required maxlength="60">
         <p></p><input type="text" name="doctor_email" placeholder="{{ t('doctor_email_ph') }}" maxlength="120" dir="ltr">
         <p></p><button class="btn teal" type="submit">{{ t('add_doctor') }}</button></form>
-      <p class="small" style="margin-top:10px"><b>{{ t('export_doctors') }}:</b>
-        <a href="{{ url_for('export_doctors', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_doctors', fmt='csv') }}">CSV</a><br>
-        <b>{{ t('export_students') }}:</b>
-        <a href="{{ url_for('export_students', fmt='xlsx') }}">Excel</a> · <a href="{{ url_for('export_students', fmt='csv') }}">CSV</a></p>
     </div>
     {% if not no_course %}
     <div class="card">

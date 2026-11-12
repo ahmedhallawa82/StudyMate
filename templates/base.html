@@ -31,7 +31,6 @@
       <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">📊</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
       <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">🛠️</span><span class="nl">{{ t('nav_content') }}</span></a>
       <a href="{{ url_for('exams_manage') }}" class="{{ 'active' if path.startswith('/exams') }}" title="{{ t('nav_exams') }}" data-tip="{{ t('tip_nav_exams') }}"><span class="ni">📝</span><span class="nl">{{ t('nav_exams') }}</span></a>
-      <a href="{{ url_for('students_page') }}" class="{{ 'active' if path.startswith('/students') }}" title="{{ t('nav_students') }}" data-tip="{{ t('tip_nav_students') }}"><span class="ni">👥</span><span class="nl">{{ t('nav_students') }}</span></a>
       <a href="{{ url_for('badges_admin') }}" class="{{ 'active' if path.startswith('/badges-admin') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_badges_admin') }}"><span class="ni">🏅</span><span class="nl">{{ t('nav_badges') }}</span></a>
       <a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">💬</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>
       <a href="{{ url_for('help_page') }}" class="{{ 'active' if path.startswith('/help') }}" title="{{ t('nav_help') }}" data-tip="{{ t('tip_nav_help') }}"><span class="ni">❓</span><span class="nl">{{ t('nav_help') }}</span></a>
@@ -52,6 +51,7 @@
     </nav>
     <div class="tools">
       {% if not is_master_user %}<button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>{% endif %}
+      {% if quick_links %}<button type="button" class="tool icon-btn" id="qsBtn" aria-haspopup="dialog" title="{{ t('qs_title') }} (Ctrl K)" data-tip="{{ t('qs_title') }}" aria-label="{{ t('qs_title') }}">🔍</button>{% endif %}
       {% if me_key %}
       <a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>
       <div class="bell" id="bell">
@@ -154,6 +154,16 @@
 <script src="{{ url_for('static', filename='js/translate.js') }}"></script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/courses.js') }}"></script>
+{% if quick_links %}
+<div class="qs" id="qs" role="dialog" aria-modal="true" aria-label="{{ t('qs_title') }}" hidden>
+  <div class="qs-box">
+    <input type="search" id="qsInput" placeholder="{{ t('qs_ph') }}" autocomplete="off" aria-label="{{ t('qs_title') }}">
+    <ul id="qsList" role="listbox"></ul>
+    <p class="qs-hint muted small">↑ ↓ {{ t('qs_move') }} · Enter {{ t('qs_open') }} · Esc {{ t('qs_close') }}</p>
+  </div>
+</div>
+<script id="qsData" type="application/json">{{ quick_links|tojson }}</script>
+{% endif %}
 <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 
 <script>

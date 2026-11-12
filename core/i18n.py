@@ -128,6 +128,8 @@ T = {
     "auth_f2": ("Practice with hints", "تدرّب بتلميحات"), "auth_f2d": ("Questions that fit your level.", "أسئلة على مستواك."),
     "auth_f3": ("See your progress", "شوف تقدّمك"), "auth_f3d": ("Know what to study next.", "اعرف هتذاكر إيه بعد كده."),
     "auth_sub": ("Sign in to continue.", "سجّل دخولك عشان تكمل."), "auth_privacy": ("Who can sign in, and your privacy", "مين يقدر يدخل، وخصوصيتك"),
+    "qs_title": ("Search the site", "دوّر في الموقع"), "qs_ph": ("Type what you need: exams, videos, students…", "اكتب اللي عايزه: امتحانات، فيديوهات، طلاب…"),
+    "qs_move": ("move", "تنقّل"), "qs_open": ("open", "فتح"), "qs_close": ("close", "إغلاق"), "qs_none": ("Nothing found.", "مفيش نتايج."),
     "nbr_title": ('Google Colab notebooks', 'نوتبوكس Google Colab'),
     "nbr_sub": ('Train and test the models on Colab (free), download the results and import them here. The site then compares them with its own evaluation.',
                 'درّب واختبر النماذج على Colab (مجاني)، نزّل النتائج واستوردها هنا، والموقع يقارنها بتقييمه هو.'),

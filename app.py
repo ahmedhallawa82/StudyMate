@@ -304,6 +304,59 @@ def _me_context():
             "chat_unread": chat.unread_total(key)}
 
 
+def quick_links():
+    """Pages and sections the top-bar search can jump to: [{t: title, u: url, i: icon, k: extra words (English + Arabic)}]."""
+    l = lang()
+    T = lambda k: tr(k, l)
+    items = []
+
+    def add(icon, key, endpoint, words="", **kw):
+        try:
+            items.append({"i": icon, "t": T(key), "u": url_for(endpoint, **kw), "k": words})
+        except Exception:                                    # noqa: BLE001 - a missing route must never break a page
+            pass
+    if session.get("lecturer"):
+        master = is_master()
+        add("🏠", "nav_home", "staff_home", "home overview الرئيسية")
+        add("📊", "nav_dashboard", "dashboard", "dashboard statistics data احصائيات بيانات")
+        add("🛠️", "nav_content", "admin", "content lectures upload slides pdf محاضرات رفع محتوى")
+        add("🎬", "vid_title", "admin", "videos youtube recorded فيديو فيديوهات", _anchor="videos")
+        add("📝", "nav_exams", "exams_manage", "exams questions bank upload true false mcq امتحان اسئلة بنك")
+        add("⚙️", "ex_tab_s", "exams_manage", "exam settings time minutes اعدادات وقت", tab="settings")
+        add("📋", "ex_tab_r", "exams_manage", "exam results attempts degrees نتايج درجات", tab="results")
+        add("👥", "nav_students", "students_page", "students طلاب message رسالة export")
+        add("📈", "risk_title", "dashboard", "at risk students inactive low level طلاب متعثرين", _anchor="risk")
+        add("❔", "ua_title", "dashboard", "not found unanswered questions اسئلة مفيش اجابة", _anchor="unanswered")
+        add("🏅", "nav_badges", "badges_admin", "badges awards شارات")
+        add("💬", "nav_chat", "chat_page", "chat messages رسائل محادثة")
+        add("📅", "nav_calendar", "calendar_page", "calendar schedule تقويم")
+        add("🔔", "notif_title", "notifications_page", "notifications اشعارات")
+        add("❓", "nav_help", "help_page", "help faq formats accepted question files مساعدة")
+        add("👤", "nav_profile", "profile", "profile password account حسابي")
+        add("📚", "sh_courses", "all_courses", "courses مواد")
+        if master:
+            add("🛡️", "doc_title", "doctors_page", "admins doctors add doctor دكاترة ادمن")
+            add("🛟", "support_inbox", "support_inbox", "support help requests دعم")
+            add("🧮", "mdl_title", "evaluation", "models accuracy colab confusion matrix evaluation نماذج دقة")
+    elif student():
+        add("🏠", "nav_home", "student_home", "home الرئيسية")
+        add("🔎", "nav_ask", "ask", "ask question search slides اسأل سؤال بحث")
+        add("🎓", "nav_studio", "studio", "studio quiz mind map videos فيديوهات كويز")
+        add("🎯", "nav_practice", "practice", "practice questions hints تدريب")
+        add("📈", "nav_progress", "progress", "progress level mastery review تقدم مستوى مراجعة")
+        add("📝", "nav_exams", "exams", "exams امتحانات")
+        add("📄", "nav_materials", "materials", "materials lectures slides pdf محاضرات ملفات")
+        add("🎒", "my_courses", "my_courses", "my courses مواد")
+        if user_key():
+            add("🏅", "nav_badges", "badges_page", "badges شارات")
+            add("💬", "nav_chat", "chat_page", "chat doctor message رسالة دكتور")
+            add("📅", "nav_calendar", "calendar_page", "calendar تقويم")
+            add("🔔", "notif_title", "notifications_page", "notifications اشعارات")
+            add("👤", "nav_profile", "profile", "profile password حسابي")
+        add("❓", "nav_help", "help_page", "help faq مساعدة")
+    return items
+
+
 @app.context_processor
 def inject():
     l = lang()
@@ -312,7 +365,7 @@ def inject():
     from urllib.parse import urlencode
     return {"lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(), "student_name": session.get("student_name", ""),
             "is_lecturer": session.get("lecturer"), "is_master_user": bool(session.get("lecturer")) and is_master(), "names": (S() or {}).get("names_ar" if l == "ar" else "names", {}),
-            "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
+            "quick_links": quick_links(), "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
                         for c in visible_courses() if session.get("lecturer") or student_course_list() is None
                         or c["code"] in student_course_list()],

@@ -1327,3 +1327,17 @@ def test_true_false_in_table_and_old_bank_fix(tmp_path, monkeypatch):
 def test_login_page_and_doctors_page_message(client):
     html = client.get("/start").get_data(as_text=True) if client.get("/start").status_code == 200 else ""
     assert html == "" or 'class="auth' in html
+
+
+def test_top_bar_search_and_cleanups(client):
+    import app as A
+    from core import doctors
+    adm = A.app.test_client()
+    with adm.session_transaction() as s:
+        s["lecturer"], s["admin_id"], s["admin_name"] = True, doctors.MASTER, "Admin"
+    page = adm.get("/dashboard").get_data(as_text=True)
+    nav = page.split("<nav>")[1].split("</nav>")[0]
+    assert 'id="qsBtn"' in page and 'id="qsData"' in page and "/students" not in nav          # search added, students icon removed from the bar
+    assert "admin/doctors.xlsx" not in adm.get("/admin").get_data(as_text=True) and "🎲" not in adm.get("/admin").get_data(as_text=True)
+    stu = client.get("/home").get_data(as_text=True)
+    assert 'id="qsData"' in stu and "/exams" in stu.split('id="qsData"')[1][:3000]
