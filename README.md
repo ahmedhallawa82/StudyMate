@@ -1,104 +1,95 @@
-# StudyMate – Course Study Assistant (AI Lab · Project 1E)
+# StudyMate — Course Study Assistant
 
-A study assistant for **one course** (Artificial Intelligence). It answers only from the lecture slides and always shows the lecture and slide number, detects the topic of each question, gives practice questions with hints, tracks each student's level per topic and suggests what to study next. If a question is not in the course it answers **"Not found in the course"** instead of inventing an answer.
+**AI Lab · Project 1E** · Benha University, Faculty of Engineering (Mechatronics, Systems & AI Automation)
+Live demo: <https://ahmedhallawa.pythonanywhere.com> · Code: <https://github.com/pikachu8240/StudyMate>
 
-## Run it (Windows, VS Code)
+StudyMate answers a student's question **only from the course's own lecture slides** and always shows the lecture and slide number.
+If the question is not in the course it says **"Not found in the course"** instead of inventing an answer. Around that core it gives students
+a study area (quiz, mind map, videos, exams, progress, badges), and gives doctors tools to upload lectures, follow students' questions and see how well the search works.
+English and Arabic (RTL), light/dark theme, works on phones.
+
+| Student home | Ask (answer from slides) | Not found |
+|---|---|---|
+| ![home](docs/screenshots/02_student_home.png) | ![ask](docs/screenshots/03_ask_answer.png) | ![nf](docs/screenshots/04_ask_not_found.png) |
+
+## What it does
+
+**Students** — register (or continue as guest) · ask in English or Arabic · choose the search method · detected topic + confidence · "was this helpful?" ·
+**Study Studio**: Quiz, Mind Map (course as root), Videos (recorded lectures + YouTube played *inside* the site), links to Exams / Progress / Materials ·
+mastery per topic and "study next" · 25 badges · ready exams (timed, auto-graded, essay similarity) · calendar & notifications · direct chat · Help/FAQ on every page ·
+delete my account.
+
+| Study Studio | Videos | Mind map |
+|---|---|---|
+| ![studio](docs/screenshots/05_studio_quiz.png) | ![videos](docs/screenshots/07_studio_videos.png) | ![mind](docs/screenshots/06_studio_mindmap.png) |
+
+**Doctors / admin** — upload lecture PDFs (a new course is built automatically: passages, topics, glossary, question bank, search index) ·
+several courses and several doctors (each doctor sees only his own students) · **questions follow-up** (every question is *Open* or *Answered*, with a note) ·
+upload recorded lectures / YouTube links · exam builder, scheduling, results · dashboard & Excel export · FAQ editor ·
+password-protected **AI models** page.
+
+| Overview | Questions follow-up | Content & videos |
+|---|---|---|
+| ![ov](docs/screenshots/20_admin_overview.png) | ![fu](docs/screenshots/21_dashboard_followup.png) | ![ct](docs/screenshots/22_admin_content.png) |
+
+## The AI part
+
+| Component | Method |
+|---|---|
+| Slide search | **TF-IDF**, **BM25**, **LSA** (TruncatedSVD, semantic), **Hybrid** (0.5 TF-IDF + 0.5 LSA); optional free **Neural** method (`fastembed`, see `requirements-optional.txt`) |
+| "Not found" gate | similarity threshold + query-word coverage, tuned on an off-topic test set |
+| Topic classifier | TF-IDF + Logistic Regression / Naive Bayes |
+| Arabic questions | glossary-based translation to the slides' English terms |
+| Mastery | per-topic level updated after each answer → "study next" |
+| Auto-evaluation | hold-out sentences (one sentence per slide removed from the index and used as the question) for all methods; re-run after every upload / rebuild / retrain, so the percentages change with the course |
+| Studio | extractive summaries, cloze questions, key-term mind map — no LLM, nothing invented |
+
+The **AI models** page (admin → profile → unlock with the models password) shows the four methods' Top-1 / Top-3 / MRR, the off-topic test and the history:
+
+![eval](docs/screenshots/24_ai_models_evaluation.png)
+
+### Colab notebooks
+| Notebook | |
+|---|---|
+| Search-model training & evaluation (TF-IDF / BM25 / Hybrid / LSA + topic classifier; upload your own PDFs) | [Open in Colab](https://colab.research.google.com/github/pikachu8240/StudyMate/blob/main/notebooks/StudyMate_Search_Models.ipynb) |
+| Lecture-image recognition (extract images from PDFs → CNN → image-to-slide search) | [Open in Colab](https://colab.research.google.com/github/pikachu8240/StudyMate/blob/main/notebooks/StudyMate_Image_Recognition.ipynb) |
+
+## Run it locally
 ```bash
-cd StudyMate                      # the project folder
-python -m venv venv
-venv\Scripts\activate            # macOS/Linux: source venv/bin/activate
+git clone https://github.com/pikachu8240/StudyMate.git && cd StudyMate
+python -m venv venv && source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python app.py                    # open http://127.0.0.1:5000
+python app.py                                          # http://127.0.0.1:5000
 ```
-The trained models are already included, so `python app.py` works right away.
-To rebuild everything from the PDFs:
-```bash
-python scripts/build_passages.py   # 1) PDFs -> data/AI/passages.csv (pypdf)
-python scripts/train.py            # 2) topic classifiers (NB + LR) + search index
-python scripts/evaluate.py         # 3) metrics, confusion matrix, threshold, robustness -> static/reports/
-python -m pytest -q                # 4) 23 automatic tests
-```
-Admin area (Data, Content, Evaluation) password: `lecturer123` by default. Set your own with the environment variable `LECTURER_PASSWORD`. The Admin area is separate from the student area: while signed in as Admin the student pages are hidden; press "Exit admin" to go back and sign in as a student.
+The trained models are included, so it works right away. Rebuild from the PDFs: `python scripts/build_passages.py && python scripts/train.py && python scripts/evaluate.py`.
+Tests: `python -m pytest -q` (69 tests).
 
-## New in this version
-- **Arabic / English interface** – the button in the header switches the whole interface (right-to-left in Arabic). Slides and practice questions stay in the course language.
-- **Dark mode** – the button next to it switches light / dark; the first visit follows the device setting.
-- **Several courses** – pick the course on the start page or from the header menu. Every course has its own slides, topics, practice questions, progress and dashboard.
-  Admin → *Add a new course*: upload the lecture PDFs (`lecture 1 Intro.pdf` …) and StudyMate builds the index, one topic per lecture, a classifier and fill-in-the-blank practice questions automatically.
-  The first course (Artificial Intelligence) is the fully evaluated one (question bank, 360 labelled questions, search test, off-topic test).
+**Before putting it online set these environment variables** (the defaults are for development only):
 
-- **Guest mode** – students can press *Continue as guest* (no code needed).
-- **Second course – Automotive Engineering (MAM 336)**, 5 weekly lectures (108 slides, picture-only slides read with OCR), 47 hand-written practice questions with hints, Arabic glossary, search test (22 questions: top-3 = 86%) and off-topic test (10/10 “Not found”).
-- **One Admin area** (Data, Content, Evaluation): students never see it; while signed in as Admin the student pages are hidden.
-- **Admin page explains** how an uploaded PDF becomes searchable (step by step, in Arabic and English).
-
-## Pages
-| Page | What it does |
+| Variable | Purpose |
 |---|---|
-| **Ask** | Question box → detected topic + confidence, the 3 closest passages with "Lecture X · Slide Y" and highlighted words, or "Not found in the course". TF-IDF or BM25. "Was this helpful?" Yes/No. Side panel: my topics (coloured dots) + "Study next" with the reason. Arabic questions work too. |
-| **Practice** | One question at a time → Show hint → Show a clearer hint → Check / Show the answer → "I got it right / wrong". Sets of 5 per topic. |
-| **My progress** | Every topic in red / amber / green with its %, plus "Study next" and why (based on topic prerequisites). |
-| **Evaluation** (Admin) | Accuracy, precision, recall, F1 per class, confusion matrices (NB and LR), error analysis, search top-1/top-3, off-topic test, robustness tests. |
-| **Data** (Admin) | Most asked topics, topics with the lowest scores, students per colour, visits per day, latest "Not found" questions – read live from `logs.xlsx`. |
-| **Content** (Admin) | Upload one or several lecture PDFs and rebuild the index; delete a lecture or a course; add a new course; retrain + re-evaluate; (main admin) manage doctors and course owners. |
+| `LECTURER_PASSWORD` | password of the main admin (**required** in production) |
+| `SECRET_KEY` | signs login sessions (**required** in production) |
+| `STUDYMATE_MODELS_PASSWORD` | password of the AI-models page (optional; falls back to the admin password) |
+| `STUDYMATE_TZ` | time zone, default `Africa/Cairo` |
+| `BREVO_API_KEY`+`MAIL_FROM`, or `RESEND_API_KEY`+`MAIL_FROM`, or `SMTP_*` | e-mail for passwords/notifications (optional) |
+| `SHEET_SYNC=1`, `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_FILE` | Google Sheet mirror (optional) |
+| `STUDYMATE_NEURAL=0` | turn the optional neural method off |
 
-## Models
-- **Search:** TF-IDF (word 1–2 grams) + cosine similarity; bonus: BM25 (`rank_bm25`), semantic search with LSA (SVD of the TF-IDF matrix, finds slides with related words) and a hybrid of TF-IDF + LSA (selectable on the Ask page). The "Not found" gate always uses TF-IDF. "Not found" when the best similarity is below a tuned threshold **or** too few question words exist in the slides.
-- **Topic classifier:** question → one of 12 topics. Multinomial Naive Bayes vs Logistic Regression on word + character n-grams (character n-grams handle typos). The best (LR) is used by the app.
-- **Mastery update:** `level = level + 0.35 × (result − level)`; result = 1 (correct, no hint), 0.7 (1 hint), 0.4 (2 hints), 0 (wrong). Red < 40% ≤ amber < 70% ≤ green.
+Step-by-step hosting guides: [docs/DEPLOY.md](docs/DEPLOY.md) · what to hand over / what never to share: [docs/HANDOVER.md](docs/HANDOVER.md).
 
-## Results (from `python scripts/evaluate.py`)
-| | |
-|---|---|
-| Topic accuracy – Logistic Regression | **88.9%** (macro F1 0.889, 72 test questions) |
-| Topic accuracy – Naive Bayes | 86.1% (macro F1 0.858) |
-| Search top-1 / top-3 hit rate (TF-IDF) | **70% / 77%** (30 test questions) |
-| Search top-1 / top-3 hit rate (BM25) | 67% / 77% |
-| Search top-1 / top-3 – Semantic LSA (new) | 67% / 80% |
-| Search top-1 / top-3 – Hybrid TF-IDF + LSA (new) | **70% / 80%** |
-| Off-topic questions → "Not found" | **10 / 10** |
-| Arabic questions (bonus) → right topic | 10 / 10 |
-
-## Excel database – `logs.xlsx`
-Created automatically. Every write goes through one function, `log_to_excel()` in `core/logger.py`.
-- **Questions:** id, time, student_code, question, topic, confidence, first_slide, found, method, helpful
-- **Answers:** id, time, student_code, question_id, topic, correct, hints_used, mastery_after
-- **Visits:** id, time, student_code, page
-- **Feedback:** id, time, student_code, question_log_id, helpful, comment
-
-## Project structure
+## Project layout
 ```
-app.py                 Flask app (all pages)
-config.py              paths and settings
-core/                  text cleaning, passages (pypdf + OCR), search, classifier, mastery, topics, logger, i18n (AR/EN), autocourse, doctors
-scripts/               build_passages.py, train.py, evaluate.py
-data/MAM336/           second course (Automotive Engineering): same files, curated question bank
-data/AI/               lectures/*.pdf, passages.csv, topics.csv, topic_map.csv, question_bank.csv,
-                       questions_labeled.csv, search_test.csv, offtopic_test.csv, arabic_glossary.csv, data_card.md
-models/                saved models (joblib)
-static/reports/        metrics.json, confusion matrices, threshold plot (used by the Evaluation page)
-templates/, static/    HTML (Jinja2), CSS, Chart.js
-tests/                 pytest tests (23)
-notebooks/             StudyMate_Colab_Test.ipynb – run and test the project on Google Colab
-docs/                  presentation outline + delivery checklist
+app.py            Flask routes            core/        search, studio, exams, accounts, videos, autoeval, i18n …
+templates/ static/  UI (Jinja, CSS, JS)   scripts/     build_passages, train, evaluate
+data/<COURSE>/    lectures (PDF), passages.csv, topics, question bank, glossary
+models/           trained search index and topic classifiers
+notebooks/        Colab notebooks         tests/       automated tests
 ```
+Runtime data (accounts, logs, videos, follow-ups, password hashes) is created on first run and is **git-ignored**.
 
-## Interface themes
-Five colour themes are included: `teal`, `midnight`, `notebook`, `indigo` (default), `benha`. Change `THEME` in `config.py`,
-or preview any page with `?theme=midnight` in the address bar.
-
-## Online version (bonus: deployment)
-Live on PythonAnywhere: https://ahmedhallawa.pythonanywhere.com (code on GitHub: https://github.com/ahmedhallawa82/StudyMate).
-Update after a change: `cd ~/StudyMate && git checkout -- logs.xlsx && git pull`, then Reload in the Web tab.
-`render.yaml` + `deploy/` also contain ready files for Render and Hugging Face.
-
-## Bonus items included
-Deployment (GitHub + PythonAnywhere) · doctor accounts · BM25 search · Arabic questions (glossary translation) · Arabic interface · dark mode · multi-course · automatic tests · Colab notebook · 5 themes.
-
-
-## Doctors (passwords + private Google Sheet)
-- The main admin (password `LECTURER_PASSWORD`) opens Admin -> **Doctors**, types a doctor name and a random password such as `K7QD-M4PX2TNB` is made for him.
-- A doctor signs in on the same Admin page with his password. He sees and manages only the courses registered under his name (up to 10), can add new courses (registered under him), downloads only his own rows of `logs.xlsx`, and can **change his password** (at least 8 characters).
-- The main admin sees everything, can give a course to a doctor, make a new password for a doctor, or delete a doctor (his courses go back to the main admin).
-- **Doctors sheet** (main admin only): a table *doctor name | courses | password made by the system | password chosen by the doctor* is shown on the Admin page and copied to a private Google Sheet after every change (`core/sheet_sync.py`, gspread). Setup: a Google service-account JSON key in `secrets/google_service_account.json` (never committed) and the sheet shared with its `client_email` as Editor; the sheet id is in `GOOGLE_SHEET_ID`. Without the key the site works normally and the page shows the setup steps.
-- Sign-in uses password hashes; 5 wrong tries lock the sign-in for 5 minutes. `data/doctors.json` stays on the server (`.gitignore`).
+## Known limits
+* Slide *text* only: pictures inside slides are not searchable yet (the image notebook is the first step).
+* Scanned PDFs rely on OCR and are noisier (e.g. MAM336).
+* Free PythonAnywhere: no outbound internet except an allow-list (so no neural model download, no e-mail API), 512 MB disk, app must be renewed monthly.
+* Excel (`logs.xlsx`) is the log store — fine for a class, not for thousands of users.
