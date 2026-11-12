@@ -10,14 +10,15 @@
 | `passages.csv` | 200 passages, one per slide (60 empty / picture-only / title slides dropped) | Extracted with **pypdf** by `scripts/build_passages.py` |
 | `topics.csv`, `topic_map.csv` | 12 topics, their prerequisites, and which slides belong to each topic | Written by the team from the lecture agenda |
 | `question_bank.csv` | 72 practice questions (6 per topic) with hint 1, clearer hint 2, answer, key ideas, lecture + slide | Written by the team from the slides |
-| `questions_labeled.csv` | **360 student-style questions**, 30 per topic, labelled with their topic | Written by the team (first draft prepared with an AI assistant, then reviewed against the slides) |
-| `search_test.csv` | 30 questions, each with the correct slide(s) | Written by the team, deliberately in different words from the slides |
-| `offtopic_test.csv` | 10 questions that are not in the course and must return "Not found" | Written by the team |
+| `questions_labeled.csv` | **466 student-style questions**, 37–40 per topic, labelled with their topic | Written by the team (first draft prepared with an AI assistant, then reviewed against the slides) |
+| `search_test.csv` | 94 questions, each with the correct slide(s) (30 original + 64 added) | Written by the team, deliberately in different words from the slides |
+| `offtopic_test.csv` | 50 questions that are not in the course and must return "Not found" (tuned on the even rows, reported on the odd rows) | Written by the team |
+| `question_variants.csv` | 94 short student phrasings, each attached to one slide (added to the search index only, never to a test set) | Written by the team |
 | `arabic_glossary.csv` | 76 Arabic → English course terms (bonus: Arabic questions) | Written by the team |
 
 ## 2. Size and labels
 - **Topics (12):** Introduction to AI · Intelligent Agents · Environment Properties · Problem Formulation · BFS & Uniform-Cost Search · DFS, DLS & IDS · Heuristics & Greedy Search · A* Search · Minimax · Alpha-Beta Pruning · Probability & Bayes Networks · Probabilistic Inference
-- Labelled questions are balanced: 30 per topic (288 train / 72 test, stratified 80/20, seed 42).
+- Labelled questions are balanced: 37–40 per topic (372 train / 94 test, stratified 80/20, seed 42).
 - Passages per topic range from 8 (Environment Properties) to 26 (Probabilistic Inference).
 
 ## 3. How it was collected and labelled
@@ -29,10 +30,10 @@
 
 ## 4. Privacy
 - The slides contain no personal data. The lecturers' names on the title slides are not indexed.
-- Students enter only a **student code** (e.g. S001) – never a name. `logs.xlsx` stores the code, the question, the topic, the first slide, whether it helped, and practice results (question ID, correct, hints used).
+- Students register with first/last name, e-mail and a numeric university code; passwords are stored only as hashes. The logs use the student code, never the name. `logs.xlsx` stores the code, the question, the topic, the first slide, whether it helped, and practice results (question ID, correct, hints used).
 - `logs.xlsx` stays on the computer running the app and is not shared.
 
 ## 5. Known limitations
 - Picture-only slides (worked examples on images, e.g. greedy/A* examples) have no text and cannot be found.
 - The labelled questions were written by the team, not collected from real students; a real-student collection (e.g. Google Form) would make the test more realistic.
-- TF-IDF matches words, not meaning: heavily paraphrased questions ("fool a human judge" → Turing test) can be missed.
+- TF-IDF matches words, not meaning: heavily paraphrased questions ("fool a human judge" → Turing test) can be missed. The student phrasings in `question_variants.csv` reduce this (Top-1 75.5% → 80.9% on the same 94 questions).
