@@ -139,6 +139,7 @@ T = {
     "chat_close_confirm": ("Close this chat for good? Its messages and files will be deleted from your side and cannot be brought back.", "تقفل المحادثة دي نهائي؟ رسايلها وملفاتها هتتمسح من عندك ومش هترجع."),
     "chat_closed": ("Chat closed.", "اتقفلت المحادثة."), "chat_attach": ("Attach a file", "ارفق ملف"),
     "chat_file_big": ("The file is too big (max 15 MB).", "الملف كبير (الحد 15 ميجا)."), "chat_file_type": ("This file type is not allowed.", "نوع الملف ده مش مسموح."),
+    "caps_on": ("Caps Lock is on.", "زرار Caps Lock شغال."),
     "sh_admins_card": ("Admins", "الأدمنز"), "adm_badges_link": ("Badges and awards", "الشارات والجوايز"),
     "sv_summary": ("Quick answer", "إجابة سريعة"), "sv_zoom": ("Click to enlarge", "اضغط للتكبير"),
     "sv_more": ("Show more ({n})", "اعرض المزيد ({n})"), "sv_hidden": ("{n} nearly identical slide(s) hidden.", "تم إخفاء {n} استليد متشابه جدًا."),

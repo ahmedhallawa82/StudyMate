@@ -69,3 +69,18 @@ html[data-theme="edu"] .trio .pc-row span{overflow:hidden;text-overflow:ellipsis
 html[data-theme="edu"] .tools { flex-wrap: nowrap; }
 html[data-theme="edu"] .tools .qs-pill { min-width: 0; padding: 0; width: 44px; justify-content: center; }
 html[data-theme="edu"] .tools .qs-pill .qs-t, html[data-theme="edu"] .tools .qs-pill kbd { display: none; }
+
+/* ---- consistency pass ---- */
+/* the sticky bar hides what scrolls under it (no more cards running through the menu) */
+html[data-theme="edu"] header.top { background: color-mix(in srgb, var(--bg) 96%, transparent); }
+html[data-theme="edu"][data-mode="dark"] header.top { background: color-mix(in srgb, #10151c 96%, transparent); }
+/* nothing to show in the menu (login page): no empty white pill */
+html[data-theme="edu"] nav:not(:has(a, button)) { display: none; }
+/* every file picker looks like the rest of the site */
+html[data-theme="edu"] input[type="file"] { width: 100%; max-width: 100%; padding: 8px 10px; border: 1.5px dashed var(--line); border-radius: 18px; background: var(--card); color: var(--muted); font: inherit; font-size: 14px; cursor: pointer; }
+html[data-theme="edu"] input[type="file"]:hover { border-color: var(--teal); }
+html[data-theme="edu"] input[type="file"]::file-selector-button { margin-inline-end: 12px; border: 0; border-radius: 999px; padding: 9px 18px; background: var(--teal); color: #fff; font: inherit; font-weight: 600; cursor: pointer; }
+html[data-theme="edu"] input[type="file"]::file-selector-button:hover { background: var(--teal-dark); }
+/* login */
+.auth-caps { color: #b45309; font-size: 13px; margin: 6px 2px 0; }
+.auth-main.busy { opacity: .7; pointer-events: none; }

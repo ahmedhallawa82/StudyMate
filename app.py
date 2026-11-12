@@ -2104,19 +2104,6 @@ def find_person(username):
     return None
 
 
-def chat_suggestions(me):
-    """People this user most likely wants to write to: his doctors (student) or his students (doctor)."""
-    out = []
-    if me.startswith("s:"):
-        owners = student_owners(me[2:])
-        out = [person("d:" + o) for o in sorted(owners)] + ([person("d:" + doctors.MASTER)] if not owners else [])
-    elif me == "d:" + doctors.MASTER:
-        out = [person("s:" + s["code"]) for s in students.list_students()[:30]]
-    else:
-        out = [person("s:" + s["code"]) for s in students_for_admin()]
-    return [p for p in out if p and p["key"] != me]
-
-
 def _msg_json(m, me):
     out = {"id": m["id"], "mine": m["from"] == me, "text": m["text"], "time": m["time"]}
     f = m.get("file")
@@ -2152,8 +2139,7 @@ def chat_page():
     if cur:
         chat.mark_read(me, cur["key"])
         msgs = [_msg_json(m, me) for m in chat.messages(me, cur["key"])]
-    known = {t["key"] for t in threads}
-    return render_template("chat.html", threads=threads, cur=cur, msgs=msgs, suggestions=[p for p in chat_suggestions(me) if p["key"] not in known][:12])
+    return render_template("chat.html", threads=threads, cur=cur, msgs=msgs)
 
 
 @app.route("/chat/send", methods=["POST"])

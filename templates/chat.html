@@ -19,8 +19,6 @@
       </a>
       {% else %}<p class="muted small" style="padding:10px">{{ t('chat_none') }}</p>{% endfor %}
     </div>
-    {% if suggestions %}<div class="chat-sug"><small class="muted">{{ t('chat_suggest') }}</small>
-      {% for p in suggestions %}<a class="pill" href="{{ url_for('chat_page', **{'with': p.key}) }}" title="@{{ p.username }}">{{ p.name }} · {{ p.role }}</a>{% endfor %}</div>{% endif %}
   </aside>
 
   <section class="chat-main card">

@@ -19,6 +19,7 @@
       <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
       <label class="small" for="password" style="margin-top:12px">{{ t('password') }}</label>
       <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password" required>
+      <p class="auth-caps" id="capsNote" hidden>⚠️ {{ t('caps_on') }}</p>
       <div class="auth-row">
         <label class="small"><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label>
         <a class="small" href="{{ url_for('forgot') }}">{{ t('forgot_link') }}</a>
@@ -33,4 +34,19 @@
     </form>
   </section>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var f = document.querySelector('.auth-form form'), pw = document.getElementById('password'), note = document.getElementById('capsNote');
+  function caps(e) { if (e.getModifierState) note.hidden = !e.getModifierState('CapsLock'); }
+  pw.addEventListener('keyup', caps); pw.addEventListener('keydown', caps); pw.addEventListener('blur', function () { note.hidden = true; });
+  var sent = false;                                                  // one click = one sign-in (slow hosting: no double submits)
+  f.addEventListener('submit', function (e) {
+    if (sent) { e.preventDefault(); return; }
+    sent = true; var b = e.submitter; if (b) b.classList.add('busy');
+    setTimeout(function () { sent = false; if (b) b.classList.remove('busy'); }, 8000);
+  });
+})();
+</script>
 {% endblock %}
