@@ -1,0 +1,95 @@
+﻿passage_id,question
+L01S06,so what exactly is AI
+L01S06,meaning of artificial intelligence
+L01S08,the 2x2 table of AI definitions humanly rationally
+L01S08,four categories that AI definitions fall into
+L01S09,cognitive science approach to thinking like people
+L01S11,logic based thinking rationally syllogism
+L01S14,turing test what skills are required total turing test vision robotics
+L01S15,acting rationally means what
+L01S17,left brain right brain vs computers
+L01S19,AI connected subjects like philosophy maths psychology
+L01S20,AI vs ML vs DL circles
+L01S21,those distorted letters on websites that check you are human
+L01S22,abilities to pass turing test language knowledge reasoning learning
+L01S23,computers beat humans at chess checkers
+L01S27,AI timeline dartmouth 1956 history
+L02S05,what counts as an agent sensors actuators
+L02S07,perceive plan act loop of agent
+L02S09,right thing to do performance measure rational
+L02S10,task environment specification performance measure environment actuators sensors
+L02S11,taxi example performance measure safe fast legal
+L02S14,list of environment properties
+L02S15,can the agent see the whole state
+L02S16,next state determined by current state and action randomness
+L02S17,does the current decision affect future decisions
+L02S18,world changes while agent is thinking
+L02S19,finite number of states vs infinite
+L02S20,agents working against each other or together
+L02S21,table of example environments crossword chess taxi
+L02S24,kinds of agent programs list
+L02S25,condition action rules reflex agent
+L02S26,internal state of the world kept by agent
+L02S27,agent that plans to reach a goal
+L02S28,agent that compares how happy each state makes it
+L02S29,critic problem generator learning agent
+L03S05,romania map route problem
+L03S08,initial state actions transition model goal test path cost
+L03S09,frontier explored set unexplored nodes
+L03S11,tree search pseudocode expand node
+L03S15,uninformed vs informed search types
+L03S18,bfs queue first in first out level by level
+L03S24,time complexity of breadth first search b^d
+L03S26,bfs properties complete optimal time space
+L03S27,ucs expands lowest path cost
+L03S29,priority queue ordered by g(n)
+L03S30,ucs complete optimal time space epsilon
+L03S33,dfs last in first out deepest node
+L03S44,dfs complete optimal complexity b m
+L03S47,dfs with a depth limit L
+L03S48,properties of depth limited search
+L03S49,increase the depth limit one by one
+L03S50,ids complete optimal time space complexity
+L04S02,why uninformed search is inefficient
+L04S06,estimated cost to goal heuristic function
+L04S07,greedy expands node closest to goal using h only
+L04S15,greedy search properties not optimal stuck in loops
+L04S17,astar uniform cost plus greedy idea
+L04S18,f = g + h evaluation function
+L04S24,astar properties complete optimal
+L04S25,never overestimates the true cost
+L04S26,consistent heuristic triangle inequality monotonic
+L04S34,8 puzzle heuristics misplaced tiles manhattan distance
+L04S35,which heuristic dominates h1 h2
+L05S03,multi agent competitive environments games
+L05S05,chess branching factor 35 huge tree
+L05S07,optimal move in a two player game
+L05S08,game defined as search problem initial state player actions terminal test utility
+L05S12,max picks highest min picks lowest value
+L05S14,calculate minimax example tree
+L05S16,minimax complexity time space optimal
+L05S17,why prune the game tree
+L05S19,alpha best value for max so far
+L05S20,beta best value for min so far
+L06S03,nodes and arcs random variables graph
+L06S04,uses of bayes networks diagnosis prediction
+L06S08,probability of heads and tails adds to one
+L06S10,"P(X,Y) = P(X)P(Y) independent"
+L06S14,prior and posterior probability P(B|A)
+L06S18,bayes rule P(A|B) observable not observable
+L06S23,are B and C independent given A
+L06S27,sunny raise happy explaining away
+L06S35,count the number of parameters in a bayes net
+L06S39,car wont start network 2^12
+L06S40,d separation independence rules
+L07S03,how to answer probability queries with bayes nets
+L07S06,conditional probability rule general
+L07S08,burglary earthquake alarm john mary
+L07S11,sum over hidden variables enumeration
+L07S17,reorder variables to speed up enumeration
+L07S18,eliminate variables join factors sum out
+L07S24,sampling to approximate probability advantages disadvantages
+L07S26,throw away samples that do not match evidence
+L07S28,weight samples by likelihood of evidence
+L07S30,resample one variable at a time markov chain
+L07S31,three doors switch or stay

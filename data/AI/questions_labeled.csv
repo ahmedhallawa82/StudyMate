@@ -299,7 +299,6 @@ ab pruning,alpha_beta
 alpha beta order of nodes,alpha_beta
 which branches get pruned,alpha_beta
 alpha beta same decision as minimax,alpha_beta
-what is a bayes network,probability_bayes
 nodes and arcs in bayes net,probability_bayes
 why do we need bayes networks,probability_bayes
 bayes network applications,probability_bayes
@@ -337,7 +336,6 @@ what is enumeration,inference
 why is enumeration hard,inference
 pulling out terms in enumeration,inference
 maximize independence causal direction,inference
-what is variable elimination,inference
 joining factors,inference
 summing out marginalization,inference
 order of variable elimination,inference
@@ -359,3 +357,111 @@ boolean events notation +c -c,inference
 sprinkler rain wet grass example,inference
 exact vs approximate inference,inference
 varible elimination,inference
+what does artificial intelligence try to reproduce,intro_ai
+is a calculator intelligent according to the lecture,intro_ai
+acting humanly vs acting rationally which is the goal of the course,intro_ai
+why is the turing test called an imitation game,intro_ai
+what is the total turing test,intro_ai
+what happened to AI in the 1980s and 90s,intro_ai
+is AI only computer science or other fields too,intro_ai
+where do we use AI in daily life,intro_ai
+how is AI research done theoretical and experimental,intro_ai
+what is an agent function vs agent program,agents
+examples of sensors and actuators of a robot,agents
+what is the performance measure of a vacuum agent,agents
+PEAS for a medical diagnosis system,agents
+what is percept sequence,agents
+why is a rational agent not omniscient,agents
+which agent type keeps a model of the world,agents
+what does the problem generator do in a learning agent,agents
+reflex agent with condition action rule example,agents
+is driving a taxi deterministic or stochastic,environments
+is image classification episodic,environments
+is poker partially observable,environments
+properties of the crossword puzzle environment,environments
+why is the real world continuous,environments
+what makes an environment unknown,environments
+classify the environment of a vacuum cleaner robot,environments
+what is the state space of a problem,problem_formulation
+what is a transition model,problem_formulation
+define path cost and step cost,problem_formulation
+what is a solution of a search problem,problem_formulation
+difference between tree search and graph search,problem_formulation
+what is the explored set,problem_formulation
+what is a node in the search tree,problem_formulation
+how to formulate the 8 queens problem,problem_formulation
+what assumptions does problem solving by search make,problem_formulation
+breadth first explores which nodes first,bfs_ucs
+why is bfs memory hungry,bfs_ucs
+when is bfs optimal,bfs_ucs
+ucs with equal step costs equals what,bfs_ucs
+what happens when ucs finds the goal,bfs_ucs
+bfs time complexity in terms of b and d,bfs_ucs
+does ucs need positive step costs,bfs_ucs
+bfs graph version avoids repeated states how,bfs_ucs
+fifo queue in breadth first,bfs_ucs
+compare bfs and ucs,bfs_ucs
+dfs can get stuck in infinite path,dfs_ids
+memory needed by depth first search,dfs_ids
+what is the depth limit in dls,dfs_ids
+why does iterative deepening repeat work,dfs_ids
+ids combines benefits of which two searches,dfs_ids
+when is depth limited search complete,dfs_ids
+dfs uses lifo or fifo,dfs_ids
+ids space complexity O(bd),dfs_ids
+dfs vs bfs which uses less memory,dfs_ids
+greedy search uses which function to order the frontier,heuristics_greedy
+straight line distance heuristic romania,heuristics_greedy
+why can greedy search be not optimal,heuristics_greedy
+informed vs uninformed search difference,heuristics_greedy
+how to invent a good heuristic,heuristics_greedy
+relaxed problem heuristics,heuristics_greedy
+manhattan distance heuristic for 8 puzzle,heuristics_greedy
+greedy best first time complexity,heuristics_greedy
+dominating heuristic is better why,heuristics_greedy
+why is a star optimal,astar
+what is h star of n,astar
+example of admissible heuristic,astar
+consistent heuristic definition,astar
+a star tree search vs graph search optimality,astar
+what is f of n in a star,astar
+a star expands nodes in order of what,astar
+does a star always find the cheapest path,astar
+a star with h equals zero becomes which algorithm,astar
+two player zero sum game,minimax
+what is a utility function in games,minimax
+terminal test in a game,minimax
+minimax time complexity b^m,minimax
+ply in a game tree,minimax
+what does min player choose,minimax
+backing up values in minimax tree,minimax
+optimal strategy against an optimal opponent,minimax
+game tree for tic tac toe,minimax
+what is pruning in game search,alpha_beta
+alpha beta best case complexity,alpha_beta
+move ordering in alpha beta,alpha_beta
+does alpha beta change the minimax result,alpha_beta
+update alpha at a max node,alpha_beta
+update beta at a min node,alpha_beta
+prune condition alpha greater or equal beta,alpha_beta
+why alpha beta is faster than minimax,alpha_beta
+alpha beta example step by step,alpha_beta
+what is a random variable,probability_bayes
+complement rule of probability,probability_bayes
+joint probability of dependent events,probability_bayes
+what is a prior probability,probability_bayes
+what is posterior probability,probability_bayes
+bayes rule formula,probability_bayes
+total probability theorem,probability_bayes
+cancer test probability example,probability_bayes
+what is explaining away,probability_bayes
+number of parameters in full joint distribution,probability_bayes
+query variables evidence variables hidden variables,inference
+burglary alarm network inference,inference
+enumeration is slow why,inference
+what is a factor in variable elimination,inference
+order of elimination matters why,inference
+prior sampling in bayes nets,inference
+disadvantage of rejection sampling,inference
+likelihood weighting fixes evidence variables,inference
+what is markov chain monte carlo,inference

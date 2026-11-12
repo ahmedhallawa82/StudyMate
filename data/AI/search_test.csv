@@ -29,3 +29,67 @@ how big is the chess game tree and why can't we search all of it,5,5,L05S05
 cutting branches of the game tree while keeping the same decision as minimax,5,17,L05S17
 "compute probability of a disease given a positive test, inverse of causal reasoning",6,18,L06S18
 two methods to answer probability questions on a bayes net exactly or by simulation,7,3,L07S03;L07S24
+what does CAPTCHA stand for,1,21,L01S21
+which fields does AI mix together as an interdisciplinary subject,1,19,L01S19
+who first used the name artificial intelligence and in which year,1,27,L01S27
+how are machine learning and deep learning related to AI,1,20,L01S20
+which games have computers beaten the world champions in,1,23,L01S23
+what must we know first if we want a computer to think like a human,1,9,L01S09
+what is the laws of thought approach based on,1,11,L01S11
+how do the two halves of the human brain handle problems differently from machines,1,17,L01S17
+is intelligent behaviour just information processing,1,25,L01S25
+what is the definition of an agent,2,5,L02S05
+what four things make up a PEAS description,2,10,L02S10;L02S11
+give the PEAS of an automated taxi driver,2,11,L02S11
+how is a fully observable environment different from a partially observable one,2,15,L02S15;L02S14
+what makes an environment stochastic instead of deterministic,2,16,L02S16
+episodic or sequential environment,2,17,L02S17
+what is a static environment compared to a dynamic one,2,18,L02S18
+discrete versus continuous environments,2,19,L02S19
+competitive or collaborative environments,2,20,L02S20
+how does a simple reflex agent choose its action,2,25,L02S25
+how does a model-based agent remember what it cannot see,2,26,L02S26
+what is a goal-based agent,2,27,L02S27
+what does the utility function of an agent measure,2,28,L02S28
+what are the learning element and performance element of a learning agent,2,29,L02S29
+what does it mean for an agent to be rational,2,9,L02S09
+what are the five components of a formal problem definition,3,8,L03S08;L03S56
+find a route from Arad to Bucharest,3,5,L03S05
+which data structure is the frontier in breadth first search,3,18,L03S18
+is BFS complete and optimal,3,26,L03S26
+which node does uniform cost search expand next,3,29,L03S29;L03S27
+why is the frontier of DFS a stack,3,33,L03S33
+what is the space complexity of depth first search,3,46,L03S46;L03S44
+how does depth limited search work,3,47,L03S47
+is iterative deepening complete and optimal,3,50,L03S50;L03S49
+write the tree search algorithm,3,11,L03S11
+what do the abbreviations BFS UCS DFS DLS IDS mean,3,53,L03S53
+is greedy best first search complete,4,15,L04S15
+what is the difference between the path cost g(n) and the heuristic h(n),4,6,L04S06
+how does A star combine path cost and heuristic in f(n),4,18,L04S18
+when is a heuristic admissible,4,25,L04S25
+which one guarantees optimality in the graph version of A star admissible or consistent,4,30,L04S30
+which heuristic is admissible for the sliding blocks puzzle,4,35,L04S35;L04S34
+formulate the vacuum cleaner state space,4,32,L04S32
+where is the intelligence in heuristic search,4,36,L04S36;L04S37
+why can games not be solved by searching the whole tree,5,5,L05S05
+what do MAX and MIN try to do,5,10,L05S10;L05S12
+what is the minimax value of a node,5,13,L05S13
+is minimax optimal and complete,5,16,L05S16
+what does alpha mean in pruning,5,19,L05S19
+what does beta mean in alpha beta,5,20,L05S20
+when do we cut a branch in alpha beta pruning,5,23,L05S23;L05S28;L05S32;L05S37
+what is a bayes network,6,3,L06S03;L06S34
+probability of two independent events together,6,10,L06S10
+what is conditional independence,6,23,L06S23;L06S25
+how many probability values does a bayes network need to specify,6,35,L06S35;L06S36
+how does d-separation work,6,40,L06S40
+what is a confounding cause in a bayes net,6,27,L06S27;L06S28;L06S29
+why does naive probability need 4096 values for the car problem,6,39,L06S39
+how does inference by enumeration work,7,11,L07S11
+what is variable elimination,7,22,L07S22;L07S18
+how does rejection sampling work,7,26,L07S26
+what is likelihood weighting,7,28,L07S28;L07S29
+what is gibbs sampling,7,30,L07S30
+explain the monty hall problem,7,31,L07S31
+how can we estimate probabilities by simulation instead of rules,7,24,L07S24

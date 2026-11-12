@@ -20,9 +20,30 @@ from core import figures
 
 COLAB_BASE = os.environ.get("STUDYMATE_COLAB_BASE", "https://colab.research.google.com/github/pikachu8240/StudyMate/blob/main/notebooks/")
 NOTEBOOKS = {"search": "StudyMate_Search_Models.ipynb", "image": "StudyMate_Image_Recognition.ipynb"}
-KINDS = {"auto_metrics.json": "search", "topic_classifier.json": "topic", "image_metrics.json": "image", "figure_text.json": "figures"}
+KINDS = {"auto_metrics.json": "search", "topic_classifier.json": "topic", "image_metrics.json": "image", "figure_text.json": "figures", "search_test_metrics.json": "handtest"}
 MAX_FILE = 6 * 1024 * 1024
 SHORT_SLIDE = 150
+
+
+def token():
+    """Secret that lets a Colab notebook send its results straight to the site (no download / upload by hand)."""
+    import secrets
+    f = config.BASE_DIR / "data" / "colab_token.txt"
+    try:
+        t = f.read_text(encoding="utf-8").strip()
+        if t:
+            return t
+    except OSError:
+        pass
+    t = secrets.token_urlsafe(24)
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(t, encoding="utf-8")
+    return t
+
+
+def token_ok(given):
+    import hmac
+    return bool(given) and hmac.compare_digest(str(given), token())
 
 
 def colab_url(which):
@@ -74,7 +95,7 @@ def import_results(code, filename, data):
         kind = KINDS[name]
         if kind == "figures":
             n_fig = figures.save_imported(config.course_paths(code).data, obj)
-        elif kind == "search" and not isinstance(obj.get("methods"), dict):
+        elif kind in ("search", "handtest") and not isinstance(obj.get("methods"), dict):
             continue
         else:
             cur[kind] = obj
@@ -127,6 +148,9 @@ def advise(ae, nb, short_slides=0, slides=0):
             out.append(("warn", "adv_image_low", {"n": _pct(acc), "k": img.get("images", 0)}))
         if "ImageNet weights not available" in str(img.get("model", "")):
             out.append(("info", "adv_image_weights", {}))
+    ht = (nb.get("handtest") or {}).get("methods", {})
+    if ht.get("neural") and ht.get("tfidf") and ht["neural"]["top1"] > 0.80 and ht["neural"]["top1"] > ht["tfidf"]["top1"]:
+        out.append(("info", "adv_neural_better", {"a": _pct(ht["neural"]["top1"]), "b": _pct(ht["tfidf"]["top1"])}))
     if not nb.get("search") and not img:
         out.append(("info", "adv_no_notebook", {}))
     if not out:

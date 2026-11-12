@@ -2,9 +2,30 @@
 {% from "_ui.html" import page_head %}
 {% block title %}{{ t('rep_title') }}{% endblock %}
 {% block content %}
-{{ page_head('🗓', t('rep_title'), t('rep_sub')) }}
-{% for c in cards %}
+{{ page_head('🗓', t('rep_title') ~ ((' · ' ~ detail.title) if detail else ''), t('rep_sub')) }}
+{% if tot %}
 <section class="card" style="margin-bottom:16px">
+  <h2>{{ t('rep_total') }} <small class="muted">{{ t('rep_courses_n', n=tot.courses) }}</small></h2>
+  <div class="grid-4">
+    <a class="kpi kpi-link" href="#courses"><div class="v">{{ tot.questions }}</div><div class="l">{{ t('rep_q') }}</div></a>
+    <a class="kpi kpi-link" href="#courses"><div class="v">{{ tot.not_found }}</div><div class="l">{{ t('rep_nf') }}</div></a>
+    <a class="kpi kpi-link" href="#courses"><div class="v">{{ tot.students }}</div><div class="l">{{ t('rep_st') }}</div></a>
+    <a class="kpi kpi-link" href="#courses"><div class="v">{{ (tot.helpful_pct ~ '%') if tot.helpful_pct is not none else '–' }}</div><div class="l">{{ t('rep_help') }}</div></a>
+  </div>
+</section>
+<h2 id="courses" style="margin:6px 0 10px">{{ t('rep_by_course') }}</h2>
+<div class="grid" style="margin-bottom:18px">
+  {% for c in cards %}
+  <a class="card course-tile" href="{{ url_for('report_course', code=c.code) }}">
+    <b>📚 {{ c.title }}</b> <small class="muted">{{ c.code }}</small>
+    <div class="ct-nums"><span><b>{{ c.questions }}</b> {{ t('rep_q') }}</span><span><b>{{ c.not_found }}</b> {{ t('rep_nf') }}</span><span><b>{{ c.students }}</b> {{ t('rep_st') }}</span></div>
+    <span class="ct-go">{{ t('rep_open') }} →</span>
+  </a>
+  {% else %}<p class="muted">{{ t('rep_no_courses') }}</p>{% endfor %}
+</div>
+{% endif %}
+{% for c in (cards if detail else []) %}
+<section class="card" style="margin-bottom:16px" id="c-{{ c.code }}">
   <h2>📚 {{ c.title }} <small class="muted">{{ c.code }} · {{ c['from'] }} → {{ c.to }}</small></h2>
   <div class="grid-4" style="margin-bottom:12px">
     <div class="kpi"><div class="v">{{ c.questions }}</div><div class="l">{{ t('rep_q') }}</div></div>
@@ -19,6 +40,12 @@
       {% for m in c.missing %}<p dir="auto">{{ m.question }} <small class="muted">{{ t('rep_n_times', n=m.n) }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}
       {% if c.missing %}<p class="muted small">{{ t('rep_hint') }}</p>{% endif %}</div>
   </div>
+  {% if detail %}
+  <h3 style="margin-top:14px">{{ t('rep_recent') }}</h3>
+  {% for q in recent %}<p dir="auto">{{ q.question }} <small class="muted">· {{ (q.time|string)[:16] }} · {{ '✔' if q.found != 'no' else '✘' }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}
+  <p style="margin-top:12px"><a class="btn" href="{{ url_for('choose_course', code=c.code, next=url_for('dashboard')) }}">📊 {{ t('rep_dash') }}</a>
+     <a class="btn ghost" href="{{ url_for('report_page') }}">← {{ t('rep_back_all') }}</a></p>
+  {% endif %}
 </section>
 {% endfor %}
 {% endblock %}

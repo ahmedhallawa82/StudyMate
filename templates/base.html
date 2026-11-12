@@ -86,6 +86,10 @@
   {% if student_code and not is_lecturer and path.startswith(('/practice', '/progress', '/exams', '/materials')) %}
   <a class="st-back" href="{{ url_for('studio') }}">← {{ t('nav_studio') }}</a>
   {% endif %}
+  {% if request.endpoint not in ('home', 'start', 'staff_home', 'student_home', 'lecturer_login', 'register', 'register_student', 'register_doctor', 'forgot') and not embed %}
+  <a class="back-arrow" href="{{ url_for('home') }}" id="backArrow" title="{{ t('go_back') }}" aria-label="{{ t('go_back') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>{{ t('go_back') }}</span></a>
+  <script>document.getElementById('backArrow').addEventListener('click', function (e) { if (history.length > 1 && document.referrer.indexOf(location.host) > -1) { e.preventDefault(); history.back(); } });</script>
+  {% endif %}
   {% block content %}{% endblock %}
 </main>
 {% if not request.path.startswith('/help') %}<a class="help-fab" href="{{ url_for('help_page') }}" title="{{ t('help_fab') }}" aria-label="{{ t('help_fab') }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7 M12 17v.5"/></svg></a>{% endif %}

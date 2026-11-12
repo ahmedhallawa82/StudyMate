@@ -171,3 +171,14 @@ html, body { overflow-x: clip; }
 .auth-form .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .auth-form input[type=text], .auth-form input[type=password] { width: 100%; }
 
 .hint-bad:not([hidden]) { display: block; margin-top: 4px; color: #b45309; }
+
+.back-arrow { display: inline-flex; align-items: center; gap: 4px; margin: 0 0 10px; padding: 6px 12px 6px 8px; border-radius: 999px; background: var(--card, #fff); border: 1px solid var(--line); color: inherit; text-decoration: none; font-size: 14px; font-weight: 600; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+.back-arrow:hover { background: rgba(120,140,200,.12); }
+[dir="rtl"] .back-arrow svg { transform: scaleX(-1); }
+[dir="rtl"] .back-arrow { padding: 6px 8px 6px 12px; }
+.kpi-link { display: block; text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; }
+.kpi-link:hover, .course-tile:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(70,90,150,.15); }
+.course-tile { display: block; text-decoration: none; color: inherit; transition: transform .15s, box-shadow .15s; }
+.ct-nums { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0; font-size: 13px; color: var(--muted); }
+.ct-nums b { font-size: 20px; color: var(--teal); }
+.ct-go { font-weight: 600; font-size: 13px; color: var(--teal); }

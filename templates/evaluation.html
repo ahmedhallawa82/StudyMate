@@ -6,7 +6,7 @@
 <form method="post" action="{{ url_for('models_lock') }}" style="margin:0 0 14px"><button class="btn ghost" type="submit">🔒 {{ t('mdl_lock') }}</button></form>
 <div class="card" style="margin-bottom:16px" id="advice">
   <h2>{{ t('adv_title') }}</h2>
-  <ul class="adv">{% for lvl, key, args in advice %}<li class="{{ lvl }}">{{ {'bad':'🔴','warn':'🟠','info':'🔵','ok':'🟢'}[lvl] }} {{ t(key, **args) }}</li>{% endfor %}</ul>
+  <ul class="adv">{% for lvl, key, args in advice %}<li class="{{ lvl }}">{{ {'bad':'🔴','warn':'🟠','info':'🔵','ok':'🟢'}[lvl] }} {{ t(key, **args) }}{% if key == 'adv_no_notebook' %} <a href="#colab">{{ t('nbr_go') }}</a>{% endif %}</li>{% endfor %}</ul>
 </div>
 <div class="card" style="margin-bottom:16px" id="colab">
   <h2>{{ t('nbr_title') }}</h2>
@@ -15,12 +15,19 @@
      <a class="btn ghost" href="{{ colab.image }}" target="_blank" rel="noopener">🖼️ {{ t('nbr_open_image') }}</a></p>
   <p class="muted">{{ t('nbr_how') }}</p>
   <form method="post" action="{{ url_for('models_notebook') }}" enctype="multipart/form-data" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <input type="file" name="file" accept=".zip,.json" required><button class="btn" type="submit">⬆️ {{ t('nbr_upload') }}</button></form>
+    <input type="file" name="file" accept=".zip,.json" multiple required><button class="btn" type="submit">⬆️ {{ t('nbr_upload') }}</button></form>
+  <details style="margin-top:12px"><summary><b>⚡ {{ t('nbr_direct') }}</b></summary>
+    <p class="muted">{{ t('nbr_direct_how') }}</p>
+    <pre dir="ltr" style="white-space:pre-wrap;user-select:all">SITE  = "{{ request.host_url.rstrip('/') }}"
+TOKEN = "{{ colab_token }}"</pre></details>
   {% if nb %}
   <p class="muted" style="margin-top:12px">{{ t('nbr_last', w=nb.when) }}{% if nb.figures %} · {{ t('nbr_figs', n=nb.figures) }}{% endif %}</p>
   {% if nb.search %}<h3>{{ t('nbr_search_h') }}</h3>
   <table><tr><th>{{ t('ev_method') }}</th><th class="num">Top-1</th><th class="num">Top-3</th><th class="num">MRR</th></tr>
     {% for k, m in nb.search.methods.items() %}<tr><td>{{ m.name }}</td><td class="num">{{ (m.top1 * 100)|round(1) }}%</td><td class="num">{{ (m.top3 * 100)|round(1) }}%</td><td class="num">{{ m.mrr }}</td></tr>{% endfor %}</table>{% endif %}
+  {% if nb.handtest %}<h3>{{ t('nbr_hand_h', n=nb.handtest.n_queries) }}</h3>
+  <table><tr><th></th><th>Top-1</th><th>Top-3</th><th>MRR</th></tr>
+    {% for k, m in nb.handtest.methods.items() %}<tr><td>{{ m.name }}</td><td class="num">{{ (m.top1 * 100)|round(1) }}%</td><td class="num">{{ (m.top3 * 100)|round(1) }}%</td><td class="num">{{ m.mrr }}</td></tr>{% endfor %}</table>{% endif %}
   {% if nb.topic %}<h3>{{ t('nbr_topic_h') }}</h3>
   <table>{% for name, acc in nb.topic.items() %}<tr><td>{{ name }}</td><td class="num">{{ acc }}%</td></tr>{% endfor %}</table>{% endif %}
   {% if nb.image %}<h3>{{ t('nbr_image_h') }}</h3>

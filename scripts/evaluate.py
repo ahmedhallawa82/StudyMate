@@ -1,8 +1,8 @@
 """Step 3: evaluate everything and write static/reports/ (read by the Evaluation page).
 
 - topic classifier: accuracy, precision / recall / F1 per class, confusion matrix, error analysis
-- search: top-1 and top-3 hit rate (TF-IDF and BM25) on the 30-question search test
-- "Not found": tunes the similarity threshold so the 10 off-topic questions return "Not found"
+- search: top-1 and top-3 hit rate (TF-IDF and BM25) on the hand-written search test (data/<course>/search_test.csv)
+- "Not found": tunes the similarity threshold on half of the off-topic questions, reports on the other half
 - robustness: typos, lower/upper case, very short questions, extra words, Arabic questions
 
 Run from the project folder:  python scripts/evaluate.py
@@ -172,9 +172,13 @@ def main():
     engine = SearchEngine.load()
     test = pd.read_csv(config.SEARCH_TEST_CSV)
     offtopic = pd.read_csv(config.OFFTOPIC_CSV)
-    # tuning uses the search-test questions + the TRAINING student questions (not the classifier test set)
+    # No leakage: the threshold is tuned on the TRAINING student questions and on half of the off-topic questions
+    # (even rows). The search test and the other half of the off-topic questions (odd rows) are only used to report.
+    off_dev, off_test = offtopic.iloc[::2], offtopic.iloc[1::2]
+    (thr, cov), _, _, _, _ = tune_threshold(engine, list(df.loc[split["train"]].question), off_dev.question)
     real_q = list(test.question) + list(df.loc[split["train"]].question)
-    (thr, cov), real_scores, off_scores, real_cov, off_cov = tune_threshold(engine, real_q, offtopic.question)
+    real_scores = np.array([engine.best_score(q) for q in real_q]); real_cov = np.array([engine.coverage(q) for q in real_q])
+    off_scores = np.array([engine.best_score(q) for q in offtopic.question]); off_cov = np.array([engine.coverage(q) for q in offtopic.question])
     joblib.dump({"similarity": thr, "coverage": cov}, THRESHOLD_FILE)
     engine.threshold, engine.min_coverage = thr, cov
     report["search"] = {"threshold": thr, "min_coverage": cov, "n_test": len(test), "methods": {}}
@@ -198,9 +202,10 @@ def main():
                   "result": "Not found" if r else "FOUND (wrong)"}
                  for q, s, c, r in zip(offtopic.question, off_scores, off_cov, off_rej)],
         "rejected": int(off_rej.sum()), "total": len(offtopic),
+        "test_rejected": int(off_rej[1::2].sum()), "test_total": int(len(off_test)),
     }
     print(f"  similarity>={thr} and coverage>={cov}: off-topic rejected {report['offtopic']['rejected']}/{len(offtopic)}, "
-          f"search-test answered {report['search']['real_found']}/{n_st}, "
+          f"(held-out half {report['offtopic']['test_rejected']}/{report['offtopic']['test_total']}), search-test answered {report['search']['real_found']}/{n_st}, "
           f"student questions answered {report['search']['student_questions_answered']:.1%}")
     real_scores, off_scores = real_scores[:n_st], off_scores
 

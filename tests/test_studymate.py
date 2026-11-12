@@ -82,8 +82,8 @@ def test_dataset_sizes():
     bank = pd.read_csv(config.QUESTION_BANK_CSV)
     assert len(labelled) >= 300
     assert bank.topic.nunique() >= 8 and bank.groupby("topic").size().min() >= 5
-    assert len(pd.read_csv(config.SEARCH_TEST_CSV)) == 30
-    assert len(pd.read_csv(config.OFFTOPIC_CSV)) == 10
+    assert len(pd.read_csv(config.SEARCH_TEST_CSV)) >= 30
+    assert len(pd.read_csv(config.OFFTOPIC_CSV)) >= 10
 
 
 def test_test_sets_not_in_training():
@@ -1570,3 +1570,35 @@ def test_admin_deletes_registered_students(admin):
     admin.post("/students/delete", data={"codes": [code]})
     assert students.get(code) is None
     assert c.get("/home").status_code == 302                                   # his session no longer works
+
+
+def test_report_dashboard_back_arrow_and_colab_upload(client, tmp_path):
+    import app as A, io, json, zipfile
+    from core import nbresults
+    adm = A.app.test_client()
+    with adm.session_transaction() as ss:
+        ss["lecturer"], ss["admin_id"], ss["admin_name"] = True, "master", ""
+    page = adm.get("/report").get_data(as_text=True)
+    assert "/report/" + config.DEFAULT_COURSE in page and 'id="courses"' in page          # totals + clickable course tiles
+    det = adm.get("/report/" + config.DEFAULT_COURSE).get_data(as_text=True)
+    assert "back-arrow" in det and "/dashboard" in det                                   # course details + back arrow
+    assert adm.get("/report/NOPE").status_code == 302
+    # Colab sends its results straight to the site with the token
+    nbresults.token = lambda: "tok123"
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        z.writestr("results/search_test_metrics.json", json.dumps({"n_queries": 3, "methods": {"tfidf": {"name": "TF-IDF", "top1": 0.5, "top3": 0.9, "mrr": 0.6}}}))
+    old = nbresults._file
+    nbresults._file = lambda code: tmp_path / "nb.json"
+    A.autoeval.safe_run = lambda code: None
+    assert adm.post("/api/colab-upload", data={"token": "bad", "file": (io.BytesIO(buf.getvalue()), "r.zip")}).status_code == 403
+    r = adm.post("/api/colab-upload", data={"token": "tok123", "course": config.DEFAULT_COURSE, "file": (io.BytesIO(buf.getvalue()), "r.zip")})
+    assert r.status_code == 200 and r.get_json()["imported"] == ["handtest"]
+    assert nbresults.load(config.DEFAULT_COURSE)["handtest"]["n_queries"] == 3
+    nbresults._file = old
+
+
+def test_variants_not_in_test_sets():
+    f = config.course_paths().data / "question_variants.csv"
+    tests = set(pd.read_csv(config.SEARCH_TEST_CSV).question.str.lower()) | set(pd.read_csv(config.OFFTOPIC_CSV).question.str.lower())
+    assert not set(pd.read_csv(f).question.str.lower()) & tests

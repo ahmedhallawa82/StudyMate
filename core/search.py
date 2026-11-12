@@ -238,6 +238,12 @@ def build_index(passages: pd.DataFrame = None, topic_names: dict = None, course=
         qb["pid"] = [f"L{int(l):02d}S{int(s):02d}" for l, s in zip(qb.lecture, qb.slide)]
         add = qb.groupby("pid").apply(lambda g: " ".join(g.question + " " + g.answer)).to_dict()
         passages["index_extra"] = passages["passage_id"].map(add).fillna("")
+    # query-variant expansion: short student-style phrasings written for a slide (data/<course>/question_variants.csv)
+    vf = P.data / "question_variants.csv"
+    if vf.exists():
+        qv = pd.read_csv(vf, encoding="utf-8-sig").dropna()
+        var = qv.groupby("passage_id")["question"].apply(" ".join).to_dict()
+        passages["index_extra"] = (passages["index_extra"] + " " + passages["passage_id"].map(var).fillna("")).str.strip()
     eng = SearchEngine(passages)
     if threshold_file(course).exists():
         eng.threshold, eng.min_coverage, eng.topic_weight = _read_threshold(course)

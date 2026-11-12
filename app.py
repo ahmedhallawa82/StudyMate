@@ -1016,8 +1016,11 @@ def models_notebook():
     if not (is_main() and session.get("models_ok") and can_manage(course_code())):
         return redirect(url_for("admin"))
     code = course_code()
-    f = request.files.get("file")
-    res = nbresults.import_results(code, f.filename, f.read()) if f and f.filename else None
+    res = None
+    for f in request.files.getlist("file"):
+        r = nbresults.import_results(code, f.filename, f.read()) if f and f.filename else None
+        if r:
+            res = {"kinds": (res["kinds"] if res else []) + r["kinds"], "figures": max(r["figures"], res["figures"] if res else 0)}
     if not res:
         flash_t("nbr_bad")
         return redirect(url_for("evaluation"))
@@ -1029,6 +1032,34 @@ def models_notebook():
     autoeval.safe_run(code)
     flash_t("nbr_imported", n=len(res["kinds"]), f=res["figures"])
     return redirect(url_for("evaluation"))
+
+
+@app.route("/api/colab-upload", methods=["POST"])
+def colab_upload():
+    """A Colab notebook posts its results zip here with the site's token (shown on the AI models page)."""
+    if not nbresults.token_ok(request.form.get("token", "")):
+        return jsonify(ok=False, error="bad token"), 403
+    code = request.form.get("course", "") or config.DEFAULT_COURSE
+    if code not in course_codes():
+        return jsonify(ok=False, error="unknown course"), 400
+    files = [f for f in request.files.getlist("file") if f and f.filename]
+    if not files:
+        return jsonify(ok=False, error="no file"), 400
+    kinds, figs = [], 0
+    for f in files:
+        res = nbresults.import_results(code, f.filename, f.read())
+        if res:
+            kinds += res["kinds"]
+            figs = max(figs, res["figures"])
+    if not kinds:
+        return jsonify(ok=False, error="no usable result file"), 400
+    if figs:
+        try:
+            rebuild_course(code)
+        except Exception:                                    # noqa: BLE001
+            pass
+    autoeval.safe_run(code)
+    return jsonify(ok=True, imported=sorted(set(kinds)), figures=figs)
 
 
 @app.route("/models/password", methods=["POST"])
@@ -1074,7 +1105,7 @@ def evaluation():
         txt = pd.read_csv(P.passages)["text"].astype(str)
         slides, short = len(txt), int((txt.str.len() < nbresults.SHORT_SLIDE).sum())
     return render_template("evaluation.html", r=report, rep_url=P.reports_url, ae=ae, nb=nb,
-                           advice=nbresults.advise(ae, nb, short, slides), colab={k: nbresults.colab_url(k) for k in nbresults.NOTEBOOKS},
+                           advice=nbresults.advise(ae, nb, short, slides), colab={k: nbresults.colab_url(k) for k in nbresults.NOTEBOOKS}, colab_token=nbresults.token(),
                            auto=not any(c["full"] for c in config.list_courses() if c["code"] == course_code()))
 
 
@@ -1316,7 +1347,23 @@ def report_page():
     for c in visible_courses():
         if can_manage(c["code"]):
             cards.append({"code": c["code"], "title": c["name_ar"] if lang() == "ar" and c["name_ar"] else c["name_en"], **weekly_for(c["code"])})
-    return render_template("report.html", cards=cards)
+    tot = {"questions": sum(c["questions"] for c in cards), "not_found": sum(c["not_found"] for c in cards),
+           "students": sum(c["students"] for c in cards), "courses": len(cards)}
+    hp = [c["helpful_pct"] for c in cards if c["helpful_pct"] is not None]
+    tot["helpful_pct"] = round(sum(hp) / len(hp)) if hp else None
+    return render_template("report.html", cards=cards, tot=tot, detail=None)
+
+
+@app.route("/report/<code>")
+@lecturer_required
+@perm_required("data")
+def report_course(code):
+    """Details of one course. A doctor reaches only the courses registered under his name; the admin reaches all."""
+    if code not in course_codes() or not can_manage(code):
+        return redirect(url_for("report_page"))
+    c = {"code": code, "title": course_title(code), **weekly_for(code)}
+    qs = [q for q in read_sheet("Questions") if q.get("course") == code][::-1][:15]
+    return render_template("report.html", cards=[c], tot=None, detail=c, recent=qs)
 
 
 WEEKLY_FILE = lambda: config.BASE_DIR / "data" / "weekly_sent.json"
