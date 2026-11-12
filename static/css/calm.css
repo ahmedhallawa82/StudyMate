@@ -42,3 +42,14 @@ html[data-theme="edu"][data-mode="dark"] .lang-panel a.on { color: #0f1a2b; }
 .cal-big { padding: 18px 20px; } .cal-big .cal-grid { grid-template-columns: 1fr; gap: 12px; }
 .cal-big .cal-d { min-height: 44px; aspect-ratio: auto; border-radius: 12px; } .cal-big .cal-bar select { max-width: 130px; } .cal-big .cal-bar input[type=number] { width: 80px; }
 @media (max-width: 1000px) { .edu-grid.wide { grid-template-columns: 1fr; } }
+
+/* login page: fits the window, centred, no scrolling on a normal screen */
+main:has(.auth) { min-height: calc(100vh - 96px); display: flex; flex-direction: column; justify-content: center; margin-top: 0; margin-bottom: 0; padding-bottom: 14px; }
+main:has(.auth) .flash { margin-bottom: 10px; }
+main:has(.auth) .auth { width: 100%; margin: 6px auto; }
+.auth-brand { padding: 28px 30px; gap: 14px; } .auth-brand ul { gap: 12px; }
+.auth-form { padding: 24px 34px; } .auth-form h1 { font-size: 1.4rem; } .auth-form > .muted { margin: 2px 0 10px; }
+.auth-form input[type=text], .auth-form input[type=password] { padding: 9px 12px; }
+.auth-row { margin: 8px 0 12px; } .btn.auth-main { padding: 10px 18px; }
+.auth-or { margin: 10px 0; } .auth-note { margin: 6px 0 0; } .auth-new { margin: 10px 0 4px; }
+@media (max-width: 760px) { main:has(.auth) { min-height: 0; display: block; } }

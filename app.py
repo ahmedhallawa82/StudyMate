@@ -5,6 +5,7 @@ Run:  python app.py      then open http://127.0.0.1:5000
 import json
 import random
 import re
+from pathlib import Path
 from collections import Counter, defaultdict
 from functools import wraps
 
@@ -34,6 +35,7 @@ app.jinja_env.globals["neural_ok"] = lambda: neural.available()
 app.secret_key = config.SECRET_KEY
 from datetime import timedelta
 app.permanent_session_lifetime = timedelta(days=30)      # "remember me"
+app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 7 * 24 * 3600     # CSS / JS / images are cached by the browser; the ?v= stamp below changes when a file does
 app.config["MAX_CONTENT_LENGTH"] = 300 * 1024 * 1024  # PDFs (50 MB) and recorded lectures (videos)
 
 STATE = {}          # course code -> loaded models and data
@@ -216,6 +218,16 @@ def remove_course_files(code):
 OPEN_WITHOUT_COURSES = {"static", "start", "register", "forgot", "logout", "lecturer_login", "lecturer_logout", "admin", "support_send",
                         "support_inbox", "staff_home", "doctors_page", "export_doctors", "students_page", "students_export", "export_students",
                         "profile", "avatar", "notifications_page", "notifications_read", "generate_password", "download_logs", "course_codes_template"}
+
+
+@app.url_defaults
+def _static_stamp(endpoint, values):
+    """/static/x.css?v=<file time>: a changed file gets a new address, an unchanged one stays cached for a week."""
+    if endpoint == "static" and "filename" in values and "v" not in values:
+        try:
+            values["v"] = int((Path(app.static_folder) / values["filename"]).stat().st_mtime)
+        except OSError:
+            pass
 
 
 @app.before_request
