@@ -84,3 +84,20 @@ html[data-theme="edu"] input[type="file"]::file-selector-button:hover { backgrou
 /* login */
 .auth-caps { color: #b45309; font-size: 13px; margin: 6px 2px 0; }
 .auth-main.busy { opacity: .7; pointer-events: none; }
+
+/* ---- balance: bar and home pages follow the student home ---- */
+/* brand left, menu in the middle of the free space, tools right: same place for student, doctor and admin */
+@media (min-width: 1001px) {
+  html[data-theme="edu"] header.top .bar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 18px; }
+  html[data-theme="edu"] header.top .bar nav { justify-self: center; }
+  html[data-theme="edu"] header.top .bar .brand { margin: 0; }
+}
+/* admin / doctor home: both columns end at the same line, cards in a row have the same height */
+html[data-theme="edu"] .edu-grid.wide { align-items: stretch; }
+html[data-theme="edu"] .edu-grid.wide .col-main > :last-child { flex: 1; }
+html[data-theme="edu"] .stats { align-items: stretch; }
+html[data-theme="edu"] .stats .stat { min-height: 96px; }
+html[data-theme="edu"] .trio .card { display: flex; flex-direction: column; }
+html[data-theme="edu"] .more-row { display: block; margin-top: 8px; font-size: 13px; color: var(--teal); text-align: center; }
+html[data-theme="edu"] .edu-grid.wide .col-side > :last-child { flex: 1; }
+html[data-theme="edu"] .trio .pc-row > span:only-child { max-width: 100%; }

@@ -150,6 +150,7 @@ T = {
     "adms_note_title": ("You are now an admin", "بقيت أدمن"), "adms_note_body": ("The main admin gave you admin access. Sign out and sign in again with the same username and password.", "الأدمن الرئيسي إداك صلاحية أدمن. اعمل تسجيل خروج وادخل تاني بنفس اليوزر والباسورد."),
     "adms_note_off_title": ("Admin access removed", "اتشالت صلاحية الأدمن"), "adms_note_off_body": ("You are a student again. Sign out and in again.", "رجعت طالب. اعمل تسجيل خروج وادخل تاني."),
     "chat_seen": ("Seen", "اتشافت"), "chat_sent": ("Sent", "اتبعتت"),
+    "sh_more": ("more", "كمان"),
     "sh_admins_card": ("Admins", "الأدمنز"), "adm_badges_link": ("Badges and awards", "الشارات والجوايز"),
     "sv_summary": ("Quick answer", "إجابة سريعة"), "sv_zoom": ("Click to enlarge", "اضغط للتكبير"),
     "sv_more": ("Show more ({n})", "اعرض المزيد ({n})"), "sv_hidden": ("{n} nearly identical slide(s) hidden.", "تم إخفاء {n} استليد متشابه جدًا."),
