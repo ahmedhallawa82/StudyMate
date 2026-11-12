@@ -1,33 +1,33 @@
 {
  "course": "AI",
- "when": "2026-11-12 01:41",
+ "when": "2026-11-12 09:08",
  "slides": 200,
  "lectures": 7,
- "n_queries": 85,
+ "n_queries": 30,
  "methods": {
   "tfidf": {
    "name": "TF-IDF",
-   "top1": 0.271,
-   "top3": 0.459,
-   "mrr": 0.396
+   "top1": 0.267,
+   "top3": 0.467,
+   "mrr": 0.387
   },
   "bm25": {
    "name": "BM25",
-   "top1": 0.271,
-   "top3": 0.459,
-   "mrr": 0.404
+   "top1": 0.267,
+   "top3": 0.467,
+   "mrr": 0.41
   },
   "hybrid": {
    "name": "Hybrid (TF-IDF + semantic)",
-   "top1": 0.247,
-   "top3": 0.494,
-   "mrr": 0.401
+   "top1": 0.233,
+   "top3": 0.467,
+   "mrr": 0.384
   },
   "lsa": {
    "name": "Semantic (LSA)",
-   "top1": 0.235,
-   "top3": 0.482,
-   "mrr": 0.39
+   "top1": 0.233,
+   "top3": 0.433,
+   "mrr": 0.383
   }
  },
  "offtopic": {
@@ -42,6 +42,22 @@
    "bm25": 0.271,
    "hybrid": 0.247,
    "lsa": 0.235
+  },
+  {
+   "when": "2026-11-12 09:05",
+   "slides": 200,
+   "tfidf": 0.267,
+   "bm25": 0.267,
+   "hybrid": 0.233,
+   "lsa": 0.233
+  },
+  {
+   "when": "2026-11-12 09:08",
+   "slides": 200,
+   "tfidf": 0.267,
+   "bm25": 0.267,
+   "hybrid": 0.233,
+   "lsa": 0.233
   }
  ]
 }

@@ -1,0 +1,55 @@
+{
+ "course": "MUL9",
+ "when": "2026-11-12 09:07",
+ "slides": 96,
+ "lectures": 3,
+ "n_queries": 44,
+ "methods": {
+  "tfidf": {
+   "name": "TF-IDF",
+   "top1": 0.227,
+   "top3": 0.455,
+   "mrr": 0.362
+  },
+  "bm25": {
+   "name": "BM25",
+   "top1": 0.318,
+   "top3": 0.432,
+   "mrr": 0.41
+  },
+  "hybrid": {
+   "name": "Hybrid (TF-IDF + semantic)",
+   "top1": 0.227,
+   "top3": 0.455,
+   "mrr": 0.36
+  },
+  "lsa": {
+   "name": "Semantic (LSA)",
+   "top1": 0.227,
+   "top3": 0.455,
+   "mrr": 0.36
+  }
+ },
+ "offtopic": {
+  "total": 40,
+  "rejected": 21
+ },
+ "history": [
+  {
+   "when": "2026-11-12 09:04",
+   "slides": 96,
+   "tfidf": 0.227,
+   "bm25": 0.318,
+   "hybrid": 0.227,
+   "lsa": 0.227
+  },
+  {
+   "when": "2026-11-12 09:07",
+   "slides": 96,
+   "tfidf": 0.227,
+   "bm25": 0.318,
+   "hybrid": 0.227,
+   "lsa": 0.227
+  }
+ ]
+}

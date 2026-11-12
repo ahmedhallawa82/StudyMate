@@ -17,7 +17,7 @@ import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
-from core import faq, modelspw, autoeval, followup, videos, neural, insights
+from core import faq, modelspw, autoeval, followup, videos, neural, insights, nbresults
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -839,6 +839,28 @@ def models_evaluate():
     return redirect(url_for("evaluation"))
 
 
+@app.route("/models/notebook", methods=["POST"])
+@lecturer_required
+def models_notebook():
+    """Import the results of a Google Colab notebook (zip or json) and, when it brings figure text, rebuild the index."""
+    if not (is_master() and session.get("models_ok") and can_manage(course_code())):
+        return redirect(url_for("admin"))
+    code = course_code()
+    f = request.files.get("file")
+    res = nbresults.import_results(code, f.filename, f.read()) if f and f.filename else None
+    if not res:
+        flash_t("nbr_bad")
+        return redirect(url_for("evaluation"))
+    if res["figures"]:
+        try:
+            rebuild_course(code)
+        except Exception:                                    # noqa: BLE001 - the results are saved even if the rebuild fails
+            flash_t("nbr_rebuild_fail")
+    autoeval.safe_run(code)
+    flash_t("nbr_imported", n=len(res["kinds"]), f=res["figures"])
+    return redirect(url_for("evaluation"))
+
+
 @app.route("/models/password", methods=["POST"])
 @lecturer_required
 def models_password():
@@ -846,6 +868,22 @@ def models_password():
         err = modelspw.change(request.form.get("old", ""), request.form.get("new", ""))
         flash_t(err or "mdl_pw_changed", n=modelspw.MIN_LEN)
     return redirect(url_for("evaluation"))
+
+
+def rebuild_course(code):
+    """Read the lecture PDFs again and rebuild the search index of one course. Returns (slides, lectures)."""
+    full = any(c["full"] for c in config.list_courses() if c["code"] == code)
+    if not full:
+        from core.autocourse import regenerate
+        rep = regenerate(code)
+        load_state(code)
+        return rep["slides"], rep["lectures"]
+    from core.passages import build_passages
+    clf = (STATE.get(code) or load_state(code))["clf"]
+    df = build_passages(predict_topic=lambda text: clf.predict(text)[0], verbose=False, course=code)
+    build_index(df, course=code)
+    load_state(code)
+    return len(df), int(df.lecture.nunique())
 
 
 @app.route("/evaluation")
@@ -859,7 +897,14 @@ def evaluation():
     P = config.course_paths(course_code())
     path = P.reports / "metrics.json"
     report = json.loads(path.read_text(encoding="utf-8")) if path.exists() else None
-    return render_template("evaluation.html", r=report, rep_url=P.reports_url, ae=autoeval.load(course_code()),
+    ae, nb = autoeval.load(course_code()), nbresults.load(course_code())
+    short = slides = 0
+    if P.passages.exists():
+        import pandas as pd
+        txt = pd.read_csv(P.passages)["text"].astype(str)
+        slides, short = len(txt), int((txt.str.len() < nbresults.SHORT_SLIDE).sum())
+    return render_template("evaluation.html", r=report, rep_url=P.reports_url, ae=ae, nb=nb,
+                           advice=nbresults.advise(ae, nb, short, slides), colab={k: nbresults.colab_url(k) for k in nbresults.NOTEBOOKS},
                            auto=not any(c["full"] for c in config.list_courses() if c["code"] == course_code()))
 
 

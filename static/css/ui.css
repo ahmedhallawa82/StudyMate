@@ -428,3 +428,5 @@ a.st-tile { text-decoration: none; } .st-emoji { font-size: 22px; }
 /* ---- spaced repetition list ---- */
 .sr-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: .92rem; }
 .sr-row:last-child { border-bottom: 0; } .sr-row.due a { font-weight: 700; }
+
+.adv{list-style:none;margin:0;padding:0}.adv li{padding:8px 0;border-bottom:1px solid var(--line,#e5e9f2)}.adv li:last-child{border-bottom:0}

@@ -1,4 +1,6 @@
 """Automatic tests. Run from the project folder:  python -m pytest -q"""
+import io
+import json
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -1239,3 +1241,52 @@ def test_dashboard_shows_insights_and_remind(client, tmp_path, monkeypatch):
 def test_progress_shows_reviews(client):
     page = client.get("/progress").get_data(as_text=True)
     assert 'id="reviews"' in page
+
+
+# ---------------- Colab results + figure text + advice
+def _zip(files):
+    import zipfile
+    b = io.BytesIO()
+    with zipfile.ZipFile(b, "w") as z:
+        for k, v in files.items():
+            z.writestr(k, json.dumps(v))
+    return b.getvalue()
+
+
+def test_notebook_import_and_figures(tmp_path, monkeypatch):
+    from core import nbresults, figures
+    import config as C
+    P = C.course_paths("AI")
+    monkeypatch.setattr(nbresults, "_file", lambda code: tmp_path / "nb.json")
+    monkeypatch.setattr(C, "course_paths", lambda code=None: type("PP", (), {"data": tmp_path, "reports": tmp_path})())
+    blob = _zip({"x/auto_metrics.json": {"methods": {"tfidf": {"name": "TF-IDF", "top1": .3, "top3": .5, "mrr": .4}}},
+                 "topic_classifier.json": {"Logistic Regression": 74.0}, "figure_text.json": {"L01S05": "Romania map Arad Sibiu", "bad": "x", "../../etc": "y"},
+                 "evil.json": {"a": 1}, "image_metrics.json": ["not a dict"]})
+    res = nbresults.import_results("AI", "res.zip", blob)
+    assert sorted(res["kinds"]) == ["figures", "search", "topic"] and res["figures"] == 1
+    assert figures.imported(tmp_path) == {"L01S05": "Romania map Arad Sibiu"}
+    assert nbresults.load("AI")["topic"]["Logistic Regression"] == 74.0
+    assert nbresults.import_results("AI", "a.zip", b"not a zip") is None
+    assert nbresults.import_results("AI", "random.json", b"{}") is None
+
+
+def test_advice_points_at_weak_numbers():
+    from core import nbresults
+    ae = {"methods": {"tfidf": {"name": "TF-IDF", "top1": .2, "top3": .6, "mrr": .3}}, "offtopic": {"total": 40, "rejected": 20}, "slides": 60, "history": []}
+    keys = [k for _, k, _ in nbresults.advise(ae, {"topic": {"NB": 70.0}, "image": {"test_accuracy": .26, "images": 250, "model": "small CNN (ImageNet weights not available here)"}}, 20, 60)]
+    for k in ("adv_top1_low", "adv_top3_gap", "adv_gate_weak", "adv_few_slides", "adv_short_slides", "adv_topic_low", "adv_image_low", "adv_image_weights"):
+        assert k in keys
+    good = {"methods": {"h": {"name": "H", "top1": .6, "top3": .7, "mrr": .6}}, "offtopic": {"total": 40, "rejected": 39}, "slides": 200, "history": []}
+    assert [k for _, k, _ in nbresults.advise(good, {"search": {"x": 1}}, 0, 200)] == ["adv_all_good"]
+
+
+def test_models_page_has_advice_and_colab(client):
+    import app as A
+    from core import doctors
+    admin = A.app.test_client()
+    with admin.session_transaction() as s:
+        s["lecturer"], s["admin_id"], s["admin_name"], s["models_ok"] = True, doctors.MASTER, "Admin", True
+    page = admin.get("/evaluation").get_data(as_text=True)
+    assert 'id="advice"' in page and 'id="colab"' in page and "colab.research.google.com" in page
+    r = admin.post("/models/notebook", data={"file": (io.BytesIO(b"junk"), "x.zip")}, content_type="multipart/form-data", follow_redirects=True)
+    assert r.status_code == 200

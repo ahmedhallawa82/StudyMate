@@ -4,6 +4,32 @@
 {% block content %}
 {{ page_head('🧮', t('mdl_title'), t('mdl_sub')) }}
 <form method="post" action="{{ url_for('models_lock') }}" style="margin:0 0 14px"><button class="btn ghost" type="submit">🔒 {{ t('mdl_lock') }}</button></form>
+<div class="card" style="margin-bottom:16px" id="advice">
+  <h2>{{ t('adv_title') }}</h2>
+  <ul class="adv">{% for lvl, key, args in advice %}<li class="{{ lvl }}">{{ {'bad':'🔴','warn':'🟠','info':'🔵','ok':'🟢'}[lvl] }} {{ t(key, **args) }}</li>{% endfor %}</ul>
+</div>
+<div class="card" style="margin-bottom:16px" id="colab">
+  <h2>{{ t('nbr_title') }}</h2>
+  <p class="muted">{{ t('nbr_sub') }}</p>
+  <p><a class="btn ghost" href="{{ colab.search }}" target="_blank" rel="noopener">📓 {{ t('nbr_open_search') }}</a>
+     <a class="btn ghost" href="{{ colab.image }}" target="_blank" rel="noopener">🖼️ {{ t('nbr_open_image') }}</a></p>
+  <p class="muted">{{ t('nbr_how') }}</p>
+  <form method="post" action="{{ url_for('models_notebook') }}" enctype="multipart/form-data" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <input type="file" name="file" accept=".zip,.json" required><button class="btn" type="submit">⬆️ {{ t('nbr_upload') }}</button></form>
+  {% if nb %}
+  <p class="muted" style="margin-top:12px">{{ t('nbr_last', w=nb.when) }}{% if nb.figures %} · {{ t('nbr_figs', n=nb.figures) }}{% endif %}</p>
+  {% if nb.search %}<h3>{{ t('nbr_search_h') }}</h3>
+  <table><tr><th>{{ t('ev_method') }}</th><th class="num">Top-1</th><th class="num">Top-3</th><th class="num">MRR</th></tr>
+    {% for k, m in nb.search.methods.items() %}<tr><td>{{ m.name }}</td><td class="num">{{ (m.top1 * 100)|round(1) }}%</td><td class="num">{{ (m.top3 * 100)|round(1) }}%</td><td class="num">{{ m.mrr }}</td></tr>{% endfor %}</table>{% endif %}
+  {% if nb.topic %}<h3>{{ t('nbr_topic_h') }}</h3>
+  <table>{% for name, acc in nb.topic.items() %}<tr><td>{{ name }}</td><td class="num">{{ acc }}%</td></tr>{% endfor %}</table>{% endif %}
+  {% if nb.image %}<h3>{{ t('nbr_image_h') }}</h3>
+  <p class="muted">{{ t('nbr_img_n', n=nb.image.images, m=nb.image.model) }}</p>
+  <table><tr><td>{{ t('nbr_img_acc') }}</td><td class="num">{{ (nb.image.test_accuracy * 100)|round|int }}%</td></tr>
+    <tr><td>{{ t('nbr_img_top1') }}</td><td class="num">{{ (nb.image.search_top1_exact * 100)|round|int }}%</td></tr>
+    <tr><td>{{ t('nbr_img_lec') }}</td><td class="num">{{ (nb.image.search_lecture_at_1 * 100)|round|int }}%</td></tr></table>{% endif %}
+  {% endif %}
+</div>
 {% if ae %}
 <div class="card" style="margin-bottom:16px">
   <h2>{{ t('mdl_auto_title') }}</h2>

@@ -9,9 +9,11 @@ import pandas as pd
 from pypdf import PdfReader
 
 import config
+from core import figures
 from core.text import clean_slide_text, is_useful
 
 
+FIGURE_IF_SHORTER = 150          # characters: figure text only completes slides whose own text is short
 LECTURE_RE = r"(?:lecture|week)\s*[_-]?\s*(\d+)"        # "lecture 3 ..." or "... week 3.pdf"
 
 
@@ -72,6 +74,7 @@ def build_passages(predict_topic=None, verbose=True, course=None) -> pd.DataFram
     P = config.course_paths(course)
     topic_map = load_topic_map(course)
     rows, dropped = [], 0
+    from_colab = figures.imported(P.data)                   # figure text made on Google Colab (id -> text)
     pdfs = sorted(P.lectures.glob("*.pdf"), key=lambda p: (lecture_number(p.name) or 999, p.name))
     for pdf in pdfs:
         lec = lecture_number(pdf.name)
@@ -80,10 +83,17 @@ def build_passages(predict_topic=None, verbose=True, course=None) -> pd.DataFram
                 print(f"  skipped {pdf.name}: file name must contain 'lecture <number>' or 'week <number>'")
             continue
         reader = PdfReader(str(pdf))
+        try:
+            pics = figures.pdf_figure_text(pdf, P.data / "ocr_cache")     # text inside pictures (cached, {} without Tesseract)
+        except Exception:                                    # noqa: BLE001 - never break an upload because of a picture
+            pics = {}
         for i, page in enumerate(reader.pages, start=1):
             raw = page.extract_text() or ""
             if len(raw.strip()) < 40:                       # picture-only slide -> read it with OCR
                 raw = ocr_page(pdf, i, P.data / "ocr_cache") or raw
+            extra = from_colab.get(f"L{lec:02d}S{i:02d}") or pics.get(i, "")
+            if extra and len(raw.strip()) < FIGURE_IF_SHORTER:      # only slides that say (almost) nothing in real text
+                raw = raw + "\n" + extra
             text = clean_slide_text(raw)
             if not is_useful(text):
                 dropped += 1
