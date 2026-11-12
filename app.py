@@ -17,7 +17,7 @@ import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
-from core import faq, modelspw, autoeval, followup, videos, neural
+from core import faq, modelspw, autoeval, followup, videos, neural, insights
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -239,12 +239,29 @@ def my_mastery(code=None):
     return M.replay(rows, S()["qid_topic"])
 
 
+def my_reviews(mastery=None, code=None):
+    """Spaced repetition for the signed-in student: weak topics practised before, with their next review date."""
+    code = code or student()
+    if not code:
+        return []
+    rows = [a for a in read_sheet("Answers") if a.get("student_code") == code and a.get("course") == course_code()]
+    out = insights.reviews(rows, my_mastery(code) if mastery is None else mastery, S()["qid_topic"])
+    for r in out:
+        r["name"] = topic_name(r["topic"])
+    return out
+
+
 def topic_panel(mastery):
     items, l = [], lang()
     for _, t in S()["topics"].iterrows():
         lvl = mastery.get(t.topic, 0.0)
         items.append({"topic": t.topic, "name": t["name_ar"] if l == "ar" else t["name"], "level": lvl,
                       "pct": round(lvl * 100), "colour": M.colour(lvl), "started": t.topic in mastery})
+    due = [r for r in my_reviews(mastery) if r["overdue"]] if student() and not session.get("lecturer") else []
+    if due:                                               # a review that is due comes before new material
+        r = due[0]
+        return items, {"topic": r["topic"], "name": r["name"], "review": True,
+                       "why": tr("sr_why", l, t=r["name"], d=r["days_ago"], g=r["gap"])}
     nxt, why = study_next(mastery, S()["topics"], l)
     return items, ({"topic": nxt, "name": topic_name(nxt), "why": why} if nxt else {"why": why})
 
@@ -548,6 +565,7 @@ def award(code=None):
 def student_home():
     visit("home")
     award()
+    check_risk(course_code())
     code, me = course_code(), student()
     mastery = my_mastery()
     items, nxt = topic_panel(mastery)
@@ -774,7 +792,7 @@ def progress():
     answers = [a for a in read_sheet("Answers") if a.get("student_code") == student() and a.get("course") == course_code()]
     stats = {"answered": len(answers), "correct": sum(str(a["correct"]) in ("1", "True") for a in answers),
              "green": sum(i["colour"] == "green" for i in items), "total": len(items)}
-    return render_template("progress.html", items=items, nxt=nxt, stats=stats)
+    return render_template("progress.html", items=items, nxt=nxt, stats=stats, reviews=my_reviews(m))
 
 
 # ------------------------------------------------------------------ Help / questions
@@ -881,6 +899,8 @@ def staff_home():
     visit("overview")
     master = is_master()
     courses = [c for c in config.list_courses() if can_manage(c["code"])]
+    for c in courses:
+        check_risk(c["code"])
     ar = lang() == "ar"
     title = {c["code"]: (c["name_ar"] or c["name_en"]) if ar else c["name_en"] for c in config.list_courses()}
     rows = students_for_admin()
@@ -1181,7 +1201,45 @@ def dashboard():
            "answered": sum(1 for q in qs if str(q.get("id")) in fu), "open": sum(1 for q in qs if str(q.get("id")) not in fu)}
     lowest = [{"name": names[t], "avg": avg[t], "n": len(score[t])} for t in sorted(avg, key=avg.get)[:3]]
     top = [{"name": names[t], "n": n} for t, n in asked.most_common(3)]
-    return render_template("dashboard.html", data=data, kpi=kpi, lowest=lowest, top=top, not_found=not_found, latest=latest)
+    risk = course_risk(cc, qs, ans, visits)
+    return render_template("dashboard.html", data=data, kpi=kpi, lowest=lowest, top=top, not_found=not_found, latest=latest,
+                           unanswered=insights.unanswered(qs), risk=risk, inactive_days=insights.INACTIVE_DAYS)
+
+
+def course_students(code):
+    return [s for s in students.list_students() if code in (s.get("courses") or [])]
+
+
+def course_risk(code, qs=None, ans=None, visits=None):
+    """Registered students of a course who need attention (low level or inactive)."""
+    if qs is None:
+        qs, ans, visits = [[r for r in read_sheet(s) if r.get("course") == code] for s in ("Questions", "Answers", "Visits")]
+    st = STATE.get(code) or load_state(code)
+    return insights.at_risk(code, course_students(code), qs, ans, visits, M.replay, st["qid_topic"], len(st["topics"]))
+
+
+def check_risk(code):
+    """Once a day per course: tell the course owner (or the main admin) about students who newly need attention."""
+    if insights.notified_today(code):
+        return
+    try:
+        rows = course_risk(code)
+        owner = course_owner(code)
+        title = tr("risk_n_title", lang(), course=course_title(code))
+        insights.notify_at_risk(code, rows, ["d:" + (owner or doctors.MASTER)], notify.push, title,
+                                lambda new: ", ".join(r["name"] for r in new[:5]) + (" …" if len(new) > 5 else ""), url_for("dashboard") + "#risk")
+    except Exception as e:                                   # noqa: BLE001 - a notice must never break a page
+        print("at-risk check skipped:", type(e).__name__, e)
+
+
+@app.route("/dashboard/remind", methods=["POST"])
+@lecturer_required
+def dashboard_remind():
+    code, who = course_code(), request.form.get("student", "")
+    if can_manage(code) and any(s["code"] == who for s in course_students(code)):
+        notify.push(["s:" + who], "study", tr("remind_title", lang(), course=course_title(code)), tr("remind_body", lang()), url_for("progress"))
+        flash_t("remind_sent")
+    return redirect(url_for("dashboard") + "#risk")
 
 
 @app.route("/dashboard/followup", methods=["POST"])

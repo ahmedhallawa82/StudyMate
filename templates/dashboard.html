@@ -25,6 +25,30 @@
   <div class="card"><h3>{{ t('students_per_colour') }}</h3><canvas id="colours" height="240"></canvas></div>
   <div class="card"><h3>{{ t('visits_day') }}</h3><canvas id="visits" height="240"></canvas></div>
 </div>
+<div class="grid-2">
+<div class="card" id="unanswered"><h3>{{ t('ua_title') }}</h3>
+  <p class="muted small">{{ t('ua_sub') }}</p>
+  {% if unanswered %}
+  <div class="table-wrap"><table>
+    <tr><th>{{ t('question') }}</th><th class="num">{{ t('ua_times') }}</th><th class="num">{{ t('ua_students') }}</th><th>{{ t('ua_last') }}</th></tr>
+    {% for u in unanswered %}<tr><td dir="auto">{{ u.question }}</td><td class="num"><b>{{ u.n }}</b></td><td class="num">{{ u.students }}</td><td class="small">{{ u.last }}</td></tr>{% endfor %}
+  </table></div>
+  {% else %}<p class="muted">{{ t('ua_none') }}</p>{% endif %}
+</div>
+<div class="card" id="risk"><h3>{{ t('risk_title') }}</h3>
+  <p class="muted small">{{ t('risk_sub', d=inactive_days) }}</p>
+  {% if risk %}
+  <div class="table-wrap"><table>
+    <tr><th>{{ t('student') }}</th><th class="num">{{ t('risk_level') }}</th><th>{{ t('risk_last') }}</th><th>{{ t('risk_why') }}</th><th></th></tr>
+    {% for r in risk %}<tr><td dir="auto">{{ r.name }}<br><small class="muted">{{ r.code }}</small></td>
+      <td class="num">{{ (r.level ~ '%') if r.level is not none else '—' }}</td>
+      <td class="small">{{ r.last or '—' }}{% if r.days is not none %}<br><small class="muted">{{ t('risk_days', n=r.days) }}</small>{% endif %}</td>
+      <td>{% for w in r.reasons %}<span class="tag {{ 'red' if w == 'low' else 'amber' }}">{{ t('risk_' ~ w) }}</span> {% endfor %}</td>
+      <td><form method="post" action="{{ url_for('dashboard_remind') }}"><input type="hidden" name="student" value="{{ r.code }}"><button class="btn ghost small" type="submit">🔔 {{ t('remind_btn') }}</button></form></td></tr>{% endfor %}
+  </table></div>
+  {% else %}<p class="muted">{{ t('risk_none') }}</p>{% endif %}
+</div>
+</div>
 <div class="card" id="followup"><h3>{{ t('fu_title') }}</h3>
   <p class="muted small">{{ t('fu_sub', a=kpi.answered, o=kpi.open) }}</p>
   {% if latest %}

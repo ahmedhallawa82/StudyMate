@@ -23,3 +23,4 @@ data/followups.json
 data/models_auth.json
 data/*/videos/
 data/*/videos.json
+data/atrisk_notified.json

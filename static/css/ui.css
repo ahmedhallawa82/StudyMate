@@ -424,3 +424,7 @@ a.st-tile { text-decoration: none; } .st-emoji { font-size: 22px; }
 .help-fab:hover { background: var(--teal-dark); color: #fff; }
 .course-chips { position: relative; z-index: 45; } .course-pick { position: relative; z-index: 45; }
 .cmenu-panel { width: max-content; min-width: 260px; } .cmenu-item { white-space: nowrap; line-height: 1.3; }
+
+/* ---- spaced repetition list ---- */
+.sr-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: .92rem; }
+.sr-row:last-child { border-bottom: 0; } .sr-row.due a { font-weight: 700; }

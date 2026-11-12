@@ -30,6 +30,16 @@
       {% else %}<p>{{ nxt.why }}</p>{% endif %}
       <p class="muted small" style="margin-top:14px">{{ t('how_level') }}</p>
     </div>
+    <div class="card panel" id="reviews" style="margin-top:14px">
+      <h3>🔁 {{ t('sr_title') }}</h3>
+      <p class="muted small">{{ t('sr_sub') }}</p>
+      {% for r in reviews %}
+      <div class="sr-row{{ ' due' if r.overdue }}">
+        <a href="{{ url_for('practice', topic=r.topic) }}">{{ r.name }}</a>
+        <span class="tag {{ 'amber' if r.overdue else '' }}">{{ t('sr_due_now') if r.overdue else t('sr_due_on', d=r.due) }}</span>
+      </div>
+      {% else %}<p class="muted small">{{ t('sr_none') }}</p>{% endfor %}
+    </div>
   </aside>
 </div>
 {% endblock %}

@@ -58,7 +58,7 @@
         <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}" data-tip="{{ t('tip_bell') }}">🔔{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
         <div class="bell-panel" hidden>
           <div class="bell-head"><b>{{ t('notif_title') }}</b>{% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="next" value="{{ request.path }}"><button type="submit" class="linkish">{{ t('notif_mark_all') }}</button></form>{% endif %}</div>
-          {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋', 'badge': '🏅', 'chat': '💬'}.get(n.kind, '🔔') }}</span><span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
+          {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋', 'badge': '🏅', 'chat': '💬', 'study': '📚'}.get(n.kind, '🔔') }}</span><span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
           {% else %}<p class="muted small" style="padding:14px">{{ t('notif_none') }}</p>{% endfor %}
           <a class="bell-all" href="{{ url_for('notifications_page') }}">{{ t('notif_see_all') }}</a>
         </div>

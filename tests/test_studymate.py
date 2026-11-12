@@ -1180,3 +1180,62 @@ def test_neural_method_optional_and_falls_back(monkeypatch):
     fake = lambda texts: np.eye(3, dtype=np.float32)[: len(texts)] if len(texts) == 3 else np.array([[0, 1, 0]], dtype=np.float32)
     monkeypatch.setattr(neural, "embed", fake)                                      # a fake model that matches slide 2
     assert int(np.argmax(eng.scores("something", "neural"))) == 1
+
+
+# ---------------- insights: unanswered questions, spaced repetition, students who need attention
+def test_unanswered_groups_and_counts():
+    from core import insights
+    qs = [{"id": 1, "question": "What is SLAM?", "found": "no", "student_code": "a", "time": "2026-11-10 10:00"},
+          {"id": 2, "question": "what is slam", "found": "no", "student_code": "b", "time": "2026-11-11 10:00"},
+          {"id": 3, "question": "Who won?", "found": "no", "student_code": "a", "time": "2026-11-12 10:00"},
+          {"id": 4, "question": "BFS", "found": "yes", "student_code": "a", "time": "2026-11-12 11:00"}]
+    u = insights.unanswered(qs)
+    assert u[0]["n"] == 2 and u[0]["students"] == 2 and len(u) == 2
+
+
+def test_spaced_repetition_intervals():
+    from datetime import date
+    from core import insights
+    qt = {"q1": "bfs", "q2": "dfs"}
+    ans = [{"question_id": "q1", "time": "2026-11-10 09:00"},                                   # practised once -> review after 1 day
+           {"question_id": "q2", "time": "2026-11-09 09:00"}, {"question_id": "q2", "time": "2026-11-10 09:00"}]   # twice -> 3 days
+    r = {x["topic"]: x for x in insights.reviews(ans, {"bfs": 0.3, "dfs": 0.5}, qt, today=date(2026, 11, 11))}
+    assert r["bfs"]["overdue"] and r["bfs"]["gap"] == 1
+    assert not r["dfs"]["overdue"] and r["dfs"]["due"] == "2026-11-13"
+    assert insights.reviews(ans, {"bfs": 0.9, "dfs": 0.9}, qt) == []                             # green topics: no review
+
+
+def test_at_risk_low_and_inactive():
+    from datetime import date
+    from core import insights, mastery
+    st = [{"code": "S1", "first": "A", "last": "", "created": "2026-11-01"},
+          {"code": "S2", "first": "B", "last": "", "created": "2026-11-01"},
+          {"code": "S3", "first": "C", "last": "", "created": "2026-11-01"}]
+    qt = {"q": "t"}
+    ans = [{"student_code": "S1", "question_id": "q", "correct": "0", "hints_used": 0, "time": "2026-11-11 10:00"}] * 5 + \
+          [{"student_code": "S2", "question_id": "q", "correct": "1", "hints_used": 0, "time": "2026-11-11 10:00"}]
+    for _ in range(5):
+        ans.append({"student_code": "S2", "question_id": "q", "correct": "1", "hints_used": 0, "time": "2026-11-11 10:00"})
+    rows = {r["code"]: r for r in insights.at_risk("X", st, [], ans, [], mastery.replay, qt, 1, today=date(2026, 11, 12))}
+    assert rows["S1"]["reasons"] == ["low"] and "S2" not in rows and rows["S3"]["reasons"] == ["inactive"]
+
+
+def test_dashboard_shows_insights_and_remind(client, tmp_path, monkeypatch):
+    import app as A
+    from core import doctors, notify, students
+    monkeypatch.setattr(A, "course_students", lambda code: [{"code": "S9", "first": "Late", "last": "Student", "created": "2026-01-01", "courses": [code]}])
+    sent = []
+    monkeypatch.setattr(notify, "push", lambda to, kind, title, body="", link="": sent.append((to, kind)))
+    adm = A.app.test_client()
+    with adm.session_transaction() as s:
+        s["lecturer"], s["admin_id"], s["admin_name"] = True, doctors.MASTER, "Admin"
+    page = adm.get("/dashboard").get_data(as_text=True)
+    assert 'id="unanswered"' in page and 'id="risk"' in page and "Late Student" in page
+    adm.post("/dashboard/remind", data={"student": "S9"})
+    adm.post("/dashboard/remind", data={"student": "NOT-MINE"})
+    assert sent == [(["s:S9"], "study")]
+
+
+def test_progress_shows_reviews(client):
+    page = client.get("/progress").get_data(as_text=True)
+    assert 'id="reviews"' in page
