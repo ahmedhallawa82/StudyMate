@@ -760,6 +760,7 @@ T = {
     "login_hint": ("Students sign in with the e-mail they registered with. Doctors and the admin use their username.", "الطالب بيدخل بالإيميل اللي سجّل بيه. الدكتور والأدمن بيدخلوا باسم المستخدم."),
     "no_account": ("New student?", "طالب جديد؟"), "register_link": ("Create an account", "إنشاء حساب"),
     "forgot_link": ("Forgot your password?", "نسيت كلمة السر؟"),
+    "login_empty": ("Please type your password to sign in.", "اكتب كلمة السر علشان تدخل."),
     "wrong_login": ("Wrong username or password.", "اسم المستخدم أو كلمة السر غلط."),
     "register_title": ("Create a student account", "إنشاء حساب طالب"),
     "first_name": ("First name", "الاسم الأول"), "last_name": ("Last name", "الاسم الأخير"), "email": ("E-mail", "الإيميل"),

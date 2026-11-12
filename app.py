@@ -472,6 +472,9 @@ def handle_login(default_next):
     if _locked(key):
         g.login_alert = {"kind": "locked", "left": 0, "ident": key}
         return None
+    if not (request.form.get("password") or "").strip():
+        flash_t("login_empty")
+        return None
     got = try_login(request.form.get("username", ""), request.form.get("password", ""))
     if not got:
         n, t0 = _FAILS.get(key, (0, time.time()))
