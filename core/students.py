@@ -38,6 +38,7 @@ def norm_email(e):
 
 
 _USER = re.compile(r"^[a-z0-9_.]{3,20}$")
+_UNI = re.compile(r"^\d{4,15}$")                               # the university (student) code: digits only
 
 
 def username_of(s):
@@ -46,7 +47,7 @@ def username_of(s):
 
 def public(s):
     return {"code": s["code"], "first": s["first"], "last": s["last"], "email": s["email"], "created": s["created"],
-            "username": username_of(s), "courses": list(s.get("courses", []))}
+            "username": username_of(s), "uni_code": s.get("uni_code", ""), "courses": list(s.get("courses", []))}
 
 
 def get(code):
@@ -59,17 +60,20 @@ def list_students():
 
 
 def find(ident):
-    """A student by e-mail or by username."""
+    """A student by e-mail, username or university code."""
     e = norm_email(ident)
-    return next((s for s in _load() if s["email"] == e or username_of(s).lower() == e), None)
+    return next((s for s in _load() if s["email"] == e or username_of(s).lower() == e or (e and s.get("uni_code") == e)), None)
 
 
-def register(first, last, email, password, username="", reserved=()):
+def register(first, last, email, password, username="", reserved=(), uni_code=""):
     """Returns (student dict, error key). error key '' = done. `reserved` = usernames nobody may take (admin, doctors)."""
     first, last, email = (first or "").strip()[:40], (last or "").strip()[:40], norm_email(email)
     username = (username or "").strip().lower()
     if not first or not last:
         return None, "reg_name_missing"
+    uni_code = (uni_code or "").strip()
+    if not _UNI.match(uni_code):
+        return None, "reg_uni_bad"
     if not _EMAIL.match(email):
         return None, "reg_email_bad"
     if len(password or "") < MIN_LEN:
@@ -80,6 +84,8 @@ def register(first, last, email, password, username="", reserved=()):
         rows = _load()
         if any(s["email"] == email for s in rows):
             return None, "reg_email_taken"
+        if any(s.get("uni_code") == uni_code for s in rows):
+            return None, "reg_uni_taken"
         if not username:                                          # not given: made from the e-mail
             base = re.sub(r"[^a-z0-9_.]", "", email.split("@")[0])[:16] or "student"
             username = base if len(base) >= 3 else base + "123"
@@ -93,7 +99,7 @@ def register(first, last, email, password, username="", reserved=()):
         n = len(rows) + 1
         while f"S{n:04d}" in used:
             n += 1
-        s = {"code": f"S{n:04d}", "first": first, "last": last, "email": email, "username": username, "courses": [],
+        s = {"code": f"S{n:04d}", "first": first, "last": last, "email": email, "username": username, "uni_code": uni_code, "courses": [],
              "hash": generate_password_hash(password), "created": datetime.now().strftime("%Y-%m-%d %H:%M")}
         rows.append(s)
         _save(rows)

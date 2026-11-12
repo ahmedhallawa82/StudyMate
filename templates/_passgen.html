@@ -1,11 +1,15 @@
 <div class="passgen">
   <button type="button" class="btn ghost small" data-passgen data-url="{{ url_for('generate_password') }}" data-targets="{{ targets }}">{{ t('pg_btn') }}</button>
-  <small class="muted">{{ t('pg_note') }}</small>
+  <small class="muted hint-bad" hidden data-pgnote>{{ t('pg_note') }}</small>
 </div>
 <script>
 (function () {
+  function okPw(p) { return p.length >= 8 && p.length <= 15 && /[A-Z]/.test(p) && /[a-z]/.test(p) && /[0-9]/.test(p) && /[^A-Za-z0-9]/.test(p); }
   document.querySelectorAll('[data-passgen]').forEach(function (b) {
     if (b.dataset.on) return; b.dataset.on = 1;
+    var note = b.parentNode.querySelector('[data-pgnote]'), form = b.closest('form'), first = form.querySelector('input[name="' + b.dataset.targets.split(',')[0] + '"]');
+    function chk() { if (note && first) note.hidden = !first.value || okPw(first.value); }       // shown only when the password does not follow the rule
+    if (first) { first.addEventListener('input', chk); first.addEventListener('blur', chk); first.addEventListener('pw-show', chk); }
     b.onclick = function () {
       fetch(b.dataset.url, {cache: 'no-store'}).then(function (r) { return r.json(); }).then(function (j) {
         var form = b.closest('form');

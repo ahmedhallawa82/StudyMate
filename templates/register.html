@@ -11,8 +11,10 @@
         <div><label class="small">{{ t('first_name') }}</label><input type="text" name="first" required maxlength="40" value="{{ request.form.first }}"></div>
         <div><label class="small">{{ t('last_name') }}</label><input type="text" name="last" required maxlength="40" value="{{ request.form.last }}"></div>
       </div>
-      <label class="small" style="margin-top:10px">{{ t('username') }}</label><input type="text" name="username" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" dir="ltr" autocomplete="username" value="{{ request.form.username }}">
-      <span class="muted small" style="display:block;margin-top:4px">{{ t('username_note') }}</span>
+      <label class="small" style="margin-top:10px">{{ t('uni_code') }}</label><input type="text" name="uni_code" required inputmode="numeric" pattern="[0-9]{4,15}" minlength="4" maxlength="15" dir="ltr" autocomplete="off" value="{{ request.form.uni_code }}" data-hint="uniHint">
+      <span class="muted small hint-bad" id="uniHint" hidden>{{ t('uni_note') }}</span>
+      <label class="small" style="margin-top:10px">{{ t('username') }}</label><input type="text" name="username" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" dir="ltr" autocomplete="username" value="{{ request.form.username }}" data-hint="userHint">
+      <span class="muted small hint-bad" id="userHint" hidden>{{ t('username_note') }}</span>
       <label class="small" style="margin-top:10px">{{ t('email') }}</label><input type="text" name="email" required dir="ltr" autocomplete="email" value="{{ request.form.email }}">
       <label class="small" style="margin-top:10px">{{ t('password') }}</label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password">
       <label class="small" style="margin-top:10px">{{ t('pw_confirm') }}</label><input type="password" name="confirm" required minlength="6" dir="ltr" autocomplete="new-password">
@@ -23,4 +25,15 @@
     </form>
   </section>
 </div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {   // a hint appears only when what was typed does not follow the rule
+  document.querySelectorAll('input[data-hint]').forEach(function (i) {
+    var h = document.getElementById(i.dataset.hint), re = new RegExp('^(?:' + i.getAttribute('pattern') + ')$');
+    function chk() { h.hidden = !i.value || re.test(i.value); }
+    i.addEventListener('input', chk); i.addEventListener('blur', chk);
+  });
+})();
+</script>
 {% endblock %}

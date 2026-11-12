@@ -169,3 +169,5 @@ html, body { overflow-x: clip; }
 .who-card .wc-i { font-size: 30px; } .who-card b { font-size: 1.05rem; } .who-card small { color: var(--muted, #6b7a99); }
 @media (max-width: 520px) { .who-cards { grid-template-columns: 1fr; } }
 .auth-form .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .auth-form input[type=text], .auth-form input[type=password] { width: 100%; }
+
+.hint-bad:not([hidden]) { display: block; margin-top: 4px; color: #b45309; }

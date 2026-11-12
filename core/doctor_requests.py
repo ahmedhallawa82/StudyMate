@@ -34,10 +34,10 @@ def get(rid):
     return next((r for r in _load() if r["id"] == rid), None)
 
 
-def add(name, email, username, password, note="", taken=()):
+def add(name, email, username, password, dept="", taken=()):
     """Returns (request, error) with error '' | 'need_all' | 'adms_user_bad' | 'adms_user_taken' | 'pw_too_short'."""
-    name, email, username, note = (name or "").strip()[:60], (email or "").strip()[:120], (username or "").strip(), (note or "").strip()[:300]
-    if not (name and email and username and password):
+    name, email, username, dept = (name or "").strip()[:60], (email or "").strip()[:120], (username or "").strip(), (dept or "").strip()[:120]
+    if not (name and email and username and password and dept):
         return None, "need_all"
     if not re.fullmatch(r"[A-Za-z0-9._-]{3,30}", username):
         return None, "adms_user_bad"
@@ -48,7 +48,7 @@ def add(name, email, username, password, note="", taken=()):
         if username.lower() in {x.lower() for x in taken} | {"admin", "master"} or any(r["username"].lower() == username.lower() for r in rows):
             return None, "adms_user_taken"
         rid = (max([r["id"] for r in rows]) + 1) if rows else 1
-        rec = {"id": rid, "name": name, "email": email, "username": username, "note": note, "hash": generate_password_hash(password),
+        rec = {"id": rid, "name": name, "email": email, "username": username, "dept": dept, "hash": generate_password_hash(password),
                "time": datetime.now().strftime("%Y-%m-%d %H:%M")}
         rows.append(rec)
         _save(rows)

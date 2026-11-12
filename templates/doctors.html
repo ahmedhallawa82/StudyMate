@@ -8,7 +8,7 @@
   <h3>📥 {{ t('doc_req_title') }} <span class="badge">{{ requests_|length }}</span></h3>
   {% for r in requests_ %}
   <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)">
-    <div><b>{{ r.name }}</b> <small class="muted" dir="ltr">@{{ r.username }} · {{ r.email }} · {{ r.time }}</small>{% if r.note %}<div class="small" dir="auto">{{ r.note }}</div>{% endif %}</div>
+    <div><b>{{ r.name }}</b> <small class="muted" dir="ltr">@{{ r.username }} · {{ r.email }} · {{ r.time }}</small><div class="small" dir="auto">🏛 {{ r.dept }}</div></div>
     <form method="post" style="display:flex;gap:8px"><input type="hidden" name="id" value="{{ r.id }}">
       <button class="btn small" name="action" value="approve">✓ {{ t('doc_req_approve') }}</button><button class="btn ghost small" name="action" value="reject">{{ t('doc_req_reject') }}</button></form>
   </div>{% endfor %}
@@ -24,12 +24,12 @@
   </div>
   {% if rows %}
   <div class="table-wrap"><table id="tbl">
-    <tr><th>{{ t('prof_name') }}</th><th>{{ t('username') }}</th><th>{{ t('email') }}</th><th>{{ t('doc_courses') }}</th><th class="num">{{ t('doc_students') }}</th><th></th></tr>
+    <tr><th>{{ t('prof_name') }}</th><th>{{ t('username') }}</th><th>{{ t('email') }}</th><th>{{ t('doc_dept') }}</th><th>{{ t('doc_courses') }}</th><th class="num">{{ t('doc_students') }}</th><th></th></tr>
     <tr class="main-row"><td><span class="who-cell"><span class="mini-av">{{ main.name[:1]|upper }}</span><b>{{ main.name }}</b> <span class="tag green">{{ t('doc_main') }}</span></span></td>
-      <td dir="ltr">admin</td><td>–</td><td><span class="muted small">{{ t('doc_main_all') }}</span></td><td class="num">–</td><td></td></tr>
+      <td dir="ltr">admin</td><td>–</td><td>–</td><td><span class="muted small">{{ t('doc_main_all') }}</span></td><td class="num">–</td><td></td></tr>
     {% for r in rows %}<tr data-q="{{ (r.name ~ ' ' ~ r.username ~ ' ' ~ r.email)|lower }}">
       <td><span class="who-cell">{% if r.avatar %}<img class="mini-av" src="{{ url_for('avatar', key=r.key) }}" alt="">{% else %}<span class="mini-av">{{ r.name[:1]|upper }}</span>{% endif %}<b>{{ r.name }}</b></span></td>
-      <td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.email or '–' }}</td>
+      <td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.email or '–' }}</td><td dir="auto">{{ r.dept or '–' }}</td>
       <td>{% for c in r.courses %}<span class="tag">{{ c }}</span> {% else %}–{% endfor %}</td><td class="num">{{ r.students }}</td>
       <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 'd:' ~ r.id}) }}">💬 {{ t('students_message') }}</a></td></tr>{% endfor %}
   </table></div>

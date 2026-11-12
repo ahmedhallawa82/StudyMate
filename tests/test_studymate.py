@@ -40,10 +40,18 @@ def _students_file(tmp_path_factory):
     _A.WEEKLY_FILE = lambda: d / "weekly_sent.json"
 
 
+_UNI_N = [100000]
+
+
+def uni():
+    _UNI_N[0] += 1
+    return str(_UNI_N[0])
+
+
 def as_student(c, name):
     """Register (or sign in) a test student and leave the client signed in."""
     r = c.post("/register", data={"first": name, "last": "Test", "email": f"{name.lower()}@test.com",
-                                  "password": "secret1", "confirm": "secret1"})
+                                  "password": "secret1", "confirm": "secret1", "uni_code": uni()})
     if "Location" not in r.headers or "/register" in r.headers.get("Location", ""):
         c.post("/start", data={"username": f"{name.lower()}@test.com", "password": "secret1"})
     c.post("/my-courses", data={"course": [config.DEFAULT_COURSE]})
@@ -229,7 +237,7 @@ def test_no_guest_login_and_register_steps():
     d = pathlib.Path(tempfile.mkdtemp())
     doctor_requests.FILE = lambda: d / "req.json"
     doctors.FILE = lambda: d / "doc.json"
-    r = c.post("/register/doctor", data={"name": "Dr Test", "username": "dr.test", "email": "dr@t.com", "password": "longpass1", "confirm": "longpass1", "note": "AI"})
+    r = c.post("/register/doctor", data={"name": "Dr Test", "username": "dr.test", "email": "dr@t.com", "password": "longpass1", "confirm": "longpass1", "dept": "Computer Science"})
     assert r.status_code == 302 and len(doctor_requests.pending()) == 1
     assert c.post("/start", data={"username": "dr.test", "password": "longpass1"}).status_code == 200       # not approved yet
     adm = A.app.test_client()
@@ -238,6 +246,10 @@ def test_no_guest_login_and_register_steps():
     assert "Dr Test" in adm.get("/doctors").get_data(as_text=True)
     adm.post("/doctors", data={"id": "1", "action": "approve"})
     assert doctor_requests.pending() == [] and doctors.list_doctors("doctor")[0]["username"] == "dr.test"
+    assert doctors.list_doctors("doctor")[0]["dept"] == "Computer Science"
+    assert "Computer Science" in adm.get("/doctors").get_data(as_text=True)
+    nd = c.post("/register/doctor", data={"name": "Dr X", "username": "dr.x", "email": "x@t.com", "password": "longpass1", "confirm": "longpass1", "dept": ""})
+    assert nd.status_code == 200 and "Location" not in nd.headers                                 # department is required
     assert c.post("/start", data={"username": "dr.test", "password": "longpass1"}).status_code == 302
 
 
@@ -437,11 +449,14 @@ def test_register_login_and_students_sheet(tmp_path):
     import app as A
     from core import students
     c = A.app.test_client()
-    bad = c.post("/register", data={"first": "A", "last": "B", "email": "nope", "password": "secret1", "confirm": "secret1"})
+    bad = c.post("/register", data={"first": "A", "last": "B", "email": "nope", "password": "secret1", "confirm": "secret1", "uni_code": uni()})
     assert bad.status_code == 200 and "Location" not in bad.headers
-    ok = c.post("/register", data={"first": "Sara", "last": "Ali", "email": "Sara@Mail.com", "password": "secret1", "confirm": "secret1"})
+    ok = c.post("/register", data={"first": "Sara", "last": "Ali", "email": "Sara@Mail.com", "password": "secret1", "confirm": "secret1", "uni_code": uni()})
     assert ok.status_code == 302
-    dup = c.post("/register", data={"first": "S", "last": "A", "email": "sara@mail.com", "password": "secret1", "confirm": "secret1"})
+    nocode = c.post("/register", data={"first": "N", "last": "C", "email": "nc@mail.com", "password": "secret1", "confirm": "secret1", "uni_code": "12ab"})
+    assert nocode.status_code == 200 and "Location" not in nocode.headers                # digits only
+    assert students.find("nc@mail.com") is None
+    dup = c.post("/register", data={"first": "S", "last": "A", "email": "sara@mail.com", "password": "secret1", "confirm": "secret1", "uni_code": uni()})
     assert dup.status_code == 200
     s = students.find("sara@mail.com")
     assert s["first"] == "Sara" and "secret1" not in json_text(students.FILE())          # only a hash is stored
@@ -651,7 +666,7 @@ def test_exam_pdf_noise_and_answer_key():
 def test_student_home_and_login_landing():
     import app as A
     c = A.app.test_client()
-    r = c.post("/register", data={"first": "Mona", "last": "K", "email": "mona@test.com", "password": "secret1", "confirm": "secret1"})
+    r = c.post("/register", data={"first": "Mona", "last": "K", "email": "mona@test.com", "password": "secret1", "confirm": "secret1", "uni_code": uni()})
     assert r.headers["Location"].endswith("/my-courses")
     c.post("/my-courses", data={"course": ["AI"]})
     page = c.get("/home").get_data(as_text=True)
@@ -791,7 +806,7 @@ def test_password_generator_rules_and_button():
     assert passgen.check(pw)
     assert "data-passgen" in c.get("/register/student").get_data(as_text=True)
     # a generated password is accepted by the registration rules
-    r = c.post("/register", data={"first": "Gen", "last": "Pw", "email": "genpw@test.com", "password": pw, "confirm": pw})
+    r = c.post("/register", data={"first": "Gen", "last": "Pw", "email": "genpw@test.com", "password": pw, "confirm": pw, "uni_code": uni()})
     assert r.status_code in (200, 302)
 
 

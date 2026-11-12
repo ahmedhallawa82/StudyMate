@@ -541,7 +541,7 @@ def register_student():
         else:
             reserved = {"admin"} | {d["username"].lower() for d in doctors.list_doctors()}
             st, err = students.register(f.get("first"), f.get("last"), f.get("email"), f.get("password", ""),
-                                        f.get("username", ""), reserved)
+                                        f.get("username", ""), reserved, f.get("uni_code", ""))
             if err:
                 flash_t(err, n=students.MIN_LEN)
             else:
@@ -562,7 +562,7 @@ def register_doctor():
             flash_t("pw_mismatch")
         else:
             taken = {s_["username"] for s_ in students.list_students()} | {doctors.username_of(d) for d in doctors.list_doctors()}
-            rec, err = doctor_requests.add(f.get("name"), f.get("email"), f.get("username"), f.get("password", ""), f.get("note", ""), taken)
+            rec, err = doctor_requests.add(f.get("name"), f.get("email"), f.get("username"), f.get("password", ""), f.get("dept", ""), taken)
             if err:
                 flash_t("reg_doc_need" if err == "need_all" else err, n=doctor_requests.MIN_LEN)
             else:
@@ -1163,7 +1163,7 @@ def doctors_page():
         r = doctor_requests.get(int(rid)) if rid.isdigit() else None
         if r and action == "approve":
             try:
-                doctors.add_hashed(r["name"], r["email"], r["username"], r["hash"])
+                doctors.add_hashed(r["name"], r["email"], r["username"], r["hash"], r.get("dept", ""))
                 doctor_requests.remove(r["id"])
                 audit.record(actor(), "doctor_approved", f"{r['name']} ({r['username']})")
                 flash_t("doc_req_approved", name=r["name"])
@@ -2526,11 +2526,11 @@ def students_delete():
 def students_export(fmt):
     if fmt not in ("xlsx", "csv"):
         return redirect(url_for("students_page"))
-    rows = [[r["code"], r["first"], r["last"], r["username"], r["email"], c[0], c[2], r["created"]]
+    rows = [[r["code"], r["first"], r["last"], r["username"], r.get("uni_code", ""), r["email"], c[0], c[2], r["created"]]
             for r in students_for_admin() for c in r["courses"]]
-    header = ["student_code", "first_name", "last_name", "username", "email", "course", "doctor", "registered"]
+    header = ["student_code", "first_name", "last_name", "username", "university_code", "email", "course", "doctor", "registered"]
     if not is_master():                                    # a doctor never gets the other doctors' names
-        header, rows = header[:-2] + header[-1:], [r[:6] + r[7:] for r in rows]
+        header, rows = header[:-2] + header[-1:], [r[:7] + r[8:] for r in rows]
     return _table_response(rows, header, "students", fmt)
 
 
