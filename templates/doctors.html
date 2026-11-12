@@ -3,6 +3,17 @@
 {% block title %}{{ t('doc_title') }}{% endblock %}
 {% block content %}
 {{ page_head('👨‍🏫', t('doc_title'), t('doc_sub')) }}
+{% if requests_ %}
+<div class="card" style="margin-bottom:16px">
+  <h3>📥 {{ t('doc_req_title') }} <span class="badge">{{ requests_|length }}</span></h3>
+  {% for r in requests_ %}
+  <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)">
+    <div><b>{{ r.name }}</b> <small class="muted" dir="ltr">@{{ r.username }} · {{ r.email }} · {{ r.time }}</small>{% if r.note %}<div class="small" dir="auto">{{ r.note }}</div>{% endif %}</div>
+    <form method="post" style="display:flex;gap:8px"><input type="hidden" name="id" value="{{ r.id }}">
+      <button class="btn small" name="action" value="approve">✓ {{ t('doc_req_approve') }}</button><button class="btn ghost small" name="action" value="reject">{{ t('doc_req_reject') }}</button></form>
+  </div>{% endfor %}
+</div>
+{% endif %}
 <div class="card">
   <div class="actions" style="margin:0 0 12px;align-items:center">
     <input type="text" id="q" placeholder="{{ t('doc_search') }}" style="max-width:320px">

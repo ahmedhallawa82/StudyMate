@@ -15,7 +15,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import bookmarks, audit, announce, plan as planlib, doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
+from core import doctor_requests, bookmarks, audit, announce, plan as planlib, doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
 from core import faq, modelspw, autoeval, followup, videos, neural, insights, nbresults
@@ -259,7 +259,7 @@ def remove_course_files(code):
     session.pop("practice", None)
 
 
-OPEN_WITHOUT_COURSES = {"static", "start", "register", "forgot", "logout", "lecturer_login", "lecturer_logout", "admin", "support_send",
+OPEN_WITHOUT_COURSES = {"static", "start", "register", "register_student", "register_doctor", "forgot", "logout", "lecturer_login", "lecturer_logout", "admin", "support_send",
                         "support_inbox", "staff_home", "doctors_page", "export_doctors", "students_page", "students_export", "export_students",
                         "profile", "avatar", "notifications_page", "notifications_read", "generate_password", "download_logs", "course_codes_template"}
 
@@ -510,7 +510,7 @@ def start():
     if session.get("lecturer"):
         return redirect(url_for("staff_home"))
     if request.method == "POST":
-        if request.form.get("guest"):                  # guest: no account needed, a temporary code is made
+        if False and request.form.get("guest"):        # guest (no longer offered on the login page): no account needed, a temporary code is made
             import secrets
             code = "GUEST-" + secrets.token_hex(2).upper()
             sign_in_as("student", {"code": code, "first": code}, "", False)
@@ -526,6 +526,14 @@ def start():
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    """Step 1: are you a student or a doctor? (a POST here is still accepted as a student sign-up)"""
+    if request.method == "POST":
+        return register_student()
+    return render_template("register_choose.html")
+
+
+@app.route("/register/student", methods=["GET", "POST"])
+def register_student():
     if request.method == "POST":
         f = request.form
         if f.get("password") != f.get("confirm"):
@@ -543,6 +551,25 @@ def register():
                 notify.push(["s:" + st["code"]], "welcome", tr("n_welcome_title", lang()), tr("n_welcome_body", lang()), url_for("profile"))
                 return redirect(url_for("my_courses"))
     return render_template("register.html")
+
+
+@app.route("/register/doctor", methods=["GET", "POST"])
+def register_doctor():
+    """A doctor asks for an account; the main admin approves it on the Doctors page."""
+    if request.method == "POST":
+        f = request.form
+        if f.get("password") != f.get("confirm"):
+            flash_t("pw_mismatch")
+        else:
+            taken = {s_["username"] for s_ in students.list_students()} | {doctors.username_of(d) for d in doctors.list_doctors()}
+            rec, err = doctor_requests.add(f.get("name"), f.get("email"), f.get("username"), f.get("password", ""), f.get("note", ""), taken)
+            if err:
+                flash_t("reg_doc_need" if err == "need_all" else err, n=doctor_requests.MIN_LEN)
+            else:
+                notify.push(["d:" + doctors.MASTER], "security", tr("doc_req_note_title", lang(), name=rec["name"]), tr("doc_req_note_body", lang()), url_for("doctors_page"))
+                flash_t("reg_doc_sent")
+                return redirect(url_for("start"))
+    return render_template("register_doctor.html")
 
 
 @app.route("/forgot", methods=["GET", "POST"])
@@ -1123,11 +1150,30 @@ def staff_home():
 
 
 # ------------------------------------------------------------------ doctors / courses overview pages (admin + doctor home cards)
-@app.route("/doctors")
+@app.route("/doctors", methods=["GET", "POST"])
 @lecturer_required
 def doctors_page():
     if not (is_main() or (is_subadmin() and has_perm("doctors"))):
         return redirect(url_for("staff_home"))
+    if request.method == "POST":                                  # approve / reject a doctor who asked for an account
+        if not is_main():
+            flash_t("master_only")
+            return redirect(url_for("doctors_page"))
+        rid, action = request.form.get("id", ""), request.form.get("action", "")
+        r = doctor_requests.get(int(rid)) if rid.isdigit() else None
+        if r and action == "approve":
+            try:
+                doctors.add_hashed(r["name"], r["email"], r["username"], r["hash"])
+                doctor_requests.remove(r["id"])
+                audit.record(actor(), "doctor_approved", f"{r['name']} ({r['username']})")
+                flash_t("doc_req_approved", name=r["name"])
+            except ValueError as e:
+                flash_t(str(e))
+        elif r and action == "reject":
+            doctor_requests.remove(r["id"])
+            audit.record(actor(), "doctor_rejected", f"{r['name']} ({r['username']})")
+            flash_t("doc_req_rejected")
+        return redirect(url_for("doctors_page"))
     allc = config.list_courses()
     owned = {}
     for c in allc:
@@ -1138,7 +1184,7 @@ def doctors_page():
         mine = owned.get(d["id"], [])
         rows.append({**d, "courses": mine, "students": sum(per.get(c, 0) for c in mine), "avatar": profiles.avatar_path("d:" + d["id"]) is not None,
                      "key": profiles.safe("d:" + d["id"])})
-    return render_template("doctors.html", rows=rows, main={"name": session.get("admin_name") or tr("role_admin", lang()), "key": "d:" + doctors.MASTER})
+    return render_template("doctors.html", requests_=doctor_requests.pending() if is_main() else [], rows=rows, main={"name": session.get("admin_name") or tr("role_admin", lang()), "key": "d:" + doctors.MASTER})
 
 
 # ------------------------------------------------------------------ extra admins (main admin only): name, username, password, permissions
@@ -1910,6 +1956,19 @@ def admin():
             load_state(code)
             autoeval.safe_run(code)
             flash_t("index_rebuilt", n=len(df), m=df.lecture.nunique())
+        elif action == "set_threshold":
+            try:
+                val = round(float(request.form.get("threshold", "").replace(",", ".")), 3)
+            except ValueError:
+                val = None
+            if val is None or not 0.01 <= val <= 0.9:
+                flash_t("thr_bad")
+            else:
+                from core.search import set_threshold
+                set_threshold(val, code)
+                load_state(code)
+                audit.record(actor(), "not_found_threshold", f"{code}: {val}")
+                flash_t("thr_saved", v=val)
         elif action == "retrain":
             import scripts.train as T
             import scripts.evaluate as E
@@ -2205,7 +2264,7 @@ def badges_admin():
         act = request.form.get("action")
         link = url_for("badges_page")
         if act == "create_badge":
-            b = custom_badges.create(request.form.get("name"), request.form.get("icon"), request.form.get("desc"), me_key)
+            b = custom_badges.create(request.form.get("name"), request.form.get("icon"), request.form.get("desc"), me_key, actor())
             if b:
                 # tell every student the badge can reach how to get it
                 notify.push(["s:" + c for c in aud_codes], "badge", f"🏅 {b['name']} · " + tr("bg_available", "en") + " / " + tr("bg_available", "ar"),
@@ -2250,7 +2309,7 @@ def badges_admin():
     cards = []
     for b in mine():
         got = [a for a in awards if a["badge"] == b["id"]]
-        cards.append({**b, "n": len(got), "owner_name": tr("role_admin", lang()) if b["owner"] == custom_badges.MASTER else (doctors.get(b["owner"]) or {}).get("name", b["owner"]),
+        cards.append({**b, "n": len(got), "owner_name": b.get("by_name") or (tr("role_admin", lang()) if b["owner"] == custom_badges.MASTER else (doctors.get(b["owner"]) or {}).get("name", b["owner"])),
                       "got": [{"code": a["student"], "name": names.get(a["student"], a["student"])} for a in got]})
     return render_template("badges_admin.html", rows=rows, cards=cards, popular=popular, students=[{"code": s["code"], "name": names[s["code"]]} for s in sorted(aud, key=lambda x: x["code"])],
                            total_earned=sum(r["total"] for r in rows), master=is_master())
@@ -2307,6 +2366,16 @@ def chat_page():
         if not p or p["key"] == me:
             flash_t("chat_not_found")
             return redirect(url_for("chat_page"))
+        st = chat.state(me, p["key"])
+        if st == "none":                                          # nobody can write to a person before he accepts
+            chat.request(me, p["key"])
+            notify.push([p["key"]], "chat", tr("chat_req_title", lang(), name=person(me)["name"]), tr("chat_req_body", lang()), url_for("chat_page", **{"with": me}))
+            flash_t("chat_req_sent", name=p["name"])
+        elif st == "pending_out":
+            flash_t("chat_req_wait", name=p["name"])
+        elif st == "blocked_me":
+            flash_t("chat_cannot")
+            return redirect(url_for("chat_page"))
         return redirect(url_for("chat_page", **{"with": p["key"]}))
     visit("chat")
     threads = []
@@ -2314,17 +2383,43 @@ def chat_page():
         p = person(t["with"])
         if p:
             threads.append({**p, "last": (t["last"]["text"] or "📎 " + t["last"].get("file", {}).get("fname", ""))[:60], "time": t["last"]["time"], "unread": t["unread"]})
+    inc, out, blocked = chat.lists(me)
+    people = lambda keys: [x for x in (person(k) for k in keys) if x]
     cur = person(request.args.get("with"))
     if request.args.get("with") and not cur:
         flash_t("chat_not_found")
     if cur and cur["key"] == me:
         cur = None
-    msgs = []
+    msgs, cstate = [], "ok"
     if cur:
-        chat.mark_read(me, cur["key"])
-        seen = chat.seen_upto(me, cur["key"])
-        msgs = [_msg_json(m, me, seen) for m in chat.messages(me, cur["key"])]
-    return render_template("chat.html", threads=threads, cur=cur, msgs=msgs)
+        cstate = chat.state(me, cur["key"])
+        if cstate in ("ok", "blocked_by_me", "blocked_me"):
+            chat.mark_read(me, cur["key"])
+            seen = chat.seen_upto(me, cur["key"])
+            msgs = [_msg_json(m, me, seen) for m in chat.messages(me, cur["key"])]
+    return render_template("chat.html", threads=threads, cur=cur, msgs=msgs, cstate=cstate,
+                           incoming=people(inc), outgoing=people(out), blocked=people(blocked))
+
+
+@app.route("/chat/respond", methods=["POST"])
+@perm_required("chat")
+def chat_respond():
+    """accept / decline a chat request, block or unblock a person."""
+    me, key, action = user_key(), request.form.get("with", ""), request.form.get("action", "")
+    p = person(key)
+    if me and p and action in ("accept", "decline", "block", "unblock"):
+        before = chat.state(me, key)
+        chat.respond(me, key, action)
+        if action == "accept" and before == "pending_in":
+            notify.push([key], "chat", tr("chat_acc_title", lang(), name=person(me)["name"]), tr("chat_acc_body", lang()), url_for("chat_page", **{"with": me}))
+            flash_t("chat_accepted", name=p["name"])
+        elif action == "block":
+            flash_t("chat_blocked", name=p["name"])
+        elif action == "unblock":
+            flash_t("chat_unblocked", name=p["name"])
+        elif action == "decline":
+            flash_t("chat_declined")
+    return redirect(url_for("chat_page", **({"with": key} if action in ("accept", "unblock") else {})))
 
 
 @app.route("/chat/send", methods=["POST"])
@@ -2334,6 +2429,10 @@ def chat_send():
     to = request.form.get("with", "")
     if not me or not person(to):
         return jsonify(ok=False, error="user"), 400
+    if to == me:
+        return jsonify(ok=False, error="self"), 400
+    if chat.state(me, to) != "ok":
+        return jsonify(ok=False, error={"blocked_by_me": "blocked_by_me", "blocked_me": "blocked"}.get(chat.state(me, to), "pending")), 403
     unread_before = next((t["unread"] for t in chat.threads_for(to) if t["with"] == me), 0)
     saved = None
     up = request.files.get("file")

@@ -1,27 +1,26 @@
 {% extends "base.html" %}
 {% block title %}{{ t('register_title') }}{% endblock %}
 {% block content %}
-<div class="center-box card" style="max-width:560px">
-  <h2>{{ t('register_title') }}</h2>
-  <form method="post">
-    <div class="grid-2" style="gap:10px">
-      <div><label class="small">{{ t('first_name') }}</label><input type="text" name="first" required maxlength="40" value="{{ request.form.first }}"></div>
-      <div><label class="small">{{ t('last_name') }}</label><input type="text" name="last" required maxlength="40" value="{{ request.form.last }}"></div>
-    </div>
-    <p style="margin:8px 0 0"></p>
-    <label class="small">{{ t('username') }}</label><input type="text" name="username" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" dir="ltr" autocomplete="username" value="{{ request.form.username }}">
-    <span class="muted small">{{ t('username_note') }}</span>
-    <p style="margin:8px 0 0"></p>
-    <label class="small">{{ t('email') }}</label><input type="text" name="email" required dir="ltr" autocomplete="email" value="{{ request.form.email }}">
-    <p style="margin:8px 0 0"></p>
-    <label class="small">{{ t('password') }}</label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password">
-    <p style="margin:8px 0 0"></p>
-    <label class="small">{{ t('pw_confirm') }}</label><input type="password" name="confirm" required minlength="6" dir="ltr" autocomplete="new-password">
-    {% set targets = "password,confirm" %}{% include "_passgen.html" %}
-    <p class="small"><label><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></p>
-    <p class="muted small">{{ t('privacy') }}</p>
-    <button class="btn" type="submit">{{ t('register_btn') }}</button>
-    <p class="small" style="margin-top:10px">{{ t('have_account') }} <a href="{{ url_for('start') }}">{{ t('login_btn') }}</a></p>
-  </form>
+<div class="auth fade" style="--i:1">
+  {% include "_auth_brand.html" %}
+  <section class="auth-form">
+    <h1>🎓 {{ t('register_title') }}</h1>
+    <p class="muted"><a href="{{ url_for('register') }}">← {{ t('reg_back') }}</a></p>
+    <form method="post" action="{{ url_for('register_student') }}">
+      <div class="grid-2" style="gap:10px">
+        <div><label class="small">{{ t('first_name') }}</label><input type="text" name="first" required maxlength="40" value="{{ request.form.first }}"></div>
+        <div><label class="small">{{ t('last_name') }}</label><input type="text" name="last" required maxlength="40" value="{{ request.form.last }}"></div>
+      </div>
+      <label class="small" style="margin-top:10px">{{ t('username') }}</label><input type="text" name="username" required minlength="3" maxlength="20" pattern="[A-Za-z0-9_.]{3,20}" dir="ltr" autocomplete="username" value="{{ request.form.username }}">
+      <span class="muted small" style="display:block;margin-top:4px">{{ t('username_note') }}</span>
+      <label class="small" style="margin-top:10px">{{ t('email') }}</label><input type="text" name="email" required dir="ltr" autocomplete="email" value="{{ request.form.email }}">
+      <label class="small" style="margin-top:10px">{{ t('password') }}</label><input type="password" name="password" required minlength="6" dir="ltr" autocomplete="new-password">
+      <label class="small" style="margin-top:10px">{{ t('pw_confirm') }}</label><input type="password" name="confirm" required minlength="6" dir="ltr" autocomplete="new-password">
+      {% set targets = "password,confirm" %}{% include "_passgen.html" %}
+      <div class="auth-row"><label class="small"><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label></div>
+      <button class="btn auth-main" type="submit">{{ t('register_btn') }}</button>
+      <p class="auth-alt">{{ t('have_account') }} <a href="{{ url_for('start') }}"><b>{{ t('login_btn') }}</b></a></p>
+    </form>
+  </section>
 </div>
 {% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ t('reg_title') }}{% endblock %}
+{% block content %}
+<div class="auth fade" style="--i:1">
+  {% include "_auth_brand.html" %}
+  <section class="auth-form">
+    <h1>{{ t('reg_title') }}</h1>
+    <p class="muted">{{ t('reg_who') }}</p>
+    <div class="who-cards">
+      <a class="who-card" href="{{ url_for('register_student') }}"><span class="wc-i">🎓</span><b>{{ t('reg_student') }}</b><small>{{ t('reg_student_d') }}</small></a>
+      <a class="who-card" href="{{ url_for('register_doctor') }}"><span class="wc-i">👨‍🏫</span><b>{{ t('reg_doctor') }}</b><small>{{ t('reg_doctor_d') }}</small></a>
+    </div>
+    <p class="auth-alt">{{ t('have_account') }} <a href="{{ url_for('start') }}"><b>{{ t('login_btn') }}</b></a></p>
+  </section>
+</div>
+{% endblock %}

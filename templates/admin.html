@@ -251,6 +251,12 @@
       <hr>
       <p class="small">{{ t('topic_model') }}: <b>{{ model }}</b><br>{{ t('question_bank') }}: <b>{{ bank }}</b> {{ t('questions') }}<br>
         {{ t('nf_threshold') }}: <b>{{ threshold }}</b></p>
+      <form method="post" class="inline" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="hidden" name="action" value="set_threshold">
+        <input type="number" name="threshold" step="0.01" min="0.01" max="0.9" value="{{ threshold }}" style="max-width:120px" aria-label="{{ t('nf_threshold') }}">
+        <button class="btn ghost small" type="submit">{{ t('thr_save') }}</button>
+      </form>
+      <p class="muted small">{{ t('thr_note') }}</p>
     </div>
 
 </section>

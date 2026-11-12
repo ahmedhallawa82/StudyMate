@@ -162,3 +162,10 @@ html, body { overflow-x: clip; }
 .stack label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 600; } .stack input, .stack select, .stack textarea { width: 100%; margin-top: 4px; } .stack .btn { margin-top: 12px; }
 .ann-banner { margin-bottom: 14px; } .ann-banner .ann-i { padding: 8px 0; border-top: 1px solid var(--line); } .ann-banner .ann-i:first-of-type { border-top: 0; }
 .star-btn.on { color: #e7a500; font-weight: 700; }
+
+.who-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 10px 0 14px; }
+.who-card { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; padding: 18px; border: 1.5px solid var(--line, #dfe5ee); border-radius: 18px; text-decoration: none; color: inherit; transition: border-color .15s, transform .15s, box-shadow .15s; background: #fff; }
+.who-card:hover { border-color: var(--teal, #4a6fa5); transform: translateY(-2px); box-shadow: 0 8px 22px rgba(60,90,140,.12); }
+.who-card .wc-i { font-size: 30px; } .who-card b { font-size: 1.05rem; } .who-card small { color: var(--muted, #6b7a99); }
+@media (max-width: 520px) { .who-cards { grid-template-columns: 1fr; } }
+.auth-form .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; } .auth-form input[type=text], .auth-form input[type=password] { width: 100%; }

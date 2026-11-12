@@ -1,6 +1,9 @@
 """Direct messages between people on the site (student <-> student, student <-> doctor, doctor <-> admin ...).
 
-data/chat.json -> {"threads": {"<keyA>|<keyB>": {"msgs": [{"id", "from", "text", "time"}], "read": {"<user key>": last read message id}}}}
+data/chat.json -> {"threads": {"<keyA>|<keyB>": {"msgs": [{"id", "from", "text", "time"}], "read": {"<user key>": last read message id}}},
+                   "links": {"<keyA>|<keyB>": {"from": "<who asked>", "status": "pending" | "accepted"}},
+                   "blocks": {"<blocker key>": ["<blocked key>", ...]}}
+Nobody can write to a person before that person accepted the chat request (conversations that already had messages count as accepted); anybody may block anybody.
 A user key is "s:<student code>" or "d:<doctor id>" ("d:master" is the main admin), the same keys the notifications use.
 """
 import json
@@ -26,9 +29,9 @@ BLOCKED_EXT = {"exe", "bat", "cmd", "com", "scr", "msi", "sh", "ps1", "vbs", "js
 def _read():
     try:
         d = json.loads(FILE().read_text(encoding="utf-8"))
-        return {"threads": d.get("threads", {})}
+        return {"threads": d.get("threads", {}), "links": d.get("links", {}), "blocks": d.get("blocks", {})}
     except (OSError, ValueError):
-        return {"threads": {}}
+        return {"threads": {}, "links": {}, "blocks": {}}
 
 
 def _write(d):
@@ -44,6 +47,76 @@ def tid(a, b):
 def other(thread_id, me):
     a, b = thread_id.split("|")
     return b if a == me else a
+
+
+def _state(d, a, b):
+    """How `a` stands with `b`: ok | pending_out (a asked, waiting) | pending_in (b asked a) | blocked_by_me | blocked_me | none."""
+    if b in d["blocks"].get(a, []):
+        return "blocked_by_me"
+    if a in d["blocks"].get(b, []):
+        return "blocked_me"
+    t = tid(a, b)
+    link = d["links"].get(t)
+    if link and link["status"] == "accepted":
+        return "ok"
+    if link and link["status"] == "pending":
+        return "pending_out" if link["from"] == a else "pending_in"
+    if d["threads"].get(t, {}).get("msgs"):                       # talked before this rule existed: stays open
+        return "ok"
+    return "none"
+
+
+def state(a, b):
+    return _state(_read(), a, b)
+
+
+def request(frm, to):
+    """Ask `to` to chat. Returns the state afterwards (a request the other side already made is accepted at once)."""
+    if frm == to:
+        return "none"
+    with _lock:
+        d = _read()
+        st = _state(d, frm, to)
+        if st == "none":
+            d["links"][tid(frm, to)] = {"from": frm, "status": "pending"}
+            st = "pending_out"
+        elif st == "pending_in":
+            d["links"][tid(frm, to)]["status"] = "accepted"
+            st = "ok"
+        _write(d)
+    return st
+
+
+def respond(me, other_key, action):
+    """accept | decline | block | unblock. Returns the new state."""
+    with _lock:
+        d = _read()
+        t = tid(me, other_key)
+        if action == "accept" and _state(d, me, other_key) == "pending_in":
+            d["links"][t]["status"] = "accepted"
+        elif action == "decline" and _state(d, me, other_key) == "pending_in":
+            d["links"].pop(t, None)
+        elif action == "block":
+            if other_key not in d["blocks"].setdefault(me, []):
+                d["blocks"][me].append(other_key)
+            d["links"].pop(t, None) if t in d["links"] and d["links"][t]["status"] == "pending" else None
+        elif action == "unblock":
+            d["blocks"][me] = [k for k in d["blocks"].get(me, []) if k != other_key]
+            if not d["blocks"][me]:
+                d["blocks"].pop(me)
+        _write(d)
+        return _state(d, me, other_key)
+
+
+def lists(me):
+    """(incoming requests, requests I sent and wait for, people I blocked) as lists of user keys."""
+    d = _read()
+    inc, out = [], []
+    for t, link in d["links"].items():
+        if link["status"] != "pending" or me not in t.split("|"):
+            continue
+        (out if link["from"] == me else inc).append(other(t, me))
+    return inc, out, list(d["blocks"].get(me, []))
 
 
 def save_file(storage):
@@ -70,6 +143,9 @@ def send(frm, to, text, file=None):
         return None, "empty"
     if frm == to:
         return None, "self"
+    st = state(frm, to)
+    if st != "ok":
+        return None, {"blocked_by_me": "blocked_by_me", "blocked_me": "blocked", "pending_out": "pending", "pending_in": "pending"}.get(st, "pending")
     now = time.time()
     with _lock:
         recent = [t for t in _sent.get(frm, []) if now - t < RATE[1]]
@@ -177,4 +253,7 @@ def purge(key):
             if key in t.split("|"):
                 _drop_files(v["msgs"])
         d["threads"] = {t: v for t, v in d["threads"].items() if key not in t.split("|")}
+        d["links"] = {t: v for t, v in d["links"].items() if key not in t.split("|")}
+        d["blocks"] = {k: [x for x in v if x != key] for k, v in d["blocks"].items() if k != key}
+        d["blocks"] = {k: v for k, v in d["blocks"].items() if v}
         _write(d)

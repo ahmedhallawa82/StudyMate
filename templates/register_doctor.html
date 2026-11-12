@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ t('reg_doc_title') }}{% endblock %}
+{% block content %}
+<div class="auth fade" style="--i:1">
+  {% include "_auth_brand.html" %}
+  <section class="auth-form">
+    <h1>👨‍🏫 {{ t('reg_doc_title') }}</h1>
+    <p class="muted"><a href="{{ url_for('register') }}">← {{ t('reg_back') }}</a></p>
+    <p class="muted small">{{ t('reg_doc_info') }}</p>
+    <form method="post" action="{{ url_for('register_doctor') }}">
+      <label class="small">{{ t('prof_name') }}</label><input type="text" name="name" required maxlength="60" value="{{ request.form.name }}" autocomplete="name">
+      <label class="small" style="margin-top:10px">{{ t('username') }}</label><input type="text" name="username" required minlength="3" maxlength="30" pattern="[A-Za-z0-9._-]{3,30}" dir="ltr" autocomplete="username" value="{{ request.form.username }}">
+      <label class="small" style="margin-top:10px">{{ t('email') }}</label><input type="text" name="email" required dir="ltr" autocomplete="email" value="{{ request.form.email }}">
+      <label class="small" style="margin-top:10px">{{ t('password') }}</label><input type="password" name="password" required minlength="8" dir="ltr" autocomplete="new-password">
+      <label class="small" style="margin-top:10px">{{ t('pw_confirm') }}</label><input type="password" name="confirm" required minlength="8" dir="ltr" autocomplete="new-password">
+      {% set targets = "password,confirm" %}{% include "_passgen.html" %}
+      <label class="small" style="margin-top:10px">{{ t('reg_doc_note') }}</label><input type="text" name="note" maxlength="300" value="{{ request.form.note }}">
+      <button class="btn auth-main" type="submit" style="margin-top:14px">{{ t('reg_doc_send') }}</button>
+      <p class="auth-alt">{{ t('have_account') }} <a href="{{ url_for('start') }}"><b>{{ t('login_btn') }}</b></a></p>
+    </form>
+  </section>
+</div>
+{% endblock %}

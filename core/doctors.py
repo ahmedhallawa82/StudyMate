@@ -86,6 +86,25 @@ def add(name, email="", username="", password="", role="doctor", perms=None):
     return did, pw
 
 
+def add_hashed(name, email, username, pw_hash):
+    """A doctor account whose password was chosen by the doctor himself (already hashed). Raises ValueError('adms_user_taken' | 'adms_user_bad')."""
+    username = (username or "").strip()
+    if not re.fullmatch(r"[A-Za-z0-9._-]{3,30}", username):
+        raise ValueError("adms_user_bad")
+    with _lock:
+        rows = _load()
+        if username.lower() in ("admin", "master") or any(username_of(d).lower() == username.lower() for d in rows):
+            raise ValueError("adms_user_taken")
+        ids = {d["id"] for d in rows}
+        did = _rand(4)
+        while did in ids:
+            did = _rand(4)
+        rows.append({"id": did, "name": name.strip()[:60] or did, "email": (email or "").strip()[:120], "hash": pw_hash,
+                     "created": datetime.now().strftime("%Y-%m-%d"), "initial": "", "new": "", "username": username})
+        _save(rows)
+    return did
+
+
 def by_student(code):
     """The admin account made from this student, if any."""
     return next((d["id"] for d in _load() if code and d.get("student") == code), None)

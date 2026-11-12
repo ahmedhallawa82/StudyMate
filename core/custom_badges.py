@@ -38,12 +38,12 @@ def get(bid):
     return next((b for b in defs() if b["id"] == bid), None)
 
 
-def create(name, icon, desc, owner):
+def create(name, icon, desc, owner, by_name=""):
     name, desc = (name or "").strip()[:60], (desc or "").strip()[:300]
     icon = (icon or "").strip()[:8] or "⭐"
     if not name:
         return None
-    rec = {"id": f"c{int(time.time() * 1000)}", "name": name, "icon": icon, "desc": desc, "owner": owner,
+    rec = {"id": f"c{int(time.time() * 1000)}", "name": name, "icon": icon, "desc": desc, "owner": owner, "by_name": (by_name or "").strip()[:60],
            "created": datetime.now().strftime("%Y-%m-%d")}
     with _lock:
         d = _read()

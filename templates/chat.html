@@ -11,13 +11,24 @@
         <button class="btn teal small" type="submit">{{ t('chat_open') }}</button></div>
     </form>
     <div class="chat-list">
+      {% if incoming %}<div class="chat-sec">{{ t('chat_requests') }}</div>
+      {% for p in incoming %}<a class="chat-row{{ ' on' if cur and cur.key == p.key }}" href="{{ url_for('chat_page', **{'with': p.key}) }}">
+        {% if p.avatar %}<img class="avatar" src="{{ p.avatar }}" alt="">{% else %}<span class="avatar">{{ p.name[:1]|upper }}</span>{% endif %}
+        <span class="chat-meta"><b>{{ p.name }}</b><small>{{ t('chat_wants') }}</small></span><span class="badge">1</span></a>{% endfor %}{% endif %}
+      {% if outgoing %}<div class="chat-sec">{{ t('chat_waiting') }}</div>
+      {% for p in outgoing %}<a class="chat-row{{ ' on' if cur and cur.key == p.key }}" href="{{ url_for('chat_page', **{'with': p.key}) }}">
+        {% if p.avatar %}<img class="avatar" src="{{ p.avatar }}" alt="">{% else %}<span class="avatar">{{ p.name[:1]|upper }}</span>{% endif %}
+        <span class="chat-meta"><b>{{ p.name }}</b><small>⏳ {{ t('chat_pending_short') }}</small></span></a>{% endfor %}{% endif %}
+      {% if threads %}{% if incoming or outgoing %}<div class="chat-sec">{{ t('nav_chat') }}</div>{% endif %}{% endif %}
       {% for p in threads %}
       <a class="chat-row{{ ' on' if cur and cur.key == p.key }}" href="{{ url_for('chat_page', **{'with': p.key}) }}">
         {% if p.avatar %}<img class="avatar" src="{{ p.avatar }}" alt="">{% else %}<span class="avatar">{{ p.name[:1]|upper }}</span>{% endif %}
         <span class="chat-meta"><b>{{ p.name }}</b><small dir="auto">{{ p.last }}</small></span>
         {% if p.unread %}<span class="badge">{{ p.unread if p.unread < 10 else '9+' }}</span>{% endif %}
       </a>
-      {% else %}<p class="muted small" style="padding:10px">{{ t('chat_none') }}</p>{% endfor %}
+      {% else %}{% if not incoming and not outgoing %}<p class="muted small" style="padding:10px">{{ t('chat_none') }}</p>{% endif %}{% endfor %}
+      {% if blocked %}<details class="chat-blocked"><summary>🚫 {{ t('chat_blocked_list', n=blocked|length) }}</summary>
+        {% for p in blocked %}<form method="post" action="{{ url_for('chat_respond') }}" class="chat-bl-row"><span>{{ p.name }}</span><input type="hidden" name="with" value="{{ p.key }}"><input type="hidden" name="action" value="unblock"><button class="btn ghost small" type="submit">{{ t('chat_unblock') }}</button></form>{% endfor %}</details>{% endif %}
     </div>
   </aside>
 
@@ -26,10 +37,24 @@
     <header class="chat-head">
       {% if cur.avatar %}<img class="avatar" src="{{ cur.avatar }}" alt="">{% else %}<span class="avatar">{{ cur.name[:1]|upper }}</span>{% endif %}
       <div style="flex:1;min-width:0"><b>{{ cur.name }}</b><small class="muted" dir="ltr"> @{{ cur.username }} · {{ cur.role }}</small></div>
-      <form method="post" action="{{ url_for('chat_close') }}" onsubmit="return confirm({{ t('chat_close_confirm')|tojson }})">
+      {% if cstate != 'blocked_by_me' %}<form method="post" action="{{ url_for('chat_respond') }}" onsubmit="return confirm({{ t('chat_block_confirm')|tojson }})">
+        <input type="hidden" name="with" value="{{ cur.key }}"><input type="hidden" name="action" value="block"><button class="btn ghost small" type="submit">🚫 {{ t('chat_block') }}</button></form>{% endif %}
+      {% if cstate == 'ok' %}<form method="post" action="{{ url_for('chat_close') }}" onsubmit="return confirm({{ t('chat_close_confirm')|tojson }})">
         <input type="hidden" name="with" value="{{ cur.key }}"><button class="btn ghost small" type="submit" title="{{ t('chat_close_tip') }}">✕ {{ t('chat_close') }}</button>
-      </form>
+      </form>{% endif %}
     </header>
+    {% if cstate != 'ok' %}
+    <div class="chat-blank chat-state">
+      {% if cstate == 'pending_in' %}<p><b>{{ cur.name }}</b> {{ t('chat_wants_long') }}</p>
+        <form method="post" action="{{ url_for('chat_respond') }}" style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap"><input type="hidden" name="with" value="{{ cur.key }}">
+          <button class="btn" name="action" value="accept">✓ {{ t('chat_accept') }}</button><button class="btn ghost" name="action" value="decline">{{ t('chat_decline') }}</button></form>
+      {% elif cstate == 'pending_out' %}<p>⏳ {{ t('chat_req_wait', name=cur.name) }}</p>
+      {% elif cstate == 'blocked_by_me' %}<p>🚫 {{ t('chat_you_blocked', name=cur.name) }}</p>
+        <form method="post" action="{{ url_for('chat_respond') }}"><input type="hidden" name="with" value="{{ cur.key }}"><input type="hidden" name="action" value="unblock"><button class="btn">{{ t('chat_unblock') }}</button></form>
+      {% elif cstate == 'blocked_me' %}<p>{{ t('chat_cannot') }}</p>
+      {% else %}<p>{{ t('chat_pick') }}</p>{% endif %}
+    </div>
+    {% else %}
     <div class="chat-msgs" id="chatMsgs" data-with="{{ cur.key }}" data-poll="{{ url_for('chat_poll') }}" data-send="{{ url_for('chat_send') }}">
       {% for m in msgs %}<div class="bubble {{ 'me' if m.mine else 'them' }}" data-id="{{ m.id }}">{% if m.file %}{% if m.file.img %}<a href="{{ m.file.url }}" target="_blank"><img class="chat-img" src="{{ m.file.url }}" alt="{{ m.file.name }}"></a>{% else %}<a class="chat-file" href="{{ m.file.url }}" download>📎 {{ m.file.name }} <small>({{ (m.file.size / 1024)|round|int }} KB)</small></a>{% endif %}{% endif %}{% if m.text %}<span dir="auto">{{ m.text }}</span>{% endif %}<small dir="ltr">{{ m.time }}{% if m.mine %} <span class="ticks{{ ' seen' if m.seen }}" title="{{ t('chat_seen') if m.seen else t('chat_sent') }}">✓✓</span>{% endif %}</small></div>
       {% else %}<p class="muted small chat-empty">{{ t('chat_say_hi') }}</p>{% endfor %}
@@ -41,16 +66,17 @@
     </form>
     <p class="muted small" id="chatPicked" hidden style="padding:0 14px 8px"></p>
     <p class="muted small chat-err" id="chatErr" hidden></p>
+    {% endif %}
     {% else %}
     <div class="chat-blank"><span style="font-size:48px">💬</span><p>{{ t('chat_pick') }}</p></div>
     {% endif %}
   </section>
 </div>
-{% if cur %}<script>
+{% if cur and cstate == 'ok' %}<script>
 (function () {
   var box = document.getElementById('chatMsgs'), form = document.getElementById('chatForm'), ta = document.getElementById('chatText'), err = document.getElementById('chatErr');
   var last = 0; box.querySelectorAll('.bubble').forEach(function (b) { last = Math.max(last, +b.dataset.id); });
-  var ERR = {rate: {{ t('chat_rate')|tojson }}, empty: '', user: {{ t('chat_not_found')|tojson }}, file_big: {{ t('chat_file_big')|tojson }}, file_type: {{ t('chat_file_type')|tojson }}};
+  var ERR = {rate: {{ t('chat_rate')|tojson }}, empty: '', user: {{ t('chat_not_found')|tojson }}, file_big: {{ t('chat_file_big')|tojson }}, file_type: {{ t('chat_file_type')|tojson }}, pending: {{ t('chat_cannot')|tojson }}, blocked: {{ t('chat_cannot')|tojson }}, blocked_by_me: {{ t('chat_you_blocked', name='')|tojson }}};
   var fileIn = document.getElementById('chatFile'), picked = document.getElementById('chatPicked');
   fileIn.onchange = function () { picked.hidden = !fileIn.files.length; picked.textContent = fileIn.files.length ? '📎 ' + fileIn.files[0].name : ''; };
   function add(m) {
@@ -97,6 +123,9 @@
 .chat-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line, #eef0f0); }
 .chat-row:hover, .chat-row.on { background: var(--chip, rgba(15,138,130,.08)); }
 .chat-meta { display: flex; flex-direction: column; min-width: 0; flex: 1; } .chat-meta small { color: var(--muted, #6b7a78); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-sec { padding: 8px 14px 4px; font-size: 12px; font-weight: 700; color: var(--muted, #6b7a78); text-transform: uppercase; letter-spacing: .04em; }
+.chat-blocked { padding: 10px 14px; border-top: 1px solid var(--line, #e5e7eb); } .chat-blocked summary { cursor: pointer; font-size: 13px; color: var(--muted, #6b7a78); }
+.chat-bl-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; } .chat-state { padding: 20px; }
 .chat-sug { padding: 12px 14px; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--line, #e5e7eb); } .chat-sug small { width: 100%; }
 .chat-head { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line, #e5e7eb); }
 .chat-msgs { flex: 1; overflow: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }

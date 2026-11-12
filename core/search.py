@@ -212,6 +212,15 @@ def _read_threshold(course=None):
     return t, 0.5, 0.0
 
 
+def set_threshold(value, course=None):
+    """Save a new "Not found" similarity threshold for the course (coverage and topic weight stay as they are)."""
+    cov, tw = 0.5, 0.0
+    if threshold_file(course).exists():
+        _, cov, tw = _read_threshold(course)
+    threshold_file(course).parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump({"similarity": float(value), "coverage": cov, "topic_weight": tw}, threshold_file(course))
+
+
 def build_index(passages: pd.DataFrame = None, topic_names: dict = None, course=None) -> SearchEngine:
     P = config.course_paths(course)
     if passages is None:

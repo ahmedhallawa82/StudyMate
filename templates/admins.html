@@ -15,7 +15,7 @@
     {% set targets = "admin_pw" %}{% include "_passgen.html" %}
     <h4>{{ t('adms_perms') }}</h4>
     <div class="adm-perms">
-      {% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}
+      <label class="chk perm-all"><input type="checkbox" data-all> <b>{{ t('perm_all') }}</b></label>{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}
     </div>
     <p class="muted small">{{ t('adms_note') }}</p>
     <button class="btn" type="submit">{{ t('adms_add_btn') }}</button>
@@ -30,7 +30,7 @@
       {% for p in r.perms %}<span class="tag">{{ t(labels[p]) }}</span> {% else %}<span class="muted small">{{ t('adms_no_perms') }}</span>{% endfor %}</summary>
     <form method="post" class="adm-edit">
       <input type="hidden" name="action" value="set_perms"><input type="hidden" name="admin" value="{{ r.id }}">
-      <div class="adm-perms">{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in r.perms }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
+      <div class="adm-perms"><label class="chk perm-all"><input type="checkbox" data-all> <b>{{ t('perm_all') }}</b></label>{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in r.perms }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
       <button class="btn small" type="submit">{{ t('adms_save') }}</button>
     </form>
     <form method="post" class="adm-edit">
@@ -65,7 +65,7 @@
     {% else %}
     <form method="post" class="adm-edit">
       <input type="hidden" name="action" value="make_admin"><input type="hidden" name="student" value="{{ u.code }}"><input type="hidden" name="q" value="{{ q }}">
-      <div class="adm-perms">{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
+      <div class="adm-perms"><label class="chk perm-all"><input type="checkbox" data-all> <b>{{ t('perm_all') }}</b></label>{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
       <button class="btn small" type="submit">🛡️ {{ t('adms_make') }}</button>
     </form>
     {% endif %}
@@ -82,4 +82,17 @@
 .adm-row summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
 .adm-edit{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 0}
 </style>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  function sync(f) { var all = f.querySelector('[data-all]'); if (all) all.checked = [].every.call(f.querySelectorAll('input[name=perms]'), function (c) { return c.checked; }); }
+  document.addEventListener('change', function (e) {
+    var a = e.target, f = a.closest && a.closest('form'); if (!f) return;
+    if (a.matches('[data-all]')) f.querySelectorAll('input[name=perms]').forEach(function (c) { c.checked = a.checked; });
+    else if (a.name === 'perms') sync(f);
+  });
+  document.querySelectorAll('form').forEach(sync);
+})();
+</script>
 {% endblock %}

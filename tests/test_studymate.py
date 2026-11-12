@@ -212,12 +212,54 @@ def test_add_course_from_pdfs(client, admin):
         client.get("/course/AI")
 
 
-def test_guest_login_and_no_evaluation_link_for_students():
+def test_no_guest_login_and_register_steps():
     import app as A
     c = A.app.test_client()
-    r = c.post("/start", data={"guest": "1", "code": ""}, follow_redirects=True)
-    html = r.get_data(as_text=True)
-    assert "GUEST-" in html and "/evaluation" not in html
+    page = c.get("/start").get_data(as_text=True)
+    assert 'name="guest"' not in page
+    r = c.post("/start", data={"guest": "1"}, follow_redirects=True)
+    assert "GUEST-" not in r.get_data(as_text=True)
+    ch = c.get("/register").get_data(as_text=True)                          # step 1: student or doctor
+    assert "/register/student" in ch and "/register/doctor" in ch
+    st = c.get("/register/student").get_data(as_text=True)
+    assert "we store only this code" not in st
+    # a doctor asks for an account, the main admin approves it, then he can sign in
+    from core import doctor_requests, doctors
+    import tempfile, pathlib
+    d = pathlib.Path(tempfile.mkdtemp())
+    doctor_requests.FILE = lambda: d / "req.json"
+    doctors.FILE = lambda: d / "doc.json"
+    r = c.post("/register/doctor", data={"name": "Dr Test", "username": "dr.test", "email": "dr@t.com", "password": "longpass1", "confirm": "longpass1", "note": "AI"})
+    assert r.status_code == 302 and len(doctor_requests.pending()) == 1
+    assert c.post("/start", data={"username": "dr.test", "password": "longpass1"}).status_code == 200       # not approved yet
+    adm = A.app.test_client()
+    with adm.session_transaction() as ss:
+        ss["lecturer"], ss["admin_id"], ss["admin_name"] = True, "master", ""
+    assert "Dr Test" in adm.get("/doctors").get_data(as_text=True)
+    adm.post("/doctors", data={"id": "1", "action": "approve"})
+    assert doctor_requests.pending() == [] and doctors.list_doctors("doctor")[0]["username"] == "dr.test"
+    assert c.post("/start", data={"username": "dr.test", "password": "longpass1"}).status_code == 302
+
+
+def test_chat_needs_accept_and_block(tmp_path, monkeypatch):
+    from core import chat
+    monkeypatch.setattr(chat, "FILE", lambda: tmp_path / "chat.json")
+    a, b = "s:S1", "d:abcd"
+    assert chat.send(a, b, "hi")[1] == "pending"                      # nobody can write first
+    assert chat.request(a, b) == "pending_out" and chat.state(b, a) == "pending_in"
+    assert chat.send(b, a, "hi")[1] == "pending"                      # the receiver cannot write before accepting either
+    chat.respond(b, a, "accept")
+    assert chat.send(a, b, "hello")[1] == "" and chat.send(b, a, "hey")[1] == ""
+    chat.respond(b, a, "block")                                       # b blocks a: a cannot write, b cannot write
+    assert chat.send(a, b, "x")[1] == "blocked" and chat.send(b, a, "x")[1] == "blocked_by_me"
+    chat.respond(b, a, "unblock")
+    assert chat.send(a, b, "again")[1] == ""
+    c1, c2 = "s:S2", "s:S3"                                           # both sides ask -> accepted at once
+    chat.request(c1, c2)
+    assert chat.request(c2, c1) == "ok"
+    chat.request("s:S4", b)
+    chat.respond(b, "s:S4", "decline")
+    assert chat.state("s:S4", b) == "none"
 
 
 def test_second_course_search_and_arabic(client):
@@ -474,6 +516,7 @@ def test_chat_files_and_close_for_good(admin, client, tmp_path, monkeypatch):
     with client.session_transaction() as ss:
         scode = ss["student_code"]
     key = "s:" + scode
+    chat.request("d:master", key); chat.respond(key, "d:master", "accept")                 # a chat needs the other side to accept first
     r = admin.post("/chat/send", data={"with": key, "text": "see file", "file": (io.BytesIO(b"hello"), "notes.txt")}, content_type="multipart/form-data")
     j = r.get_json()
     assert j["ok"] and j["msg"]["file"]["name"] == "notes.txt"
@@ -498,6 +541,7 @@ def test_read_ticks_make_student_admin_and_doctor_username(admin, tmp_path, monk
     as_student(st, "TICK1")
     with st.session_transaction() as ss:
         code = ss["student_code"]
+    chat.request("d:master", "s:" + code); chat.respond("s:" + code, "d:master", "accept")
     r = admin.post("/chat/send", data={"with": "s:" + code, "text": "hi"}).get_json()
     assert r["msg"]["seen"] is False
     assert admin.get("/chat/poll?with=s:" + code).get_json()["seen"] == 0               # not read yet: grey ticks
@@ -745,7 +789,7 @@ def test_password_generator_rules_and_button():
     c = A.app.test_client()
     pw = c.get("/generate-password").get_json()["password"]
     assert passgen.check(pw)
-    assert "data-passgen" in c.get("/register").get_data(as_text=True)
+    assert "data-passgen" in c.get("/register/student").get_data(as_text=True)
     # a generated password is accepted by the registration rules
     r = c.post("/register", data={"first": "Gen", "last": "Pw", "email": "genpw@test.com", "password": pw, "confirm": pw})
     assert r.status_code in (200, 302)
@@ -1028,6 +1072,9 @@ def test_chat_between_people_by_username_with_privacy_and_notification():
     assert "chat" in a.post("/chat", data={"username": "chatb@test.com"}).headers["Location"] and kb not in a.post("/chat", data={"username": "chatb@test.com"}).headers["Location"]
     r = a.post("/chat", data={"username": ub["username"]})
     assert r.status_code == 302 and "with=" in r.headers["Location"]
+    assert a.post("/chat/send", data={"with": kb, "text": "too early"}).status_code == 403          # he has not accepted yet
+    assert any("wants to chat" in n["title"] for n in notify.for_user(kb))
+    b.post("/chat/respond", data={"with": ka, "action": "accept"})
     assert a.post("/chat/send", data={"with": kb, "text": "hello <b>x</b>"}).get_json()["ok"]
     assert chat.unread_total(kb) == 1 and chat.unread_total(ka) == 0
     assert any("CHATA" in n["title"].upper() or "Test" in n["title"] for n in notify.for_user(kb))   # told once
@@ -1041,6 +1088,7 @@ def test_chat_between_people_by_username_with_privacy_and_notification():
     assert a.post("/chat/send", data={"with": ka, "text": "x"}).status_code == 400
     assert a.post("/chat/send", data={"with": "s:NOPE", "text": "x"}).status_code == 400
     # the doctor can write to a student and the student answers him
+    chat.request("d:" + did, ka); chat.respond(ka, "d:" + did, "accept")
     assert d.post("/chat/send", data={"with": ka, "text": "Dr here"}).get_json()["ok"]
     assert "Dr here" in a.get("/chat?with=d:" + did).get_data(as_text=True)
     # guests have no chat
