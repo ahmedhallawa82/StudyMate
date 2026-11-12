@@ -17,7 +17,7 @@ import config
 from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
-from core import faq, modelspw, autoeval, followup, videos
+from core import faq, modelspw, autoeval, followup, videos, neural
 from core import schedule as SCH
 from core import exams as EX
 from core import mastery as M
@@ -28,6 +28,7 @@ from core.topics import load_topics, study_next
 from core.i18n import tr
 
 app = Flask(__name__)
+app.jinja_env.globals["neural_ok"] = lambda: neural.available()
 app.secret_key = config.SECRET_KEY
 from datetime import timedelta
 app.permanent_session_lifetime = timedelta(days=30)      # "remember me"
@@ -591,7 +592,7 @@ def ask():
     result = None
     question = request.values.get("q", "").strip()
     method = request.values.get("method", "tfidf")
-    method = method if method in ("tfidf", "bm25", "lsa", "hybrid") else "tfidf"
+    method = method if method in ("tfidf", "bm25", "lsa", "hybrid") or (method == "neural" and neural.available()) else "tfidf"
     if question:
         clf, eng = S()["clf"], S()["engine"]
         topic, conf = clf.predict(question)

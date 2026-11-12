@@ -1,0 +1,2 @@
+# Optional: free neural search method (see core/neural.py). Needs internet access to huggingface.co once to download the ~130 MB model.
+fastembed>=0.3

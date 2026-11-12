@@ -1164,3 +1164,19 @@ def test_help_is_public_and_only_staff_add(client):
 def test_course_dropdown_shows_title_only(client):
     page = client.get("/studio").get_data(as_text=True)
     assert 'data-cmenu' in page and "cmenu-item" in page
+
+
+def test_neural_method_optional_and_falls_back(monkeypatch):
+    import numpy as np, pandas as pd
+    from core import neural
+    from core.search import SearchEngine
+    p = pd.DataFrame({"passage_id": ["a", "b", "c"], "lecture": [1, 1, 2], "slide": [1, 2, 1], "topic": ["t", "t", "u"],
+                      "topic_name": ["T", "T", "U"], "text": ["Rational agents maximise expected utility.", "Breadth first search expands shallow nodes first.",
+                                                              "Bayes rule updates a probability from evidence."]})
+    eng = SearchEngine(p)
+    monkeypatch.setattr(neural, "embed", lambda texts: None)                      # no model installed -> hybrid
+    assert np.allclose(eng.scores("breadth first", "neural"), eng.scores("breadth first", "hybrid"))
+    eng._nemb = None
+    fake = lambda texts: np.eye(3, dtype=np.float32)[: len(texts)] if len(texts) == 3 else np.array([[0, 1, 0]], dtype=np.float32)
+    monkeypatch.setattr(neural, "embed", fake)                                      # a fake model that matches slide 2
+    assert int(np.argmax(eng.scores("something", "neural"))) == 1

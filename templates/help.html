@@ -11,7 +11,7 @@
       <div class="mh-card">
   <p class="muted small">{{ t('mh_intro') }}</p>
   <div class="mh-grid">
-    {% for id, name, d, h in [('tfidf', 'TF-IDF', 'mh_tfidf_d', 'mh_tfidf_h'), ('bm25', 'BM25', 'mh_bm25_d', 'mh_bm25_h'), ('hybrid', t('m_hybrid'), 'mh_hybrid_d', 'mh_hybrid_h'), ('lsa', t('m_lsa'), 'mh_lsa_d', 'mh_lsa_h')] %}
+    {% for id, name, d, h in [('tfidf', 'TF-IDF', 'mh_tfidf_d', 'mh_tfidf_h'), ('bm25', 'BM25', 'mh_bm25_d', 'mh_bm25_h'), ('hybrid', t('m_hybrid'), 'mh_hybrid_d', 'mh_hybrid_h'), ('lsa', t('m_lsa'), 'mh_lsa_d', 'mh_lsa_h')] + ([('neural', t('m_neural'), 'mh_neural_d', 'mh_neural_h')] if neural_ok() else []) %}
     <div class="mh-item">
       <b>{{ name }}</b>
       <p>{{ t(d) }}</p>

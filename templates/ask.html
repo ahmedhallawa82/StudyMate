@@ -13,6 +13,7 @@
           <option value="bm25" {{ 'selected' if method == 'bm25' }}>BM25</option>
           <option value="hybrid" {{ 'selected' if method == 'hybrid' }}>{{ t('m_hybrid') }}</option>
           <option value="lsa" {{ 'selected' if method == 'lsa' }}>{{ t('m_lsa') }}</option>
+          {% if neural_ok() %}<option value="neural" {{ 'selected' if method == 'neural' }}>{{ t('m_neural') }}</option>{% endif %}
         </select>
         <button class="btn" type="submit">{{ t('ask_btn') }}</button>
       </form>

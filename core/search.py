@@ -113,9 +113,26 @@ class SearchEngine:
         v = normalize(self.svd.transform(self.vectorizer.transform([q])))
         return np.clip(self.doc_lsa @ v.ravel(), 0, None)
 
+    # ---------------- neural (optional, free) ----------------
+    def _neural(self, q: str) -> np.ndarray:
+        """Cosine similarity of sentence embeddings blended with TF-IDF; falls back to Hybrid when no model is installed."""
+        from core import neural
+        if getattr(self, "_nemb", None) is None:
+            self._nemb = neural.embed((self.passages["text"] + " " + self.passages["topic_name"]).tolist())
+        qv = neural.embed([q]) if self._nemb is not None else None
+        if qv is None:
+            return 0.5 * self._tfidf(q) + 0.5 * self._lsa(q)
+        return 0.7 * np.clip(self._nemb @ qv[0], 0, None) + 0.3 * self._tfidf(q)
+
+    def __getstate__(self):
+        d = dict(self.__dict__); d.pop("_nemb", None)       # embeddings are rebuilt on demand, not stored in the index
+        return d
+
     # ---------------- scoring ----------------
     def scores(self, question: str, method: str = "tfidf") -> np.ndarray:
         q = prepare_query(question)
+        if method == "neural":
+            return self._neural(q)
         if method == "lsa":
             return self._lsa(q)
         if method == "hybrid":                           # exact words (TF-IDF) + related words (LSA)

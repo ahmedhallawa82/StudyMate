@@ -71,7 +71,9 @@ def run(code, n_queries=150, seed=0):
     eng = SearchEngine(train)
     ids = list(eng.passages["passage_id"])
     res = {}
-    for key, name in METHODS:
+    from core import neural
+    methods = METHODS + ([("neural", "Neural (free AI model)")] if neural.available() else [])
+    for key, name in methods:
         t1 = t3 = 0
         rr = []
         for q, pid in queries:
