@@ -22,7 +22,7 @@ _lock = threading.Lock()
 _ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"          # no 0/O/1/I/L: easy to read out loud
 MASTER = "master"
 MIN_LEN = 8
-PERMS = ("content", "exams", "badges", "data", "students", "chat", "support", "doctors")     # what a sub-admin may be given
+PERMS = ("content", "exams", "badges", "data", "students", "chat", "support", "doctors", "announce")     # what a sub-admin may be given
 
 
 def _load():

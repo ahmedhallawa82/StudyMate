@@ -4,6 +4,8 @@
 {% block content %}
 {% set wdn = t('home_wd').split(',') %}
 {% if courses|length > 1 %}<div class="course-chips fade" style="--i:0">{{ course_menu() }}</div>{% endif %}
+{% if announcements %}<div class="card ann-banner fade" style="--i:0"><h3>📢 {{ t('ann_home') }}</h3>
+  {% for a in announcements %}<div class="ann-i"><b dir="auto">{{ a.title }}</b> <small class="muted">· {{ a.time }}</small>{% if a.body %}<p class="small" dir="auto" style="white-space:pre-line;margin:4px 0 0">{{ a.body }}</p>{% endif %}</div>{% endfor %}</div>{% endif %}
 <div class="edu-head fade" style="--i:0">
   <div>
     <div class="hero-date" id="today" data-iso="{{ today }}"></div>
@@ -36,7 +38,7 @@
     </div>
 
     <div class="card fade" style="--i:6">
-      <div class="card-top"><h3>{{ t('home_plan') }}</h3><a href="{{ url_for('progress') }}">{{ t('home_all_topics') }} →</a></div>
+      <div class="card-top"><h3>{{ t('home_plan') }}</h3><a href="{{ url_for('plan_page') }}">🗓 {{ t('plan_link') }} →</a></div>
       {% if plan %}
       <div class="plan">
         {% for x in plan %}

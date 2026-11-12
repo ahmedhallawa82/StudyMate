@@ -2,7 +2,7 @@
 import json
 
 import config
-from core import students, doctors, profiles, notify, chat, badges, custom_badges
+from core import students, doctors, profiles, notify, chat, badges, custom_badges, bookmarks
 from core import exams as EX
 from core.logger import delete_student_rows
 
@@ -14,6 +14,7 @@ def delete_student(code):
     profiles.delete(key)
     notify.purge(key)
     chat.purge(key)
+    bookmarks.drop_student(code)
     badges.purge(code)
     custom_badges.purge_student(code)
     return students.delete(code)

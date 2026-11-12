@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('rep_title') }}{% endblock %}
+{% block content %}
+{{ page_head('🗓', t('rep_title'), t('rep_sub')) }}
+{% for c in cards %}
+<section class="card" style="margin-bottom:16px">
+  <h2>📚 {{ c.title }} <small class="muted">{{ c.code }} · {{ c['from'] }} → {{ c.to }}</small></h2>
+  <div class="grid-4" style="margin-bottom:12px">
+    <div class="kpi"><div class="v">{{ c.questions }}</div><div class="l">{{ t('rep_q') }}</div></div>
+    <div class="kpi"><div class="v">{{ c.not_found }}</div><div class="l">{{ t('rep_nf') }}</div></div>
+    <div class="kpi"><div class="v">{{ c.students }}</div><div class="l">{{ t('rep_st') }}</div></div>
+    <div class="kpi"><div class="v">{{ (c.helpful_pct ~ '%') if c.helpful_pct is not none else '–' }}</div><div class="l">{{ t('rep_help') }}</div></div>
+  </div>
+  <div class="grid">
+    <div><h3>{{ t('rep_weak') }}</h3>
+      {% for w in c.weak %}<p>{{ w.name }} <small class="muted">· {{ t('rep_avg', a=w.avg, n=w.n) }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}</div>
+    <div><h3>{{ t('rep_missing') }}</h3>
+      {% for m in c.missing %}<p dir="auto">{{ m.question }} <small class="muted">{{ t('rep_n_times', n=m.n) }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}
+      {% if c.missing %}<p class="muted small">{{ t('rep_hint') }}</p>{% endif %}</div>
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

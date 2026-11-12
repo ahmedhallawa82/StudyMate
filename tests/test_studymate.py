@@ -32,6 +32,12 @@ def _students_file(tmp_path_factory):
     adminpw.FILE = lambda: d / "admin_auth.json"
     chat.FILE = lambda: d / "chat.json"
     catalog.FILE = lambda: d / "course_codes.json"
+    from core import bookmarks, announce, audit
+    bookmarks.FILE = lambda: d / "bookmarks.json"
+    announce.FILE = lambda: d / "announcements.json"
+    audit.FILE = lambda: d / "audit.jsonl"
+    import app as _A
+    _A.WEEKLY_FILE = lambda: d / "weekly_sent.json"
 
 
 def as_student(c, name):
@@ -1450,3 +1456,38 @@ def test_ask_page_shows_summary_and_slide_pictures(tmp_path):
     c = app.test_client()
     assert c.get("/slide-image/L01S01.png").status_code == 404                # no session
     assert c.get("/slide-image/bad.png").status_code == 404
+
+
+def test_saved_plan_announcements_report_and_audit(client, admin, tmp_path, monkeypatch):
+    """Bookmarks, study plan, announcements to a course, the weekly report and the admin activity log."""
+    import datetime as dt
+    from core import plan as planlib, bookmarks, announce, audit
+    import app as A
+    client = A.app.test_client()
+    as_student(client, "PLAN1")
+    # study plan: weakest first, two a day, nothing above 80 %
+    today = dt.date(2026, 1, 1)
+    topics = [("a", "A"), ("b", "B"), ("c", "C"), ("d", "D")]
+    p = planlib.study_plan({"a": 0.9, "b": 0.2, "c": 0.5}, topics, dt.date(2026, 1, 3), today)
+    assert [x["topic"] for x in p["days"][0]["topics"]] == ["b", "d"] and p["days"][1]["topics"][0]["topic"] == "c"
+    assert all(x["topic"] != "a" for d in p["days"] for x in d["topics"])
+    rows = [{"time": "2026-01-01 10:00", "question": "What is X", "found": "no", "student_code": "S1", "helpful": "yes"}]
+    w = planlib.weekly(rows, [], [], {}, today=today)
+    assert w["questions"] == 1 and w["not_found"] == 1 and w["missing"][0]["n"] == 1 and w["helpful_pct"] == 100
+    # student side: star a question, see it in Saved, open the plan
+    r = client.post("/saved/toggle", data={"q": "what is bfs"}, headers={"X-Requested-With": "fetch"})
+    assert r.get_json()["saved"] is True
+    assert "what is bfs" in client.get("/saved").get_data(as_text=True)
+    assert client.post("/saved/toggle", data={"q": "what is bfs"}, headers={"X-Requested-With": "fetch"}).get_json()["saved"] is False
+    assert client.get("/plan").status_code == 200
+    # staff side: announcement reaches the course, report and audit pages open
+    with admin.session_transaction() as ss:                                  # main admin, whatever password earlier tests set
+        ss["lecturer"], ss["admin_id"], ss["admin_name"] = True, "master", ""
+    for url in ("/announcements", "/report", "/audit"):
+        assert admin.get(url).status_code == 200, url
+    rv = admin.post("/announcements", data={"action": "add", "course": config.DEFAULT_COURSE, "title": "Exam moved", "body": "Sunday"})
+    assert rv.status_code == 302
+    assert any(r["title"] == "Exam moved" for r in announce.for_courses([config.DEFAULT_COURSE]))
+    assert any(r["action"] == "announcement" for r in audit.rows(50))
+    assert "Exam moved" in client.get("/home").get_data(as_text=True)
+    assert "Please type your password" in client.application.test_client().post("/start", data={"username": "x", "password": ""}).get_data(as_text=True)

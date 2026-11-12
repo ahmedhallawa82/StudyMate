@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('aud_title') }}{% endblock %}
+{% block content %}
+{{ page_head('🧾', t('aud_title'), t('aud_sub')) }}
+<div class="card">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+    <input type="text" name="who" value="{{ who }}" placeholder="{{ t('aud_who') }}" style="max-width:220px">
+    <select name="action" style="max-width:240px"><option value="">{{ t('aud_all') }}</option>{% for a in actions %}<option value="{{ a }}" {{ 'selected' if a == act }}>{{ a }}</option>{% endfor %}</select>
+    <button class="btn ghost" type="submit">{{ t('aud_filter') }}</button>
+  </form>
+  <div style="overflow-x:auto"><table class="tbl" style="width:100%">
+    <tr><th>{{ t('aud_time') }}</th><th>{{ t('aud_who') }}</th><th>{{ t('aud_action') }}</th><th>{{ t('aud_target') }}</th></tr>
+    {% for r in rows %}<tr><td>{{ r.time }}</td><td>{{ r.actor }}</td><td><code>{{ r.action }}</code></td><td dir="auto">{{ r.target }}</td></tr>
+    {% else %}<tr><td colspan="4" class="muted">{{ t('aud_none') }}</td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endblock %}

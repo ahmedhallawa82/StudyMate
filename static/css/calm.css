@@ -158,3 +158,7 @@ html[dir="rtl"][data-theme="edu"] .lang-panel { inset-inline-end: 0; }
 /* never let form controls push the page wider than the screen */
 select, input, textarea { max-width: 100%; }
 html, body { overflow-x: clip; }
+
+.stack label { display: block; margin: 10px 0 4px; font-size: 13px; font-weight: 600; } .stack input, .stack select, .stack textarea { width: 100%; margin-top: 4px; } .stack .btn { margin-top: 12px; }
+.ann-banner { margin-bottom: 14px; } .ann-banner .ann-i { padding: 8px 0; border-top: 1px solid var(--line); } .ann-banner .ann-i:first-of-type { border-top: 0; }
+.star-btn.on { color: #e7a500; font-weight: 700; }

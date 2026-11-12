@@ -7,9 +7,12 @@
     <h1>{{ t(greet) }}{{ '،' if lang == 'ar' else ',' }} {{ name }} 👋</h1>
     <p class="muted">{{ t('sh_sub_admin') if master else t('sh_sub_doctor') }}</p>
   </div>
-  {% if master and 'support' in perms %}<div class="edu-actions">
-    <a class="btn ghost" href="{{ url_for('support_inbox') }}">🛟 {{ t('support_inbox') }}{% if support_open %}<span class="sup-count">{{ support_open }}</span>{% endif %}</a>
-  </div>{% endif %}
+  <div class="edu-actions">
+    {% if 'announce' in perms %}<a class="btn ghost" href="{{ url_for('announcements_page') }}">📢 {{ t('ann_title') }}</a>{% endif %}
+    {% if 'data' in perms %}<a class="btn ghost" href="{{ url_for('report_page') }}">🗓 {{ t('rep_link') }}</a>{% endif %}
+    {% if admin_role == 'master' %}<a class="btn ghost" href="{{ url_for('audit_page') }}">🧾 {{ t('aud_link') }}</a>{% endif %}
+    {% if master and 'support' in perms %}<a class="btn ghost" href="{{ url_for('support_inbox') }}">🛟 {{ t('support_inbox') }}{% if support_open %}<span class="sup-count">{{ support_open }}</span>{% endif %}</a>{% endif %}
+  </div>
 </div>
 
 <div class="edu-grid wide">

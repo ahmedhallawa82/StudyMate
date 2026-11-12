@@ -3,6 +3,7 @@
 {% block title %}{{ t('nav_ask') }}{% endblock %}
 {% block content %}
 {{ page_head('🔎', t('nav_ask'), t('tile_ask')) }}
+<p style="margin:-6px 0 12px"><a href="{{ url_for('saved_page') }}">⭐ {{ t('sv_link') }} →</a></p>
 <div class="grid">
   <section>
     <div class="card">
@@ -59,7 +60,8 @@
           <form method="post" action="{{ url_for('helpful', log_id=result.log_id, answer='no') }}" style="display:inline">
             <button class="btn ghost small" type="submit">{{ t('no') }}</button></form>
         </div>
-        <p style="margin-top:14px"><a class="btn teal small" href="{{ url_for('practice', topic=result.topic) }}">{{ t('practise_topic', topic=result.topic_name) }}</a></p>
+        <p style="margin-top:14px"><a class="btn teal small" href="{{ url_for('practice', topic=result.topic) }}">{{ t('practise_topic', topic=result.topic_name) }}</a>
+          <button class="btn ghost small star-btn {{ 'on' if starred }}" type="button" id="starBtn" data-q="{{ question }}" data-slide="{{ result.hits[0].passage_id if result.hits else '' }}" data-topic="{{ result.topic }}">⭐ <span>{{ t('sv_starred') if starred else t('sv_star') }}</span></button></p>
       {% else %}
         <div class="notfound"><b>{{ t('not_found') }}</b><br>{{ t('not_found_body', course=course) }}</div>
         <div class="muted small" style="margin-top:10px">{{ t('right_decision') }}
@@ -92,6 +94,18 @@ document.querySelectorAll('[data-big]').forEach(a => a.addEventListener('click',
   o.addEventListener('click', () => o.remove()); document.addEventListener('keydown', function k(ev) { if (ev.key === 'Escape') { o.remove(); document.removeEventListener('keydown', k); } });
   document.body.appendChild(o);
 }));
+</script>
+<script>
+// save / unsave this question (star)
+(function () {
+  var b = document.getElementById('starBtn'); if (!b) return;
+  b.addEventListener('click', function () {
+    var f = new FormData(); f.append('q', b.dataset.q); f.append('slide', b.dataset.slide); f.append('topic', b.dataset.topic);
+    fetch('{{ url_for('saved_toggle') }}', {method: 'POST', body: f, headers: {'X-Requested-With': 'fetch'}}).then(function (r) { return r.json(); }).then(function (j) {
+      b.classList.toggle('on', j.saved); b.querySelector('span').textContent = j.saved ? '{{ t('sv_starred') }}' : '{{ t('sv_star') }}';
+    });
+  });
+})();
 </script>
 <script>
 // send the helpful vote without reloading the page

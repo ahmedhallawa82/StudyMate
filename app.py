@@ -15,7 +15,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
+from core import bookmarks, audit, announce, plan as planlib, doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
 from core import faq, modelspw, autoeval, followup, videos, neural, insights, nbresults
@@ -174,6 +174,14 @@ def lecturer_required(view):
 # ------------------------------------------------------------------ who is the admin? (master or one doctor)
 def admin_id():
     return session.get("admin_id") if session.get("lecturer") else None
+
+
+def actor():
+    """Name used in the audit log: who is signed in on the admin side."""
+    a = admin_id()
+    if a == doctors.MASTER:
+        return "Admin"
+    return session.get("admin_name") or (doctors.get(a) or {}).get("username", "") or str(a)
 
 
 def is_main():
@@ -674,6 +682,7 @@ def student_home():
     visit("home")
     award()
     check_risk(course_code())
+    check_weekly(course_code())
     code, me = course_code(), student()
     mastery = my_mastery()
     items, nxt = topic_panel(mastery)
@@ -708,7 +717,7 @@ def student_home():
     greet = "gm" if hour < 12 else "ga" if hour < 18 else "ge"
     name = session.get("student_name") or me
     return render_template("home.html", stats=stats, items=items, weak=weak, week=wk, plan=plan, cont=cont, week_total=sum(w["n"] for w in wk), nxt=nxt, recent_q=recent_q, recent_e=recent_e,
-                           greet=greet, name=name, exam_ready=len(EX.eligible(code)) > 0, today=__import__("datetime").date.today().isoformat())
+                           greet=greet, name=name, announcements=announce.latest(student_course_list() or [code]), exam_ready=len(EX.eligible(code)) > 0, today=__import__("datetime").date.today().isoformat())
 
 
 # ------------------------------------------------------------------ Ask
@@ -754,7 +763,7 @@ def ask():
         visit("ask")
     items, nxt = topic_panel(my_mastery())
     return render_template("ask.html", question=question, method=method, result=result, items=items, nxt=nxt,
-                           examples=examples())
+                           examples=examples(), starred=bool(question) and bookmarks.is_saved(student(), course_code(), question))
 
 
 @app.route("/slide-image/<pid>.png")
@@ -1134,7 +1143,7 @@ def doctors_page():
 
 # ------------------------------------------------------------------ extra admins (main admin only): name, username, password, permissions
 PERM_LABEL = {"content": "adms_p_content", "exams": "adms_p_exams", "badges": "adms_p_badges", "data": "adms_p_data",
-              "students": "adms_p_students", "chat": "adms_p_chat", "support": "adms_p_support", "doctors": "adms_p_doctors"}
+              "students": "adms_p_students", "chat": "adms_p_chat", "support": "adms_p_support", "doctors": "adms_p_doctors", "announce": "adms_p_announce"}
 
 
 @app.route("/admins", methods=["GET", "POST"])
@@ -1156,12 +1165,14 @@ def admins_page():
                 try:
                     did, _pw = doctors.add(name, "", user, pw, role="admin", perms=picked)
                     flash_t("adms_added", name=name, user=user)
+                    audit.record(actor(), "admin_added", f"{name} ({user}) perms={','.join(picked)}")
                     sync_sheet()
                 except ValueError as e:
                     flash_t(str(e), n=doctors.MIN_LEN)
         elif action == "set_perms":
             if doctors.set_perms(request.form.get("admin", ""), picked):
                 flash_t("adms_saved")
+                audit.record(actor(), "perms_changed", f"{(doctors.get(request.form.get('admin', '')) or {}).get('username', '')}: {','.join(picked)}")
         elif action == "reset_admin":
             new = request.form.get("new", "").strip()
             a = doctors.get(request.form.get("admin", ""))
@@ -1171,16 +1182,19 @@ def admins_page():
                 else:
                     doctors.set_password(a["id"], new)
                     flash_t("adms_pw_set", user=a["username"])
+                    audit.record(actor(), "admin_password_reset", a["username"])
         elif action == "make_admin":                                      # a registered student becomes an admin
             st = students.get(request.form.get("student", ""))
             if st:
                 did = doctors.add_linked(st, picked)
                 notify.push(["s:" + st["code"], "d:" + did], "security", tr("adms_note_title", lang()), tr("adms_note_body", lang()), url_for("staff_home"))
                 flash_t("adms_made", name=f"{st['first']} {st['last']}".strip())
+                audit.record(actor(), "student_made_admin", f"{st['code']} perms={','.join(picked)}")
         elif action == "delete_admin":
             a = doctors.get(request.form.get("admin", ""))
             if a and a["role"] == "admin":
                 doctors.remove(a["id"])
+                audit.record(actor(), "admin_removed", a["username"])
                 if a.get("student"):
                     notify.push(["s:" + a["student"]], "security", tr("adms_note_off_title", lang()), tr("adms_note_off_body", lang()), url_for("student_home"))
                 flash_t("adms_deleted")
@@ -1195,6 +1209,144 @@ def admins_page():
     people = [{**x, "admin": doctors.by_student(x["code"])} for x in hits[:10]]
     return render_template("admins.html", rows=doctors.list_doctors("admin"), perms=doctors.PERMS, labels=PERM_LABEL, pw_min=doctors.MIN_LEN,
                            people=people, q=request.args.get("q", ""), total_students=len(allst), found=len(hits))
+
+
+# ------------------------------------------------------------------ audit log (main admin)
+@app.route("/audit")
+@lecturer_required
+def audit_page():
+    if not is_main():
+        flash_t("master_only")
+        return redirect(url_for("staff_home"))
+    who, act = request.args.get("who", "").strip(), request.args.get("action", "")
+    return render_template("audit.html", rows=audit.rows(300, who, act), actions=audit.actions(), who=who, act=act)
+
+
+# ------------------------------------------------------------------ announcements (staff -> students of a course)
+@app.route("/announcements", methods=["GET", "POST"])
+@lecturer_required
+@perm_required("announce")
+def announcements_page():
+    mine = [c for c in visible_courses() if can_manage(c["code"])]
+    codes = [c["code"] for c in mine]
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        if action == "add":
+            code = request.form.get("course", "")
+            title, body = request.form.get("title", ""), request.form.get("body", "")
+            if code not in codes or not title.strip():
+                flash_t("ann_need")
+            else:
+                item = announce.add(code, title, body, admin_id(), actor())
+                targets = ["s:" + st["code"] for st in course_students(code)]
+                notify.push(targets, "announce", f"📢 {item['title']}", item["body"][:200], url_for("student_home"))
+                audit.record(actor(), "announcement", f"{code}: {item['title']}")
+                flash_t("ann_sent", n=len(targets))
+        elif action == "delete":
+            it = next((r for r in announce.for_courses(codes, 300) if str(r["id"]) == request.form.get("id", "")), None)
+            if it and announce.remove(it["id"]):
+                audit.record(actor(), "announcement_deleted", f"{it['course']}: {it['title']}")
+                flash_t("ann_deleted")
+        return redirect(url_for("announcements_page"))
+    for c in mine:
+        c["title"] = c["name_ar"] if lang() == "ar" and c["name_ar"] else c["name_en"]
+        c["n"] = len(course_students(c["code"]))
+    return render_template("announcements.html", mine=mine, rows=announce.for_courses(codes, 40))
+
+
+# ------------------------------------------------------------------ weekly report (staff)
+def weekly_for(code):
+    st = STATE.get(code) or load_state(code)
+    names = st["names_ar"] if lang() == "ar" else st["names"]
+    qs, ans, visits = [[r for r in read_sheet(s) if r.get("course") == code] for s in ("Questions", "Answers", "Visits")]
+    return planlib.weekly(qs, ans, visits, names)
+
+
+@app.route("/report")
+@lecturer_required
+@perm_required("data")
+def report_page():
+    cards = []
+    for c in visible_courses():
+        if can_manage(c["code"]):
+            cards.append({"code": c["code"], "title": c["name_ar"] if lang() == "ar" and c["name_ar"] else c["name_en"], **weekly_for(c["code"])})
+    return render_template("report.html", cards=cards)
+
+
+WEEKLY_FILE = lambda: config.BASE_DIR / "data" / "weekly_sent.json"
+
+
+def check_weekly(code):
+    """Once a week per course (the first time anybody opens a page after the week changed): tell the course owner that the report is ready."""
+    import datetime as _d
+    key = "%d-W%02d" % _d.date.today().isocalendar()[:2]
+    f = WEEKLY_FILE()
+    try:
+        sent = json.loads(f.read_text(encoding="utf-8"))
+    except Exception:
+        sent = {}
+    if sent.get(code) == key:
+        return
+    sent[code] = key
+    try:
+        f.parent.mkdir(parents=True, exist_ok=True)
+        f.write_text(json.dumps(sent), encoding="utf-8")
+        owner = course_owner(code)
+        w = weekly_for(code)
+        notify.push(["d:" + (owner or doctors.MASTER)], "report", tr("rep_note_title", lang(), course=course_title(code)),
+                    tr("rep_note_body", lang(), q=w["questions"], nf=w["not_found"], s=w["students"]), url_for("report_page"))
+    except Exception as e:                                   # noqa: BLE001 - a notice must never break a page
+        print("weekly report skipped:", type(e).__name__, e)
+
+
+# ------------------------------------------------------------------ saved answers, recent questions, study plan (student)
+@app.route("/saved")
+@student_required
+def saved_page():
+    me, code = student(), course_code()
+    seen, recent = set(), []
+    for q in read_sheet("Questions")[::-1]:
+        if q.get("student_code") == me and q.get("course") == code:
+            key = str(q.get("question", "")).strip().lower()
+            if key and key not in seen:
+                seen.add(key)
+                recent.append({"q": q["question"], "found": q.get("found") == "yes", "time": str(q.get("time", ""))[:16]})
+                if len(recent) >= 15:
+                    break
+    return render_template("saved.html", saved=bookmarks.listing(me, code), recent=recent)
+
+
+@app.route("/saved/toggle", methods=["POST"])
+@student_required
+def saved_toggle():
+    on = bookmarks.toggle(student(), course_code(), request.form.get("q", ""), request.form.get("slide", ""), request.form.get("topic", ""))
+    if request.headers.get("X-Requested-With") == "fetch":
+        return jsonify(ok=True, saved=on)
+    return redirect(request.referrer or url_for("saved_page"))
+
+
+@app.route("/saved/remove", methods=["POST"])
+@student_required
+def saved_remove():
+    try:
+        bookmarks.remove(student(), int(request.form.get("id", "0")))
+    except ValueError:
+        pass
+    return redirect(url_for("saved_page"))
+
+
+@app.route("/plan")
+@student_required
+def plan_page():
+    import datetime as _d
+    code = course_code()
+    mastery = my_mastery()
+    tp = [(t.topic, t["name_ar"] if lang() == "ar" else t["name"]) for _, t in S()["topics"].iterrows()]
+    nxt_exam = next((r for r in SCH.for_courses([code]) if r["when"][:10] >= _d.date.today().isoformat()), None)
+    exam_day = _d.date.fromisoformat(nxt_exam["when"][:10]) if nxt_exam else None
+    p = planlib.study_plan(mastery, tp, exam_day)
+    return render_template("plan.html", plan=p, exam=nxt_exam, today=_d.date.today().isoformat())
+
 
 
 @app.route("/all-courses")
@@ -1600,6 +1752,7 @@ def admin():
                         flash_t(str(e), n=doctors.MIN_LEN)
                         return redirect(url_for("admin"))
                     flash_t("doctor_added", name=name, code=new_code)
+                    audit.record(actor(), "doctor_added", f"{name} ({doctors.get(did)['username']})")
                     flash(f"{tr('doctor_username', lang())}: {doctors.get(did)['username']}")
                     if email and mailer.send(email, "StudyMate - your doctor account",
                                              f"Hello {name},\n\nUsername: {doctors.get(did)['username']}\n"
@@ -1609,12 +1762,14 @@ def admin():
                 new_code = doctors.reset(request.form.get("doctor", ""))
                 if new_code:
                     flash_t("doctor_reset", code=new_code)
+                    audit.record(actor(), "doctor_password_reset", (doctors.get(request.form.get("doctor", "")) or {}).get("username", ""))
                     d = doctors.get(request.form.get("doctor", ""))
                     if d and d["email"] and mailer.send(d["email"], "StudyMate - new password",
                                                         f"Your new password: {new_code}\nUsername: {d['username']}"):
                         flash_t("doctor_mailed", email=d["email"])
             elif action == "delete_doctor":
                 did = request.form.get("doctor", "")
+                audit.record(actor(), "doctor_removed", (doctors.get(did) or {}).get("username", did))
                 doctors.remove(did)
                 for c in config.list_courses():              # his courses go back to the main admin
                     if c["meta"].get("owner") == did:
@@ -1632,6 +1787,7 @@ def admin():
                     meta.pop("owner", None)
                 info.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
                 flash_t("owner_set")
+                audit.record(actor(), "course_owner_set", f"{code} -> {did or '-'}")
             if action == "sync_sheet":
                 if not sheet_sync.enabled():
                     flash_t("sheet_not_connected")
@@ -1680,6 +1836,7 @@ def admin():
             if request.form.get("confirm", "").strip().upper() != code:
                 flash_t("bad_confirm")
             else:
+                audit.record(actor(), "course_deleted", code)
                 remove_course_files(code)
                 if request.form.get("purge_logs") and is_main():
                     from core.logger import delete_course_rows
