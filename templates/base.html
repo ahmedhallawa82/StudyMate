@@ -3,7 +3,7 @@
 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d[n] }}"/></svg>
 {%- endmacro %}
 <!doctype html>
-<html lang="{{ lang }}" dir="{{ dir }}" data-mode="light" data-theme="{{ theme }}">
+<html lang="{{ lang }}" dir="{{ dir }}" data-mode="light" data-theme="{{ theme }}"{% if embed %} class="embed"{% endif %}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,10 +33,10 @@
       {% set path = request.path %}
       {% if is_lecturer %}
       <a href="{{ url_for('staff_home') }}" class="{{ 'active' if path.startswith('/overview') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">{{ ic('home') }}</span><span class="nl">{{ t('nav_home') }}</span></a>
-      <a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">{{ ic('dash') }}</span><span class="nl">{{ t('nav_dashboard') }}</span></a>
-      <a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">{{ ic('tools') }}</span><span class="nl">{{ t('nav_content') }}</span></a>
+      {% if 'data' in perms %}<a href="{{ url_for('dashboard') }}" class="{{ 'active' if path.startswith('/dashboard') }}" title="{{ t('nav_dashboard') }}" data-tip="{{ t('tip_nav_dashboard') }}"><span class="ni">{{ ic('dash') }}</span><span class="nl">{{ t('nav_dashboard') }}</span></a>{% endif %}
+      {% if 'content' in perms %}<a href="{{ url_for('admin') }}" class="{{ 'active' if path.startswith('/admin') }}" title="{{ t('nav_content') }}" data-tip="{{ t('tip_nav_content') }}"><span class="ni">{{ ic('tools') }}</span><span class="nl">{{ t('nav_content') }}</span></a>{% endif %}
       {% if quick_links %}<a href="#" id="qsBtn" role="button" onclick="return false" aria-haspopup="dialog" title="{{ t('qs_title') }} (Ctrl K)" data-tip="{{ t('qs_title') }}"><span class="ni">{{ ic('search') }}</span><span class="nl">{{ t('qs_title') }}</span></a>{% endif %}
-      <a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">{{ ic('chat') }}</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>
+      {% if 'chat' in perms %}<a href="{{ url_for('chat_page') }}" class="{{ 'active' if path.startswith('/chat') }}" title="{{ t('nav_chat') }}" data-tip="{{ t('tip_nav_chat') }}"><span class="ni">{{ ic('chat') }}</span><span class="nl">{{ t('nav_chat') }}</span>{% if chat_unread %}<span class="badge nav-badge">{{ chat_unread if chat_unread < 10 else '9+' }}</span>{% endif %}</a>{% endif %}
       <a href="{{ url_for('help_page') }}" class="{{ 'active' if path.startswith('/help') }}" title="{{ t('nav_help') }}" data-tip="{{ t('tip_nav_help') }}"><span class="ni">{{ ic('help') }}</span><span class="nl">{{ t('nav_help') }}</span></a>
       <span class="chip"><a class="who" href="{{ url_for('profile') }}" title="{{ t('nav_profile') }}" data-tip="{{ t('tip_nav_profile') }}">{% if me_avatar %}<img class="avatar" src="{{ me_avatar }}" alt="">{% else %}<span class="avatar">{{ me_name[:1]|upper }}</span>{% endif %}<span class="who-t"><b>{{ me_name }}</b><small>{{ me_role }}</small></span></a><a class="exit-link" href="{{ url_for('lecturer_logout') }}"><span>{{ t('back_students') }}</span><b dir="auto">{{ me_name }}</b></a></span>
       {% elif student_code %}
@@ -244,5 +244,14 @@
   });
 })();
 </script>
+{% if embed %}<script>
+// shown inside a pane of another page: tell the parent how tall this page is so the frame has no scrollbar of its own
+(function () {
+  function send() { var h = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight); try { parent.postMessage({sm_h: h, sm_url: location.pathname}, location.origin); } catch (e) {} }
+  window.addEventListener('load', send); window.addEventListener('resize', send);
+  if (window.ResizeObserver) new ResizeObserver(send).observe(document.body);
+  setInterval(send, 1000);
+})();
+</script>{% endif %}
 </body>
 </html>

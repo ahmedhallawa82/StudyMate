@@ -6,12 +6,12 @@
 
 {{ course_picker(url_for('exams_manage')) }}
 <nav class="ex-tabs fade" role="tablist" style="--i:1">
-  <button type="button" role="tab" data-tab="questions" class="{{ 'on' if tab == 'questions' }}">① {{ t('ex_tab_q') }} {% if sm.graded %}<span class="ex-ok">✓</span>{% endif %}</button>
-  <button type="button" role="tab" data-tab="settings" class="{{ 'on' if tab == 'settings' }}">② {{ t('ex_tab_s') }}</button>
-  <button type="button" role="tab" data-tab="results" class="{{ 'on' if tab == 'results' }}">③ {{ t('ex_tab_r') }} <span class="pill">{{ stats.n }}</span></button>
+  <button type="button" role="tab" data-tab="questions" class="{{ 'on' if tab == 'questions' }}">{{ t('ex_tab_q') }} {% if sm.graded %}<span class="ex-ok">✓</span>{% endif %}</button>
+  <button type="button" role="tab" data-tab="settings" class="{{ 'on' if tab == 'settings' }}">{{ t('ex_tab_s') }}</button>
+  <button type="button" role="tab" data-tab="results" class="{{ 'on' if tab == 'results' }}">{{ t('ex_tab_r') }} <span class="pill">{{ stats.n }}</span></button>
 </nav>
 
-<!-- ① Questions -->
+<!-- Questions -->
 <section class="ex-pane" id="pane-questions" {{ 'hidden' if tab != 'questions' }}>
   <div class="ex-sum card fade" style="--i:2">
     {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_tf', sm.tf), ('ex_essay', sm.essay), ('ex_ready', sm.graded)] if v or k == 'ex_total' %}
@@ -57,7 +57,7 @@
 
 </section>
 
-<!-- ② Settings -->
+<!-- Settings -->
 <section class="ex-pane" id="pane-settings" {{ 'hidden' if tab != 'settings' }}>
   <div class="card fade" style="--i:2">
     <h2>⏱ {{ t('exam_settings') }}</h2>
@@ -76,7 +76,7 @@
   </details>{% endif %}
 </section>
 
-<!-- ③ Results -->
+<!-- Results -->
 <section class="ex-pane" id="pane-results" {{ 'hidden' if tab != 'results' }}>
   <div class="ex-sum card fade" style="--i:2">
     <div><b>{{ stats.n }}</b><small>{{ t('ex_attempts_n') }}</small></div>

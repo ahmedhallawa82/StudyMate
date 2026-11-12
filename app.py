@@ -176,8 +176,44 @@ def admin_id():
     return session.get("admin_id") if session.get("lecturer") else None
 
 
-def is_master():
+def is_main():
+    """The one main admin (the owner of the site)."""
     return admin_id() == doctors.MASTER
+
+
+def is_subadmin():
+    a = admin_id()
+    return bool(a) and a != doctors.MASTER and (doctors.get(a) or {}).get("role") == "admin"
+
+
+def is_master():
+    """Main admin or a sub-admin: both see every course. What a sub-admin may open is decided by has_perm()."""
+    return is_main() or is_subadmin()
+
+
+def my_perms():
+    if is_main():
+        return set(doctors.PERMS)
+    if is_subadmin():
+        return set(doctors.get(admin_id()).get("perms", []))
+    return set(doctors.PERMS) - {"doctors", "support"}        # a doctor keeps his old access (his own courses)
+
+
+def has_perm(key):
+    """Main admin: everything. Sub-admin: only the permissions the main admin ticked."""
+    return key in my_perms()
+
+
+def perm_required(key):
+    def deco(view):
+        @wraps(view)
+        def wrapper(*a, **kw):
+            if session.get("lecturer") and not has_perm(key):
+                flash_t("adms_no_perm")
+                return redirect(url_for("staff_home") if request.endpoint != "staff_home" else url_for("my_courses"))
+            return view(*a, **kw)
+        return wrapper
+    return deco
 
 
 def course_owner(code):
@@ -376,14 +412,14 @@ def inject():
     args = request.args.to_dict()
     args["lang"] = "en" if l == "ar" else "ar"
     from urllib.parse import urlencode
-    return {"lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(), "student_name": session.get("student_name", ""),
-            "is_lecturer": session.get("lecturer"), "is_master_user": bool(session.get("lecturer")) and is_master(), "names": (S() or {}).get("names_ar" if l == "ar" else "names", {}),
+    return {"embed": request.args.get("embed") == "1" or request.headers.get("Sec-Fetch-Dest") == "iframe", "lang_url": request.path + "?" + urlencode(args), "theme": current_theme(), "course": course_title(), "course_code": course_code(), "student_code": student(), "student_name": session.get("student_name", ""),
+            "is_lecturer": session.get("lecturer"), "is_master_user": bool(session.get("lecturer")) and is_main(), "is_subadmin": bool(session.get("lecturer")) and is_subadmin(), "perms": my_perms() if session.get("lecturer") else set(), "can_see_all": bool(session.get("lecturer")) and is_master(), "names": (S() or {}).get("names_ar" if l == "ar" else "names", {}),
             "quick_links": quick_links(), "lang": l, "dir": "rtl" if l == "ar" else "ltr", "t": lambda key, **kw: tr(key, l, **kw),
             "courses": [{**c, "title": c["name_ar"] if l == "ar" and c["name_ar"] else c["name_en"]}
                         for c in visible_courses() if session.get("lecturer") or student_course_list() is None
                         or c["code"] in student_course_list()],
-            "admin_role": ("master" if is_master() else "doctor") if session.get("lecturer") else None,
-            "admin_name": session.get("admin_name", ""), "login_alert": getattr(g, "login_alert", None), "support_open": support.open_count() if session.get("lecturer") and is_master() else 0, **_me_context()}
+            "admin_role": ("master" if is_main() else ("admin" if is_subadmin() else "doctor")) if session.get("lecturer") else None,
+            "admin_name": session.get("admin_name", ""), "login_alert": getattr(g, "login_alert", None), "support_open": support.open_count() if session.get("lecturer") and is_master() and has_perm("support") else 0, **_me_context()}
 
 
 # ------------------------------------------------------------------ student login (code only, no names)
@@ -898,7 +934,7 @@ def help_page():
 @app.route("/models/unlock", methods=["POST"])
 @lecturer_required
 def models_unlock():
-    if not is_master():
+    if not is_main():
         return redirect(url_for("profile"))
     if modelspw.verify(request.form.get("pw", "")):
         session["models_ok"] = True
@@ -917,7 +953,7 @@ def models_lock():
 @app.route("/models/evaluate", methods=["POST"])
 @lecturer_required
 def models_evaluate():
-    if is_master() and session.get("models_ok"):
+    if is_main() and session.get("models_ok"):
         flash_t("mdl_eval_done" if autoeval.safe_run(course_code()) else "mdl_eval_fail")
     return redirect(url_for("evaluation"))
 
@@ -926,7 +962,7 @@ def models_evaluate():
 @lecturer_required
 def models_notebook():
     """Import the results of a Google Colab notebook (zip or json) and, when it brings figure text, rebuild the index."""
-    if not (is_master() and session.get("models_ok") and can_manage(course_code())):
+    if not (is_main() and session.get("models_ok") and can_manage(course_code())):
         return redirect(url_for("admin"))
     code = course_code()
     f = request.files.get("file")
@@ -947,7 +983,7 @@ def models_notebook():
 @app.route("/models/password", methods=["POST"])
 @lecturer_required
 def models_password():
-    if is_master() and session.get("models_ok"):
+    if is_main() and session.get("models_ok"):
         err = modelspw.change(request.form.get("old", ""), request.form.get("new", ""))
         flash_t(err or "mdl_pw_changed", n=modelspw.MIN_LEN)
     return redirect(url_for("evaluation"))
@@ -972,7 +1008,7 @@ def rebuild_course(code):
 @app.route("/evaluation")
 @lecturer_required
 def evaluation():
-    if not is_master() or not can_manage(course_code()):          # main admin only, and only after the models password
+    if not is_main() or not can_manage(course_code()):          # main admin only, and only after the models password
         return redirect(url_for("admin"))
     if not session.get("models_ok"):
         return redirect(url_for("profile"))
@@ -1047,17 +1083,18 @@ def staff_home():
         w["h"] = round(100 * w["n"] / wmax)
     exams = [e for e in read_sheet("Exams") if master or e.get("course") in mine]
     qs = [q for q in read_sheet("Questions") if master or q.get("course") in mine]
-    docs = doctors.list_doctors()
+    docs = doctors.list_doctors("doctor")
+    adm_list = doctors.list_doctors("admin") if is_main() else []
     stats = {"courses": len(courses), "students": len(rows), "visits": len(visits),
              "visitors": len({v.get("student_code") for v in visits if v.get("student_code")}),
-             "doctors": len(docs), "admins": len(docs) + 1, "exams": len(exams), "asked": len(qs)}
+             "doctors": len(docs), "admins": len(docs) + len(adm_list) + 1, "exams": len(exams), "asked": len(qs)}
     team = [{"name": d["name"], "courses": courses_of(d["id"]) or "–"} for d in docs] if master else []
     recent = sorted(rows, key=lambda r: str(r.get("created", "")), reverse=True)[:5]
     hour = _dt.datetime.now().hour
     greet = "gm" if hour < 12 else "ga" if hour < 18 else "ge"
     name = tr("role_admin", lang()) if master else session.get("admin_name") or tr("role_doctor", lang())
     return render_template("staff_home.html", stats=stats, week=wk, week_total=sum(w["n"] for w in wk), master=master,
-                           by_course=by_course, team=team, recent=recent, greet=greet, name=name,
+                           by_course=by_course, team=team, admins_list=adm_list, main_admin=is_main(), recent=recent, greet=greet, name=name,
                            today=td.isoformat(), courses=courses, events=_calendar_events())
 
 
@@ -1065,7 +1102,7 @@ def staff_home():
 @app.route("/doctors")
 @lecturer_required
 def doctors_page():
-    if not is_master():
+    if not (is_main() or (is_subadmin() and has_perm("doctors"))):
         return redirect(url_for("staff_home"))
     allc = config.list_courses()
     owned = {}
@@ -1073,11 +1110,59 @@ def doctors_page():
         owned.setdefault(c["meta"].get("owner"), []).append(c["code"])
     per = Counter(c[0] for r in students_for_admin() for c in r["courses"])
     rows = []
-    for d in doctors.list_doctors():
+    for d in doctors.list_doctors("doctor"):
         mine = owned.get(d["id"], [])
         rows.append({**d, "courses": mine, "students": sum(per.get(c, 0) for c in mine), "avatar": profiles.avatar_path("d:" + d["id"]) is not None,
                      "key": profiles.safe("d:" + d["id"])})
     return render_template("doctors.html", rows=rows, main={"name": session.get("admin_name") or tr("role_admin", lang()), "key": "d:" + doctors.MASTER})
+
+
+# ------------------------------------------------------------------ extra admins (main admin only): name, username, password, permissions
+PERM_LABEL = {"content": "adms_p_content", "exams": "adms_p_exams", "badges": "adms_p_badges", "data": "adms_p_data",
+              "students": "adms_p_students", "chat": "adms_p_chat", "support": "adms_p_support", "doctors": "adms_p_doctors"}
+
+
+@app.route("/admins", methods=["GET", "POST"])
+@lecturer_required
+def admins_page():
+    if not is_main():
+        flash_t("master_only")
+        return redirect(url_for("staff_home"))
+    if request.method == "POST":
+        action = request.form.get("action", "")
+        picked = [p for p in request.form.getlist("perms") if p in doctors.PERMS]
+        if action == "add_admin":
+            name = request.form.get("admin_name", "").strip()
+            user = request.form.get("admin_user", "").strip()
+            pw = request.form.get("admin_pw", "").strip()
+            if not (name and user and pw):
+                flash_t("adms_need_all")
+            else:
+                try:
+                    did, _pw = doctors.add(name, "", user, pw, role="admin", perms=picked)
+                    flash_t("adms_added", name=name, user=user)
+                    sync_sheet()
+                except ValueError as e:
+                    flash_t(str(e), n=doctors.MIN_LEN)
+        elif action == "set_perms":
+            if doctors.set_perms(request.form.get("admin", ""), picked):
+                flash_t("adms_saved")
+        elif action == "reset_admin":
+            new = request.form.get("new", "").strip()
+            a = doctors.get(request.form.get("admin", ""))
+            if a and a["role"] == "admin":
+                if len(new) < doctors.MIN_LEN:
+                    flash_t("pw_too_short", n=doctors.MIN_LEN)
+                else:
+                    doctors.set_password(a["id"], new)
+                    flash_t("adms_pw_set", user=a["username"])
+        elif action == "delete_admin":
+            a = doctors.get(request.form.get("admin", ""))
+            if a and a["role"] == "admin":
+                doctors.remove(a["id"])
+                flash_t("adms_deleted")
+        return redirect(url_for("admins_page", **({"embed": 1} if request.args.get("embed") or request.headers.get("Sec-Fetch-Dest") == "iframe" else {})))
+    return render_template("admins.html", rows=doctors.list_doctors("admin"), perms=doctors.PERMS, labels=PERM_LABEL, pw_min=doctors.MIN_LEN)
 
 
 @app.route("/all-courses")
@@ -1286,6 +1371,7 @@ def calendar_page():
 
 @app.route("/dashboard")
 @lecturer_required
+@perm_required("data")
 def dashboard():
     if not can_manage(course_code()):
         return redirect(url_for("admin"))
@@ -1362,6 +1448,7 @@ def check_risk(code):
 
 @app.route("/dashboard/remind", methods=["POST"])
 @lecturer_required
+@perm_required("data")
 def dashboard_remind():
     code, who = course_code(), request.form.get("student", "")
     if can_manage(code) and any(s["code"] == who for s in course_students(code)):
@@ -1372,6 +1459,7 @@ def dashboard_remind():
 
 @app.route("/dashboard/followup", methods=["POST"])
 @lecturer_required
+@perm_required("data")
 def dashboard_followup():
     if can_manage(course_code()):
         qid = request.form.get("id", "")
@@ -1384,6 +1472,7 @@ def dashboard_followup():
 
 @app.route("/dashboard/logs.xlsx")
 @lecturer_required
+@perm_required("data")
 def download_logs():
     from flask import send_file
     ensure_workbook()
@@ -1411,7 +1500,7 @@ def sync_sheet(wait=False):
 
 
 def sheet_view():
-    if not is_master():
+    if not is_main():
         return None
     return {"rows": doctors.sheet_rows(courses_of), "enabled": sheet_sync.enabled(), "status": sheet_sync.STATUS,
             "google": sheet_sync.SHOW_GOOGLE or sheet_sync.enabled(), "email": sheet_sync.service_email(), "url": sheet_sync.sheet_url(), "header": sheet_sync.HEADER}
@@ -1419,6 +1508,7 @@ def sheet_view():
 
 @app.route("/admin", methods=["GET", "POST"])
 @lecturer_required
+@perm_required("content")
 def admin():
     if is_master() and request.method == "GET":                # complete the names of codes whose course is already uploaded
         have = {r["code"] for r in catalog.load()}
@@ -1450,7 +1540,7 @@ def admin():
                         flash_t("codes_bad")
             return redirect(url_for("admin"))
         if action == "change_password":                      # a doctor changes his own password
-            if is_master() or not admin_id():
+            if is_main() or not admin_id():
                 flash_t("pw_master_note")
                 return redirect(url_for("admin"))
             new = request.form.get("new", "")
@@ -1465,7 +1555,7 @@ def admin():
                     flash_t("pw_changed")
             return redirect(url_for("admin"))
         if action in ("add_doctor", "reset_doctor", "delete_doctor", "set_owner", "sync_sheet"):
-            if not is_master():
+            if not is_main():
                 flash_t("master_only")
                 return redirect(url_for("admin"))
             if action == "add_doctor":
@@ -1555,7 +1645,7 @@ def admin():
                 flash_t("bad_confirm")
             else:
                 remove_course_files(code)
-                if request.form.get("purge_logs") and is_master():
+                if request.form.get("purge_logs") and is_main():
                     from core.logger import delete_course_rows
                     flash_t("logs_purged", n=delete_course_rows(code))
                 session["course"] = config.default_course()
@@ -1673,7 +1763,7 @@ def _table_response(rows, header, name, fmt):
 @app.route("/admin/doctors.<fmt>")
 @lecturer_required
 def export_doctors(fmt):
-    if not is_master() or fmt not in ("xlsx", "csv"):
+    if not is_main() or fmt not in ("xlsx", "csv"):
         return redirect(url_for("admin"))
     return _table_response(doctors.sheet_rows(courses_of), sheet_sync.HEADER, "doctors", fmt)
 
@@ -1771,6 +1861,7 @@ def video_file(fid):
 
 @app.route("/admin/videos", methods=["POST"])
 @lecturer_required
+@perm_required("content")
 def admin_videos():
     code = course_code()
     if not can_manage(code):
@@ -1911,6 +2002,7 @@ def _auto_badges_by_student(codes):
 
 @app.route("/badges-admin", methods=["GET", "POST"])
 @lecturer_required
+@perm_required("badges")
 def badges_admin():
     me_key = custom_badges.MASTER if is_master() else admin_id()
     aud = badge_audience()
@@ -2021,6 +2113,7 @@ def _msg_json(m, me):
 
 
 @app.route("/chat", methods=["GET", "POST"])
+@perm_required("chat")
 def chat_page():
     me = user_key()
     if not me:
@@ -2051,6 +2144,7 @@ def chat_page():
 
 
 @app.route("/chat/send", methods=["POST"])
+@perm_required("chat")
 def chat_send():
     me = user_key()
     to = request.form.get("with", "")
@@ -2067,6 +2161,7 @@ def chat_send():
 
 
 @app.route("/chat/poll")
+@perm_required("chat")
 def chat_poll():
     me = user_key()
     if not me:
@@ -2080,12 +2175,14 @@ def chat_poll():
 
 @app.route("/students")
 @lecturer_required
+@perm_required("students")
 def students_page():
     return render_template("students.html", rows=students_for_admin(), master=is_master())
 
 
 @app.route("/students.<fmt>")
 @lecturer_required
+@perm_required("students")
 def students_export(fmt):
     if fmt not in ("xlsx", "csv"):
         return redirect(url_for("students_page"))
@@ -2212,6 +2309,7 @@ def exams_result(aid):
 # ------------------------------------------------------------------ Exams (doctor)
 @app.route("/exams/manage", methods=["GET", "POST"])
 @lecturer_required
+@perm_required("exams")
 def exams_manage():
     code = course_code()
     if not can_manage(code):
@@ -2274,6 +2372,7 @@ def exams_manage():
 
 @app.route("/exams/template.xlsx")
 @lecturer_required
+@perm_required("exams")
 def exams_template():
     from flask import Response
     return Response(EX.template_xlsx(), mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -2282,6 +2381,7 @@ def exams_template():
 
 @app.route("/exams/attempt/<aid>", methods=["GET", "POST"])
 @lecturer_required
+@perm_required("exams")
 def exams_attempt(aid):
     code = course_code()
     att = EX.load_attempt(code, aid)
@@ -2301,6 +2401,7 @@ def exams_attempt(aid):
 
 @app.route("/exams/attempts.<fmt>")
 @lecturer_required
+@perm_required("exams")
 def exams_attempts_export(fmt):
     code = course_code()
     if not can_manage(code) or fmt not in ("xlsx", "csv"):
@@ -2359,7 +2460,7 @@ def _find_account(*idents):
 @app.route("/support-inbox", methods=["GET", "POST"])
 @lecturer_required
 def support_inbox():
-    if not is_master():
+    if not (is_main() or (is_subadmin() and has_perm("support"))):
         return redirect(url_for("staff_home"))
     reset = None
     if request.method == "POST":

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('adms_tab') }}{% endblock %}
+{% block content %}
+{{ page_head('🛡️', t('adms_tab'), t('adms_sub')) }}
+<div class="card adm-form">
+  <h3>➕ {{ t('adms_add') }}</h3>
+  <form method="post" autocomplete="off">
+    <input type="hidden" name="action" value="add_admin">
+    <div class="adm-fields">
+      <label>{{ t('prof_name') }}<input type="text" name="admin_name" required maxlength="60"></label>
+      <label>{{ t('username') }}<input type="text" name="admin_user" required dir="ltr" pattern="[A-Za-z0-9._\-]{3,30}" title="a-z 0-9 . _ -  (3–30)" autocomplete="off"></label>
+      <label>{{ t('password') }}<input type="password" name="admin_pw" required minlength="{{ pw_min }}" dir="ltr" autocomplete="new-password"></label>
+    </div>
+    {% set targets = "admin_pw" %}{% include "_passgen.html" %}
+    <h4>{{ t('adms_perms') }}</h4>
+    <div class="adm-perms">
+      {% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}
+    </div>
+    <p class="muted small">{{ t('adms_note') }}</p>
+    <button class="btn" type="submit">{{ t('adms_add_btn') }}</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>🛡️ {{ t('adms_list') }} <span class="pill">{{ rows|length }}</span></h3>
+  {% for r in rows %}
+  <details class="adm-row">
+    <summary><b>{{ r.name }}</b> <span class="muted" dir="ltr">@{{ r.username }}</span>
+      {% for p in r.perms %}<span class="tag">{{ t(labels[p]) }}</span> {% else %}<span class="muted small">{{ t('adms_no_perms') }}</span>{% endfor %}</summary>
+    <form method="post" class="adm-edit">
+      <input type="hidden" name="action" value="set_perms"><input type="hidden" name="admin" value="{{ r.id }}">
+      <div class="adm-perms">{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in r.perms }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
+      <button class="btn small" type="submit">{{ t('adms_save') }}</button>
+    </form>
+    <form method="post" class="adm-edit">
+      <input type="hidden" name="action" value="reset_admin"><input type="hidden" name="admin" value="{{ r.id }}">
+      <input type="password" name="new" minlength="{{ pw_min }}" placeholder="{{ t('adms_new_pw') }}" dir="ltr" autocomplete="new-password" required>
+      <button class="btn ghost small" type="submit">{{ t('adms_set_pw') }}</button>
+    </form>
+    <form method="post" class="adm-edit" onsubmit="return confirm('{{ t('adms_confirm_del') }}')">
+      <input type="hidden" name="action" value="delete_admin"><input type="hidden" name="admin" value="{{ r.id }}">
+      <button class="btn ghost small" type="submit">🗑️ {{ t('adms_delete') }}</button>
+    </form>
+  </details>
+  {% else %}<p class="muted">{{ t('adms_none') }}</p>{% endfor %}
+</div>
+<style>
+.adm-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:10px 0}
+.adm-fields label{display:flex;flex-direction:column;gap:4px;font-weight:600}
+.adm-perms{display:flex;flex-wrap:wrap;gap:8px 18px;margin:8px 0 12px}
+.adm-perms .chk{display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.adm-row{border-top:1px solid var(--line,#e3e8e7);padding:10px 0}
+.adm-row summary{cursor:pointer;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.adm-edit{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0 0}
+</style>
+{% endblock %}

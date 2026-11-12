@@ -7,7 +7,7 @@
     <h1>{{ t(greet) }}{{ '،' if lang == 'ar' else ',' }} {{ name }} 👋</h1>
     <p class="muted">{{ t('sh_sub_admin') if master else t('sh_sub_doctor') }}</p>
   </div>
-  {% if master %}<div class="edu-actions">
+  {% if master and 'support' in perms %}<div class="edu-actions">
     <a class="btn ghost" href="{{ url_for('support_inbox') }}">🛟 {{ t('support_inbox') }}{% if support_open %}<span class="sup-count">{{ support_open }}</span>{% endif %}</a>
   </div>{% endif %}
 </div>
@@ -26,6 +26,34 @@
       <div class="stat fade" style="--i:3"><div class="ic">📝</div><div><div class="v" data-count="{{ stats.exams }}">0</div><div class="l">{{ t('sh_exams') }}</div></div></div>
       <div class="stat fade" style="--i:4"><div class="ic">💬</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('sh_asked') }}</div></div></div>
       {% endif %}
+    </div>
+
+    <div class="trio">
+    {% if main_admin %}
+    <div class="card fade">
+      <div class="card-top"><h3>🛡️ {{ t('sh_admins_card') }}</h3><a href="{{ url_for('admin') }}#admins" title="{{ t('adms_tab') }}">+</a></div>
+      <div class="pc-row"><span>{{ t('role_admin') }} <span class="tag">{{ t('doc_main') }}</span></span><small class="muted">{{ t('doc_main_all') }}</small></div>
+      {% for a in admins_list %}<div class="pc-row"><span>{{ a.name }}</span><small class="muted" dir="ltr">@{{ a.username }}</small></div>{% endfor %}
+    </div>
+    {% endif %}
+    {% if master %}
+    <div class="card fade">
+      <div class="card-top"><h3>👨‍🏫 {{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
+      {% for d in team %}<div class="pc-row"><span>{{ d.name }}</span><small class="muted" dir="ltr">{{ d.courses }}</small></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
+    {% else %}
+    <div class="card fade">
+      <div class="card-top"><h3>📚 {{ t('sh_my_courses') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
+      {% for c in courses %}<div class="pc-row"><span>{{ c.name_ar or c.name_en if lang == 'ar' else c.name_en }}</span><small class="muted">{{ c.code }}</small></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
+    {% endif %}
+    <div class="card fade">
+      <h3>🆕 {{ t('sh_recent') }}</h3>
+      {% for r in recent %}<div class="pc-row"><span>{{ r.first }} {{ r.last }}</span><small class="muted" dir="ltr">@{{ r.username }}</small></div>
+      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+    </div>
     </div>
 
     <div class="card per-course fade" id="per-course" style="--i:5">
@@ -70,30 +98,7 @@
       <script type="application/json" id="events">{{ events|tojson }}</script>
       <form id="delForm" method="post" action="{{ url_for('calendar_page') }}" hidden><input type="hidden" name="action" value="delete"><input type="hidden" name="id" id="delId"></form>
     </div>
-    {% if master %}
-    <div class="card fade" style="--i:2">
-      <div class="card-top"><h3>🛡️ {{ t('sh_admins_card') }}</h3><a href="{{ url_for('doctors_page') }}">→</a></div>
-      <div class="pc-row"><span>{{ t('role_admin') }} <span class="tag">{{ t('doc_main') }}</span></span><small class="muted">{{ t('doc_main_all') }}</small></div>
-    </div>
-    {% endif %}
-    {% if master %}
-    <div class="card fade" style="--i:2">
-      <div class="card-top"><h3>👨‍🏫 {{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
-      {% for d in team %}<div class="pc-row"><span>{{ d.name }}</span><small class="muted" dir="ltr">{{ d.courses }}</small></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
-    </div>
-    {% else %}
-    <div class="card fade" style="--i:2">
-      <div class="card-top"><h3>📚 {{ t('sh_my_courses') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
-      {% for c in courses %}<div class="pc-row"><span>{{ c.name_ar or c.name_en if lang == 'ar' else c.name_en }}</span><small class="muted">{{ c.code }}</small></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
-    </div>
-    {% endif %}
-    <div class="card fade" style="--i:3">
-      <h3>🆕 {{ t('sh_recent') }}</h3>
-      {% for r in recent %}<div class="pc-row"><span>{{ r.first }} {{ r.last }}</span><small class="muted" dir="ltr">@{{ r.username }}</small></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
-    </div>
+
   </aside>
 </div>
 {% endblock %}

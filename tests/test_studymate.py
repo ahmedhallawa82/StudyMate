@@ -434,6 +434,32 @@ def test_admin_and_doctor_username_login(admin, tmp_path, monkeypatch):
     assert doc.get("/admin/doctors.csv").status_code == 302
 
 
+def test_sub_admin_with_permissions_and_framed_tabs(admin, tmp_path, monkeypatch):
+    import app as A
+    from core import doctors
+    monkeypatch.setattr(doctors, "FILE", lambda: tmp_path / "doctors.json")
+    r = admin.post("/admins", data={"action": "add_admin", "admin_name": "Sara", "admin_user": "sara.ta", "admin_pw": "longpass1", "perms": ["exams", "badges"]})
+    assert r.status_code == 302
+    rows = doctors.list_doctors("admin")
+    assert rows[0]["username"] == "sara.ta" and rows[0]["perms"] == ["exams", "badges"] and doctors.list_doctors("doctor") == []
+    admin.post("/admins", data={"action": "add_admin", "admin_name": "X", "admin_user": "sara.ta", "admin_pw": "longpass1"})
+    assert len(doctors.list_doctors("admin")) == 1                                           # duplicate username refused
+    adm = A.app.test_client()
+    assert "/overview" in adm.post("/start", data={"username": "sara.ta", "password": "longpass1"}).headers["Location"]
+    assert adm.get("/exams/manage").status_code == 200 and adm.get("/badges-admin").status_code == 200
+    assert adm.get("/admins").status_code == 302                                              # only the main admin manages admins
+    assert adm.get("/admin").status_code == 302 and adm.get("/dashboard").status_code == 302   # content / data not ticked
+    home = adm.get("/overview").get_data(as_text=True)
+    assert "/dashboard" not in home.split("<main>")[0]                                        # no Data button in the bar
+    admin.post("/admins", data={"action": "set_perms", "admin": rows[0]["id"], "perms": ["content", "data"]})
+    assert adm.get("/admin").status_code == 200 and adm.get("/dashboard").status_code == 200
+    page = admin.get("/admin").get_data(as_text=True)
+    assert 'data-tab="admins"' in page and 'id="pane-exams"' in page and "data-href" not in page   # tabs stay in this page
+    emb = admin.get("/admins?embed=1").get_data(as_text=True)
+    assert 'class="embed"' in emb and "sara.ta" in emb
+    assert "①" not in admin.get("/exams/manage").get_data(as_text=True)
+
+
 def test_materials_zip(client):
     r = client.get("/materials.zip")
     assert r.status_code == 200 and r.data[:2] == b"PK"

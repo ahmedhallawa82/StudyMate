@@ -8,6 +8,7 @@ data/doctors.json -> [{"id", "name", "hash", "created", "initial", "new"}]
   as the course owner asked. This file never goes to GitHub (.gitignore).
 """
 import json
+import re
 import secrets
 import threading
 from datetime import datetime
@@ -21,6 +22,7 @@ _lock = threading.Lock()
 _ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"          # no 0/O/1/I/L: easy to read out loud
 MASTER = "master"
 MIN_LEN = 8
+PERMS = ("content", "exams", "badges", "data", "students", "chat", "support", "doctors")     # what a sub-admin may be given
 
 
 def _load():
@@ -43,28 +45,56 @@ def username_of(d):
     return d.get("username") or ("dr" + d["id"].lower())
 
 
-def list_doctors():
+def list_doctors(role=None):
+    """All staff accounts; role="doctor" / "admin" keeps one kind."""
     return [{"id": d["id"], "name": d["name"], "email": d.get("email", ""), "username": username_of(d),
-             "created": d.get("created", "")} for d in _load()]
+             "created": d.get("created", ""), "role": d.get("role", "doctor"), "perms": [p for p in d.get("perms", []) if p in PERMS]} for d in _load()
+            if role is None or d.get("role", "doctor") == role]
 
 
 def get(doctor_id):
     return next((d for d in list_doctors() if d["id"] == doctor_id), None)
 
 
-def add(name, email=""):
-    """Returns (doctor_id, password)."""
+def add(name, email="", username="", password="", role="doctor", perms=None):
+    """Returns (doctor_id, password). A sub-admin (role 'admin') gets a chosen username / password and a list of permissions.
+    Raises ValueError('adms_user_taken' | 'pw_too_short' | 'adms_user_bad')."""
+    username = (username or "").strip()
+    password = (password or "").strip()
+    if username and not re.fullmatch(r"[A-Za-z0-9._-]{3,30}", username):
+        raise ValueError("adms_user_bad")
+    if password and len(password) < MIN_LEN:
+        raise ValueError("pw_too_short")
     with _lock:
         rows = _load()
+        if username and (username.lower() in ("admin", "master") or any(username_of(d).lower() == username.lower() for d in rows)):
+            raise ValueError("adms_user_taken")
         ids = {d["id"] for d in rows}
         did = _rand(4)
         while did in ids:
             did = _rand(4)
-        pw = f"{did}-{_rand(8)}"
-        rows.append({"id": did, "name": name.strip()[:60] or did, "email": (email or "").strip()[:120], "hash": generate_password_hash(pw),
-                     "created": datetime.now().strftime("%Y-%m-%d"), "initial": pw, "new": ""})
+        pw = password or f"{did}-{_rand(8)}"
+        rec = {"id": did, "name": name.strip()[:60] or did, "email": (email or "").strip()[:120], "hash": generate_password_hash(pw),
+               "created": datetime.now().strftime("%Y-%m-%d"), "initial": pw, "new": ""}
+        if username:
+            rec["username"] = username
+        if role == "admin":
+            rec["role"] = "admin"
+            rec["perms"] = [p for p in (perms or []) if p in PERMS]
+        rows.append(rec)
         _save(rows)
     return did, pw
+
+
+def set_perms(doctor_id, perms):
+    with _lock:
+        rows = _load()
+        for d in rows:
+            if d["id"] == doctor_id and d.get("role") == "admin":
+                d["perms"] = [p for p in (perms or []) if p in PERMS]
+                _save(rows)
+                return True
+    return False
 
 
 def reset(doctor_id):

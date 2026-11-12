@@ -11,10 +11,15 @@
   {% if not no_course %}<button type="button" role="tab" data-tab="lectures">{{ t('adm_tab_lec') }}</button>{% endif %}
   <button type="button" role="tab" data-tab="courses">{{ t('adm_tab_courses') }}</button>
   {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">{{ t('maintenance') }}</button>{% endif %}
-  <button type="button" class="lnk" data-href="{{ url_for('exams_manage') }}">{{ t('nav_exams') }}</button>
-  <button type="button" class="lnk" data-href="{{ url_for('badges_admin') }}">{{ t('adm_badges_link') }}</button>
-  {% if is_master_user %}<button type="button" class="lnk" data-href="{{ url_for('doctors_page') }}">{{ t('sh_team') }}</button>{% endif %}
+  {% if 'exams' in perms %}<button type="button" role="tab" data-tab="exams">{{ t('nav_exams') }}</button>{% endif %}
+  {% if 'badges' in perms %}<button type="button" role="tab" data-tab="badges">{{ t('adm_badges_link') }}</button>{% endif %}
+  {% if is_master_user %}<button type="button" role="tab" data-tab="admins">{{ t('adms_tab') }}</button>{% endif %}
 </nav>
+
+<!-- Exams / Badges / Admins: the other pages are shown inside this page (a frame), so nothing leaves the Content page -->
+{% for key, ep, ok in [('exams', 'exams_manage', 'exams' in perms), ('badges', 'badges_admin', 'badges' in perms), ('admins', 'admins_page', is_master_user)] %}
+{% if ok %}<section class="adm-pane" id="pane-{{ key }}" hidden><iframe class="adm-frame" data-src="{{ url_for(ep, embed=1) }}" title="{{ key }}" scrolling="no"></iframe></section>{% endif %}
+{% endfor %}
 
 <!-- ① Lectures -->
 {% if not no_course %}
@@ -255,6 +260,7 @@
 .adm-tabs button{border:1px solid var(--line,#d9e2e0);background:var(--card,#fff);border-radius:999px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer;color:inherit}
 .adm-tabs button.on{background:var(--teal,#0f8a82);color:#fff;border-color:transparent}
 .adm-pane[hidden]{display:none}
+.adm-frame{width:100%;border:0;min-height:520px;display:block;background:transparent}
 .adm-pane > .card, .adm-pane > details.card { margin-bottom:16px }
 .adm-sum{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-around}
 .adm-sum div{text-align:center;min-width:90px}.adm-sum b{display:block;font-size:1.5rem}.adm-sum small{color:var(--muted,#6b7a78)}
@@ -263,14 +269,21 @@
 <script>
 (function () {
   var tabs = document.querySelectorAll('.adm-tabs button[data-tab]'), key = 'adm-tab';
-  document.querySelectorAll('.adm-tabs button.lnk').forEach(function (b) { b.onclick = function () { location.href = b.dataset.href; }; });
+  window.addEventListener('message', function (e) {                       // a framed page tells its height
+    if (e.origin !== location.origin || !e.data || !e.data.sm_h) return;
+    document.querySelectorAll('.adm-frame').forEach(function (f) { if (f.contentWindow === e.source) f.style.height = (e.data.sm_h + 4) + 'px'; });
+  });
   if (!tabs.length) return;
   function show(name) {
     var ok = false;
     tabs.forEach(function (b) { if (b.dataset.tab === name) ok = true; });
     if (!ok) name = tabs[0].dataset.tab;
     tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.tab === name); });
-    document.querySelectorAll('.adm-pane').forEach(function (p) { p.hidden = p.id !== 'pane-' + name; });
+    document.querySelectorAll('.adm-pane').forEach(function (p) {
+      p.hidden = p.id !== 'pane-' + name;
+      var f = p.querySelector('iframe[data-src]');
+      if (f && !p.hidden && !f.getAttribute('src')) f.setAttribute('src', f.dataset.src);   // load a framed page the first time its tab is opened
+    });
     try { sessionStorage.setItem(key, name); } catch (e) {}
   }
   tabs.forEach(function (b) { b.onclick = function () { show(b.dataset.tab); }; });

@@ -53,3 +53,13 @@ main:has(.auth) .auth { width: 100%; margin: 6px auto; }
 .auth-row { margin: 8px 0 12px; } .btn.auth-main { padding: 10px 18px; }
 .auth-or { margin: 10px 0; } .auth-note { margin: 6px 0 0; } .auth-new { margin: 10px 0 4px; }
 @media (max-width: 760px) { main:has(.auth) { min-height: 0; display: block; } }
+
+/* page shown inside a tab pane of the Content page: no top bar, no floating help button, no page title */
+html.embed header.top, html.embed .help-fab, html.embed .page-head, html.embed footer { display: none !important; }
+html.embed body { background: transparent; }
+html.embed main { padding-top: 6px; max-width: none; }
+
+/* admin home: Admins / Doctors / Latest students side by side under the numbers */
+html[data-theme="edu"] .trio{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:0 0 16px}
+html[data-theme="edu"] .trio .card{margin:0;min-width:0}
+html[data-theme="edu"] .trio .pc-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
