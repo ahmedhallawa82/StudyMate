@@ -15,6 +15,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
+from core import photoq
 from core import doctor_requests, bookmarks, audit, announce, plan as planlib, doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
@@ -31,6 +32,7 @@ from core.topics import load_topics, study_next
 from core.i18n import tr
 
 app = Flask(__name__)
+app.jinja_env.globals["photo_ok"] = photoq.available
 app.jinja_env.globals["neural_ok"] = lambda: neural.available()
 app.secret_key = config.SECRET_KEY
 from datetime import timedelta
@@ -791,6 +793,28 @@ def ask():
     items, nxt = topic_panel(my_mastery())
     return render_template("ask.html", question=question, method=method, result=result, items=items, nxt=nxt,
                            examples=examples(), starred=bool(question) and bookmarks.is_saved(student(), course_code(), question))
+
+
+@app.route("/ask/photo", methods=["POST"])
+@student_required
+def ask_photo():
+    """Read the question written in an uploaded picture (OCR). The student checks the text, then presses Ask."""
+    if not photoq.available():
+        return jsonify(ok=False, error=tr("ph_off", lang())), 503
+    f = request.files.get("image")
+    if not f or not f.filename:
+        return jsonify(ok=False, error=tr("ph_none", lang())), 400
+    try:
+        text = photoq.read(f.read())
+    except ValueError:
+        return jsonify(ok=False, error=tr("ph_bad", lang())), 400
+    except Exception as e:                                   # noqa: BLE001 - OCR timeout / crash
+        print("photo OCR failed:", type(e).__name__, e)
+        return jsonify(ok=False, error=tr("ph_fail", lang())), 500
+    if len(text) < 4:
+        return jsonify(ok=False, error=tr("ph_empty", lang())), 200
+    visit("ask_photo")
+    return jsonify(ok=True, text=text)
 
 
 @app.route("/slide-image/<pid>.png")

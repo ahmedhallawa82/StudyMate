@@ -186,3 +186,11 @@ html, body { overflow-x: clip; }
 .tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
 .tile-grid .course-tile { margin: 0; }
 @media (max-width: 640px) { .rep-kpis { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; } .rep-kpis .kpi .v { font-size: 22px; } }
+
+.photo-btn { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.photo-btn span { font-size: 14px; }
+.photo-msg { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: rgba(80,120,200,.08); font-size: 14px; }
+.photo-msg.ok { background: rgba(61,153,112,.12); color: #1f6b47; }
+.photo-msg.bad { background: rgba(224,138,60,.14); color: #8a4b0b; }
+.photo-msg.busy { opacity: .85; }
+@media (max-width: 640px) { .photo-btn span { display: none; } }

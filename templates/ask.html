@@ -8,9 +8,12 @@
   <section>
     <div class="card">
       <form class="inline" method="get" action="{{ url_for('ask') }}">
-        <input type="text" name="q" value="{{ question }}" placeholder="{{ t('ask_ph') }}" autofocus required dir="auto">
+        <input type="text" name="q" id="askQ" value="{{ question }}" placeholder="{{ t('ask_ph') }}" autofocus required dir="auto">
+        {% if photo_ok() %}<button class="btn ghost photo-btn" type="button" id="photoBtn" title="{{ t('ph_btn') }}" aria-label="{{ t('ph_btn') }}">📷<span>{{ t('ph_btn') }}</span></button>
+        <input type="file" id="photoIn" accept="image/*" hidden>{% endif %}
         <button class="btn" type="submit">{{ t('ask_btn') }}</button>
       </form>
+      {% if photo_ok() %}<p class="photo-msg{{ ' on' if request.args.photo }}" id="photoMsg" {% if not request.args.photo %}hidden{% endif %}>{{ t('ph_intro') }}</p>{% endif %}
       <p class="muted small" style="margin:8px 0 0">{{ t('ask_hint') }}</p>
     </div>
 
@@ -86,6 +89,27 @@
 </div>
 {% endblock %}
 {% block scripts %}
+{% if photo_ok() %}<script>
+(function () {   // ask with a photo: the picture is read on the server, the text goes into the box for the student to check
+  var b = document.getElementById('photoBtn'), f = document.getElementById('photoIn'), q = document.getElementById('askQ'), m = document.getElementById('photoMsg');
+  function say(t, cls) { m.hidden = false; m.className = 'photo-msg ' + (cls || ''); m.textContent = t; }
+  b.addEventListener('click', function () { f.click(); });
+  f.addEventListener('change', function () {
+    if (!f.files.length) return;
+    var fd = new FormData(); fd.append('image', f.files[0]);
+    b.disabled = true; say({{ t('ph_reading')|tojson }}, 'busy');
+    fetch({{ url_for('ask_photo')|tojson }}, {method: 'POST', body: fd, credentials: 'same-origin'})
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j.ok) { q.value = j.text; q.focus(); say({{ t('ph_done')|tojson }}, 'ok'); }
+        else say(j.error || {{ t('ph_fail')|tojson }}, 'bad');
+      })
+      .catch(function () { say({{ t('ph_fail')|tojson }}, 'bad'); })
+      .then(function () { b.disabled = false; f.value = ''; });
+  });
+})();
+</script>{% endif %}
+
 <script>
 // click a slide picture -> large view
 document.querySelectorAll('[data-big]').forEach(a => a.addEventListener('click', e => {

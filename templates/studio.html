@@ -43,6 +43,7 @@
   </a>
   {% endfor %}
 </div>
+{% if photo_ok() %}<a class="st-practice fade" style="--i:3;margin:0 0 16px" href="{{ url_for('ask', photo=1) }}"><span class="ic">📷</span><span><b>{{ t('ph_tile') }}</b><small>{{ t('ph_tile_sub') }}</small></span><span class="go">→</span></a>{% endif %}
 
 <section class="card st-panel fade" style="--i:4" id="stPanel">
 

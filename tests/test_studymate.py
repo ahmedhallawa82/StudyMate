@@ -1602,3 +1602,23 @@ def test_variants_not_in_test_sets():
     f = config.course_paths().data / "question_variants.csv"
     tests = set(pd.read_csv(config.SEARCH_TEST_CSV).question.str.lower()) | set(pd.read_csv(config.OFFTOPIC_CSV).question.str.lower())
     assert not set(pd.read_csv(f).question.str.lower()) & tests
+
+
+def test_ask_with_photo(client):
+    """A picture of a typed question is read (OCR) and the text finds the right lecture; bad files are refused."""
+    import app as A, io, shutil, pathlib
+    from PIL import Image, ImageDraw, ImageFont
+    from core import photoq
+    assert photoq.clean("Exam revision sheet - Lecture 3\n2. What is a FIFO queue?") == "What is a FIFO queue?"
+    c = A.app.test_client()
+    as_student(c, "Photoq")
+    assert c.post("/ask/photo", data={"image": (io.BytesIO(b"not a picture"), "x.png")}).status_code in (400, 503)
+    if not shutil.which("tesseract"):
+        pytest.skip("Tesseract not installed")
+    assert "photoBtn" in c.get("/ask").get_data(as_text=True)
+    im = Image.new("RGB", (1100, 140), "white")
+    font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36) if pathlib.Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf").exists() else None
+    ImageDraw.Draw(im).text((30, 40), "What is an admissible heuristic?", fill="black", font=font)
+    buf = io.BytesIO(); im.save(buf, "PNG")
+    j = c.post("/ask/photo", data={"image": (io.BytesIO(buf.getvalue()), "q.png")}).get_json()
+    assert j["ok"] and "admissible" in j["text"].lower()
