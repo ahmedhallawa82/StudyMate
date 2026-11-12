@@ -23,7 +23,22 @@ html[data-theme="edu"][data-mode="dark"] nav a.active { background: var(--teal);
 html[data-theme="edu"] .tools select.lang-sel { appearance: none; -webkit-appearance: none; height: 44px; padding: 0 34px 0 18px; border-radius: 999px; cursor: pointer; font-weight: 600; width: auto;
   background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 14px center; }
 html[dir="rtl"][data-theme="edu"] .tools select.lang-sel { padding: 0 18px 0 34px; background-position: left 14px center; }
-.cal-big { padding: 22px 26px; }
+
 .cal-big .cal-grid { grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr); }
 .cal-big .cal-d { min-height: 64px; }
 @media (max-width: 900px) { .cal-big .cal-grid { grid-template-columns: 1fr; } }
+
+/* language dropdown, themed like the course menu */
+.lang { position: relative; }
+html[data-theme="edu"] .tools .lang-btn { display: inline-flex; align-items: center; gap: 10px; height: 44px; padding: 0 16px 0 18px; border-radius: 999px; font-weight: 600; }
+.lang-panel { position: absolute; top: calc(100% + 8px); inset-inline-end: 0; min-width: 150px; z-index: 60; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 18px; padding: 6px; box-shadow: 0 14px 40px rgba(30,45,80,.18); }
+.lang-panel[hidden] { display: none; }
+.lang-panel a { display: block; padding: 10px 14px; border-radius: 12px; color: var(--ink); text-decoration: none; font-weight: 600; }
+.lang-panel a:hover { background: var(--teal-soft); } .lang-panel a.on { background: var(--teal); color: #fff; }
+html[data-theme="edu"][data-mode="dark"] .lang-panel a.on { color: #0f1a2b; }
+
+/* staff home: calendar in the right column, compact */
+.edu-grid.wide { grid-template-columns: minmax(0, 1fr) 440px; }
+.cal-big { padding: 18px 20px; } .cal-big .cal-grid { grid-template-columns: 1fr; gap: 12px; }
+.cal-big .cal-d { min-height: 44px; aspect-ratio: auto; border-radius: 12px; } .cal-big .cal-bar select { max-width: 130px; } .cal-big .cal-bar input[type=number] { width: 80px; }
+@media (max-width: 1000px) { .edu-grid.wide { grid-template-columns: 1fr; } }

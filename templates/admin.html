@@ -7,11 +7,13 @@
   {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
 
 {{ course_picker(url_for('admin')) }}
-<p class="fade"><a class="btn ghost small" href="{{ url_for('badges_admin') }}">🏅 {{ t('adm_badges_link') }}</a></p>
 <nav class="adm-tabs fade" role="tablist">
-  {% if not no_course %}<button type="button" role="tab" data-tab="lectures">① {{ t('adm_tab_lec') }}</button>{% endif %}
-  <button type="button" role="tab" data-tab="courses">{{ '②' if not no_course else '①' }} {{ t('adm_tab_courses') }}</button>
-  {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">③ {{ t('maintenance') }}</button>{% endif %}
+  {% if not no_course %}<button type="button" role="tab" data-tab="lectures">{{ t('adm_tab_lec') }}</button>{% endif %}
+  <button type="button" role="tab" data-tab="courses">{{ t('adm_tab_courses') }}</button>
+  {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">{{ t('maintenance') }}</button>{% endif %}
+  <button type="button" class="lnk" data-href="{{ url_for('exams_manage') }}">{{ t('nav_exams') }}</button>
+  <button type="button" class="lnk" data-href="{{ url_for('badges_admin') }}">{{ t('adm_badges_link') }}</button>
+  {% if is_master_user %}<button type="button" class="lnk" data-href="{{ url_for('doctors_page') }}">{{ t('sh_team') }}</button>{% endif %}
 </nav>
 
 <!-- ① Lectures -->
@@ -260,9 +262,9 @@
 </style>
 <script>
 (function () {
-  var tabs = document.querySelectorAll('.adm-tabs button'), key = 'adm-tab';
+  var tabs = document.querySelectorAll('.adm-tabs button[data-tab]'), key = 'adm-tab';
+  document.querySelectorAll('.adm-tabs button.lnk').forEach(function (b) { b.onclick = function () { location.href = b.dataset.href; }; });
   if (!tabs.length) return;
-  tabs.forEach(function (b, i) { b.textContent = '①②③④'.charAt(i) + ' ' + b.textContent.replace(/^[①②③④]\s*/, ''); });
   function show(name) {
     var ok = false;
     tabs.forEach(function (b) { if (b.dataset.tab === name) ok = true; });
