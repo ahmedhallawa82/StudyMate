@@ -1644,10 +1644,14 @@ def test_data_vault_main_admin_only(client, tmp_path):
     assert adm.get("/vault/u/s:" + code).status_code == 302                       # locked
     vault.verify = lambda pw: pw == "vault-pass-1"
     adm.post("/vault", data={"pw": "wrong"})
-    assert "vlt-lock" in adm.get("/vault").get_data(as_text=True)
+    assert "/profile" in adm.get("/vault").headers.get("Location", "")                # the only way in is the admin's profile
+    assert "vlt-entry" in adm.get("/profile").get_data(as_text=True)
+    assert "/vault" not in adm.get("/overview").get_data(as_text=True)                 # no icon on the home page
     adm.post("/vault", data={"pw": "vault-pass-1"})
     assert "vaulty" in adm.get("/vault?q=vaulty").get_data(as_text=True).lower()
     page = adm.get("/vault/u/s:" + code).get_data(as_text=True)
-    assert "what is minimax" in page and "Vaulty" in page
+    assert "what is minimax" in page and "Vaulty" in page and "vlt-tabs" in page
+    assert adm.get(f"/vault/u/s:{code}?course={config.DEFAULT_COURSE}").status_code == 200
+    assert adm.get(f"/vault?course={config.DEFAULT_COURSE}").status_code == 200
     assert adm.get(f"/vault/x/s:{code}.xlsx").status_code == 200 and adm.get("/vault/all.xlsx").status_code == 200
     assert adm.get("/vault/file/upload/../../config.py").status_code == 404

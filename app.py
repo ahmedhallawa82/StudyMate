@@ -2616,23 +2616,31 @@ def vault_page():
             return redirect(nxt if nxt.startswith("/vault") else url_for("vault_page"))
         audit.record(actor(), "vault_wrong_password")
         flash_t("mdl_wrong")
+        if not request.args.get("next"):
+            return redirect(url_for("profile"))
     if not vault_ok():
+        if request.method == "GET" and not request.args.get("next"):
+            return redirect(url_for("profile"))
         return render_template("vault.html", locked=True)
     rows = vault.people(_vault_sheets(), _titles())
     q, role = request.args.get("q", "").strip().lower(), request.args.get("role", "")
     counts = Counter(r["role"] for r in rows)
+    course = request.args.get("course", "")
+    if course:
+        rows = [r for r in rows if course in r.get("codes", [])]
     if role:
         rows = [r for r in rows if r["role"] == role]
     if q:
         rows = [r for r in rows if q in " ".join(str(r[k]) for k in ("name", "username", "email", "uni_code", "dept", "key")).lower()]
-    return render_template("vault.html", locked=False, rows=rows, q=request.args.get("q", ""), role=role, counts=counts, total=sum(counts.values()))
+    return render_template("vault.html", locked=False, rows=rows, q=request.args.get("q", ""), role=role, counts=counts, total=sum(counts.values()), course=course,
+                           course_opts=[(c, t_) for c, t_ in _titles().items()])
 
 
 @app.route("/vault/lock", methods=["POST"])
 @lecturer_required
 def vault_lock():
     session.pop("vault_at", None)
-    return redirect(url_for("staff_home"))
+    return redirect(url_for("profile"))
 
 
 @app.route("/vault/password", methods=["POST"])
@@ -2654,7 +2662,34 @@ def vault_user(key):
         return redirect(url_for("vault_page"))
     audit.record(actor(), "vault_viewed", key)
     av = person(key)
-    return render_template("vault_user.html", p=p, av=(av or {}).get("avatar"), titles=_titles())
+    titles = _titles()
+    # per-course numbers (for the filter chips) before filtering
+    by_course = Counter()
+    for k in ("questions", "answers", "attempts", "saved", "videos", "announcements", "events"):
+        for r in p.get(k) or []:
+            by_course[r.get("course")] += 1
+    for c, _ in p.get("lectures") or []:
+        by_course[c] += 1
+    codes = [c for c, _ in p.get("courses", [])] + [c for c in by_course if c and c not in [x for x, _ in p.get("courses", [])]]
+    chips = [(c, titles.get(c, c), by_course.get(c, 0)) for c in codes if c in titles]
+    sel = request.args.get("course", "")
+    if sel:
+        for k in ("questions", "answers", "visits", "attempts", "saved", "videos", "announcements", "events", "exams_log"):
+            if p.get(k) is not None:
+                p[k] = [r for r in p[k] if r.get("course") == sel]
+        if p.get("lectures") is not None:
+            p["lectures"] = [x for x in p["lectures"] if x[0] == sel]
+    # one-line summary numbers
+    s = {}
+    if p["kind"] == "s":
+        a = p["answers"]
+        s = {"nf": sum(1 for q in p["questions"] if q.get("found") == "no"),
+             "acc": round(100 * sum(str(r.get("correct")) in ("1", "True") for r in a) / len(a)) if a else None,
+             "exam_avg": (lambda d: round(sum(x.get("pct") or 0 for x in d) / len(d)) if d else None)([x for x in p["attempts"] if x.get("status") == "done"])}
+    lect = {}
+    for c, fn in p.get("lectures") or []:
+        lect.setdefault(c, []).append(fn)
+    return render_template("vault_user.html", p=p, av=(av or {}).get("avatar"), titles=titles, chips=chips, sel=sel, s=s, lect=lect)
 
 
 @app.route("/vault/u/<path:key>/reset", methods=["POST"])

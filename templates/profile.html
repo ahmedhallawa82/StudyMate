@@ -62,6 +62,16 @@
       </form>
     </div>
     {% endif %}
+    {% if admin_role == 'master' %}
+    <div class="card fade vlt-entry" style="--i:4">
+      <h2>🔐 {{ t('vlt_title') }}</h2>
+      <p class="muted small">{{ t('vlt_entry_sub') }}</p>
+      <form method="post" action="{{ url_for('vault_page') }}">
+        <label for="vpw">{{ t('vlt_pw') }}</label><input id="vpw" type="password" name="pw" autocomplete="off" required>
+        <p><button class="btn" type="submit">{{ t('vlt_open') }}</button></p>
+      </form>
+    </div>
+    {% endif %}
     {% if not is_master_user %}
     <div class="card del-card fade" style="--i:4">
       <details>

@@ -72,19 +72,19 @@ def people(sheets, course_titles):
             last[c] = t
     out = [{"key": "d:" + doctors.MASTER, "kind": "staff", "role": "main", "name": (profiles.get("d:" + doctors.MASTER) or {}).get("name") or "Admin",
             "username": "admin", "email": (profiles.get("d:" + doctors.MASTER) or {}).get("email", ""), "uni_code": "", "dept": "", "created": "",
-            "courses": [], "last": "", "n_q": 0, "n_a": 0, "n_v": 0}]
+            "codes": [], "courses": [], "last": "", "n_q": 0, "n_a": 0, "n_v": 0}]
     owners = {}
     for c in config.list_courses():
-        owners.setdefault(c["meta"].get("owner"), []).append(course_titles.get(c["code"], c["code"]))
+        owners.setdefault(c["meta"].get("owner"), []).append(c["code"])
     for d in doctors.list_doctors():
         out.append({"key": "d:" + d["id"], "kind": "staff", "role": "admin" if d.get("role") == "admin" else "doctor", "name": d.get("name", ""),
                     "username": doctors.username_of(d), "email": d.get("email", ""), "uni_code": "", "dept": d.get("dept", ""),
-                    "created": d.get("created", ""), "courses": owners.get(d["id"], []), "last": "", "n_q": 0, "n_a": 0, "n_v": 0})
+                    "created": d.get("created", ""), "codes": owners.get(d["id"], []), "courses": [course_titles.get(c, c) for c in owners.get(d["id"], [])], "last": "", "n_q": 0, "n_a": 0, "n_v": 0})
     for s in students.list_students():
         code = s["code"]
         out.append({"key": "s:" + code, "kind": "student", "role": "student", "name": f"{s.get('first', '')} {s.get('last', '')}".strip(),
                     "username": s.get("username", ""), "email": s.get("email", ""), "uni_code": s.get("uni_code", ""), "dept": "",
-                    "created": s.get("created", ""), "courses": [course_titles.get(c, c) for c in s.get("courses", [])],
+                    "created": s.get("created", ""), "codes": list(s.get("courses", [])), "courses": [course_titles.get(c, c) for c in s.get("courses", [])],
                     "last": last.get(code, "")[:16], "n_q": cnt(qs, code), "n_a": cnt(an, code), "n_v": cnt(vi, code)})
     return out
 

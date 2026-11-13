@@ -229,3 +229,23 @@ html, body { overflow-x: clip; }
 .vlt-msgs > div { max-width: 85%; padding: 6px 10px; border-radius: 10px; background: rgba(120,140,170,.12); display: flex; flex-direction: column; font-size: 14px; }
 .vlt-msgs > div.me { align-self: flex-end; background: rgba(47,93,158,.14); } .vlt-msgs small { color: var(--muted); font-size: 11px; }
 .tag { display: inline-block; padding: 1px 8px; border-radius: 6px; background: rgba(80,120,200,.1); font-size: 13px; margin: 1px 0; }
+
+.vlt-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--muted); font-size: 13.5px; margin: 4px 0 0; }
+.vlt-actions .btn, .vlt-tabs button, .vlt-sec h3 { display: inline-flex; align-items: center; gap: 7px; }
+.vlt-summary { margin: 14px 0; } .vlt-summary h2 { display: flex; align-items: center; gap: 8px; margin-top: 0; }
+.vlt-summary ul { margin: 6px 0 0; padding-inline-start: 20px; } .vlt-summary li { margin: 4px 0; }
+.vlt-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; padding: 6px; border-radius: 16px; background: var(--card, #fff); border: 1px solid var(--line); }
+.vlt-tabs button { border: 0; background: none; padding: 8px 14px; border-radius: 12px; font: inherit; font-weight: 600; color: var(--muted); cursor: pointer; }
+.vlt-tabs button b { font-size: 12px; background: rgba(80,120,200,.14); color: var(--teal); padding: 0 7px; border-radius: 999px; }
+.vlt-tabs button.on { background: var(--teal); color: #fff; } .vlt-tabs button.on b { background: rgba(255,255,255,.25); color: #fff; }
+.vlt-sec h3 { margin: 0 0 10px; color: var(--teal); } .vlt-sec h3 svg { flex: none; }
+.cnt { display: inline-block; min-width: 22px; text-align: center; font-size: 12px; font-weight: 700; padding: 0 7px; border-radius: 999px; background: rgba(80,120,200,.14); color: var(--teal); }
+.vlt-group { border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; margin: 6px 0; } .vlt-group summary { cursor: pointer; }
+.vlt-gallery figcaption { display: flex; flex-direction: column; }
+.vlt-timeline p { margin: 0; padding: 6px 0; border-bottom: 1px dashed var(--line); display: flex; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.ok-t { color: #1f7a4d; font-weight: 700; } .bad-t { color: #b4232c; font-weight: 600; font-size: 13px; }
+@media (max-width: 640px) { .vlt-tabs { overflow-x: auto; flex-wrap: nowrap; } .vlt-tabs button { white-space: nowrap; } }
+@media (max-width: 640px) {
+  .vlt-head { gap: 12px; } .vlt-av { width: 60px; height: 60px; } .vlt-av.ph { font-size: 24px; }
+  .vlt-id h1 { font-size: 20px; } .vlt-actions { width: 100%; } .vlt-actions .btn { flex: 1; justify-content: center; font-size: 14px; padding: 8px 10px; }
+}

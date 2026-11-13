@@ -22,12 +22,16 @@
   <form method="get" class="inline">
     <input type="search" name="q" value="{{ q }}" placeholder="{{ t('vlt_search') }}" autofocus>
     {% if role %}<input type="hidden" name="role" value="{{ role }}">{% endif %}
+    <select name="course" onchange="this.form.submit()" aria-label="{{ t('vlt_courses') }}">
+      <option value="">{{ t('vlt_all_courses') }}</option>
+      {% for c, title in course_opts %}<option value="{{ c }}" {{ 'selected' if course == c }}>{{ title }}</option>{% endfor %}
+    </select>
     <button class="btn" type="submit">{{ t('vlt_find') }}</button>
   </form>
   <div class="vlt-chips">
-    <a class="{{ 'on' if not role }}" href="{{ url_for('vault_page', q=q or None) }}">{{ t('vlt_all') }} <b>{{ total }}</b></a>
+    <a class="{{ 'on' if not role }}" href="{{ url_for('vault_page', q=q or None, course=course or None) }}">{{ t('vlt_all') }} <b>{{ total }}</b></a>
     {% for r, lab in [('student', t('role_student')), ('doctor', t('role_doctor')), ('admin', t('vlt_subadmin')), ('main', t('role_admin'))] %}
-    <a class="{{ 'on' if role == r }}" href="{{ url_for('vault_page', role=r, q=q or None) }}">{{ lab }} <b>{{ counts.get(r, 0) }}</b></a>{% endfor %}
+    <a class="{{ 'on' if role == r }}" href="{{ url_for('vault_page', role=r, q=q or None, course=course or None) }}">{{ lab }} <b>{{ counts.get(r, 0) }}</b></a>{% endfor %}
   </div>
 </section>
 <section class="card">
@@ -41,7 +45,7 @@
       <td><span class="vlt-role r-{{ r.role }}">{{ {'student': t('role_student'), 'doctor': t('role_doctor'), 'admin': t('vlt_subadmin'), 'main': t('role_admin')}[r.role] }}</span></td>
       <td dir="ltr">{{ r.email or '–' }}</td>
       <td dir="auto">{{ r.uni_code or r.dept or '–' }}</td>
-      <td dir="auto" class="small">{{ r.courses|join(', ') or '–' }}</td>
+      <td dir="auto" class="small">{% if r.courses %}<span class="cnt">{{ r.courses|length }}</span> {{ r.courses[:2]|join(', ') }}{{ ' …' if r.courses|length > 2 }}{% else %}–{% endif %}</td>
       <td dir="ltr" class="small">{{ r.last or '–' }}</td>
       <td class="num">{{ r.n_q if r.kind == 'student' else '–' }}</td>
     </tr>

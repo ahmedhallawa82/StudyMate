@@ -28,7 +28,7 @@
     <tr class="main-row"><td><span class="who-cell"><span class="mini-av">{{ main.name[:1]|upper }}</span><b>{{ main.name }}</b> <span class="tag green">{{ t('doc_main') }}</span></span></td>
       <td dir="ltr">admin</td><td>–</td><td>–</td><td><span class="muted small">{{ t('doc_main_all') }}</span></td><td class="num">–</td><td></td></tr>
     {% for r in rows %}<tr data-q="{{ (r.name ~ ' ' ~ r.username ~ ' ' ~ r.email)|lower }}">
-      <td><span class="who-cell">{% if r.avatar %}<img class="mini-av" src="{{ url_for('avatar', key=r.key) }}" alt="">{% else %}<span class="mini-av">{{ r.name[:1]|upper }}</span>{% endif %}{% if admin_role == 'master' %}<a href="{{ url_for('vault_user', key='d:' ~ r.key[2:]) }}"><b>{{ r.name }}</b> 🔐</a>{% else %}<b>{{ r.name }}</b>{% endif %}</span></td>
+      <td><span class="who-cell">{% if r.avatar %}<img class="mini-av" src="{{ url_for('avatar', key=r.key) }}" alt="">{% else %}<span class="mini-av">{{ r.name[:1]|upper }}</span>{% endif %}<b>{{ r.name }}</b></span></td>
       <td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.email or '–' }}</td><td dir="auto">{{ r.dept or '–' }}</td>
       <td>{% for c in r.courses %}<span class="tag">{{ c }}</span> {% else %}–{% endfor %}</td><td class="num">{{ r.students }}</td>
       <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 'd:' ~ r.id}) }}">💬 {{ t('students_message') }}</a></td></tr>{% endfor %}
