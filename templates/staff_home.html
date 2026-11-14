@@ -19,7 +19,7 @@
   <section class="col-main">
     <div class="stats">
       {% if master %}
-      <div class="stat fade" style="--i:1" title="{{ t('sh_visitors', n=stats.visitors) }}"><div class="ic">{{ icon('globe') }}</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }}</div></div></div>
+      <a class="stat fade click" style="--i:1" href="{{ url_for('visitors_page') }}" title="{{ t('vis_open') }}"><div class="ic">{{ icon('globe') }}</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }}</div></div></a>
       <a class="stat fade click" style="--i:2" href="{{ url_for('doctors_page') }}" title="{{ t('doc_manage') }}"><div class="ic">{{ icon('teacher') }}</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></a>
       <button type="button" class="stat fade click" style="--i:3" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">{{ icon('cap') }}</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
       <a class="stat fade click" style="--i:4" href="{{ url_for('all_courses') }}"><div class="ic">{{ icon('book') }}</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></a>
@@ -39,7 +39,7 @@
     </div>
 
     <div class="card fade" style="--i:6">
-      <div class="card-top"><h3>{{ icon('globe') }}{{ t('sh_traffic_week') }}</h3><span class="pill">{{ week_total }} {{ t('sh_visits_unit') }}</span></div>
+      <div class="card-top"><h3>{{ icon('globe') }}{{ t('sh_traffic_week') }}</h3>{% if master %}<a href="{{ url_for('visitors_page') }}">{{ week_total }} {{ t('sh_visits_unit') }} {{ icon('arrow') }}</a>{% else %}<span class="pill">{{ week_total }} {{ t('sh_visits_unit') }}</span>{% endif %}</div>
       <div class="chart">
         {% set wdn = t('home_wd').split(',') %}
         {% for w in week %}

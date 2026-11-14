@@ -23,6 +23,7 @@ from core import faq, modelspw, autoeval, followup, videos, neural, insights, nb
 from core import slideview
 from core.passages import lecture_number
 from core import schedule as SCH
+from core import visitors
 from core import exams as EX
 from core import mastery as M
 from core.classifier import TopicClassifier, KIND_NAME
@@ -313,6 +314,18 @@ def _no_courses_guard():
     if session.get("lecturer"):
         return redirect(url_for("admin"))
     return render_template("no_courses.html"), 200
+
+
+@app.after_request
+def _count_visitor(resp):
+    """Every page someone opens (not files, not background calls) is kept for the visitors page of the main admin."""
+    try:
+        if (request.method == "GET" and resp.status_code == 200 and resp.mimetype == "text/html" and request.endpoint
+                and request.endpoint != "static" and not request.args.get("embed") and not app.config.get("TESTING_NO_VISITORS")):
+            visitors.record(visitors.client_ip(request), request.headers.get("User-Agent", ""), user_key() or "", request.path)
+    except Exception:                                            # noqa: BLE001 - counting must never break a page
+        pass
+    return resp
 
 
 def visit(page):
@@ -1349,6 +1362,28 @@ def admins_page():
     people = [{**x, "admin": doctors.by_student(x["code"])} for x in hits[:10]]
     return render_template("admins.html", rows=doctors.list_doctors("admin"), perms=doctors.PERMS, labels=PERM_LABEL, pw_min=doctors.MIN_LEN,
                            people=people, q=request.args.get("q", ""), total_students=len(allst), found=len(hits))
+
+
+# ------------------------------------------------------------------ site visitors (main admin)
+@app.route("/visitors")
+@lecturer_required
+def visitors_page():
+    if not is_main():
+        flash_t("master_only")
+        return redirect(url_for("staff_home"))
+    period = request.args.get("p", "7")
+    days = {"1": 1, "7": 7, "30": 30}.get(period)
+    rows = visitors.read(days)
+    q = request.args.get("q", "").strip().lower()
+    s = visitors.summary(rows, lang())
+    names = {}
+    for r in s["recent"]:
+        if r.get("who") and r["who"] not in names:
+            p = person(r["who"])
+            names[r["who"]] = (p["name"], p["role"]) if p else (r["who"], "")
+    recent = [r for r in s["recent"] if not q or q in (r["ip"] + " " + names.get(r.get("who"), ("", ""))[0] + " " + r["country"] + " " + r["net"] + " " + r["os"] + " " + r["br"]).lower()][:120]
+    return render_template("visitors.html", s=s, recent=recent, names=names, period=period if days or period == "all" else "7", q=q,
+                           old_total=len(read_sheet("Visits")))
 
 
 # ------------------------------------------------------------------ audit log (main admin)

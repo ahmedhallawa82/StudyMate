@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head, search_field with context %}
+{% block title %}{{ t('vis_title') }}{% endblock %}
+{% block content %}
+{{ page_head('globe', t('vis_title'), t('vis_sub')) }}
+{% macro pct(a, b) %}{{ ((100 * a / b)|round|int) if b else 0 }}{% endmacro %}
+<nav class="seg top fade" style="--i:1" aria-label="{{ t('vis_title') }}">
+  {% for p, lab in [('1', t('vis_today')), ('7', t('vis_7')), ('30', t('vis_30')), ('all', t('vis_all'))] %}
+  <a class="{{ 'on' if period == p }}" href="{{ url_for('visitors_page', p=p, q=q or None) }}">{{ icon('cal') if loop.first else icon('clock') }}{{ lab }}</a>{% endfor %}
+</nav>
+
+<div class="stats vis-kpis">
+  <div class="stat fade" style="--i:2"><div class="ic">{{ icon('eye') }}</div><div><div class="v" data-count="{{ s.views }}">0</div><div class="l">{{ t('vis_views') }}</div></div></div>
+  <div class="stat fade" style="--i:3"><div class="ic">{{ icon('users') }}</div><div><div class="v" data-count="{{ s.visitors }}">0</div><div class="l">{{ t('vis_people') }}</div></div></div>
+  <div class="stat fade" style="--i:4"><div class="ic">{{ icon('user') }}</div><div><div class="v" data-count="{{ s.signed }}">0</div><div class="l">{{ t('vis_signed') }}</div></div></div>
+  <div class="stat fade" style="--i:5"><div class="ic">{{ icon('pin') }}</div><div><div class="v">{{ pct(s.egypt, s.visitors) }}%</div><div class="l">{{ t('vis_egypt_k') }}</div></div></div>
+</div>
+
+{% if not s.visitors %}
+<div class="card fade" style="--i:6">{{ empty(t('vis_none'), 'globe') }}</div>
+{% else %}
+<div class="vis-grid">
+  <section class="card fade" style="--i:6">
+    <div class="card-top"><h3>{{ icon('monitor') }}{{ t('vis_devices') }}</h3></div>
+    <div class="vis-devs">
+      {% for k, ic, lab in [('phone', 'phone', t('vis_phone')), ('tablet', 'tablet', t('vis_tablet')), ('computer', 'monitor', t('vis_computer'))] %}
+      {% set n = s.dev[k] %}
+      <div class="vis-dev">
+        <span class="vis-dev-ic">{{ icon(ic, 26) }}</span>
+        <b>{{ n }}</b><small>{{ lab }}</small>
+        <div class="vis-bar"><i style="width: {{ pct(n, s.visitors) }}%"></i></div>
+        <small class="muted">{{ pct(n, s.visitors) }}%</small>
+      </div>{% endfor %}
+    </div>
+    <p class="muted small">{{ icon('help', 15) }}{{ t('vis_dev_note') }}</p>
+  </section>
+
+  <section class="card fade" style="--i:7">
+    <div class="card-top"><h3>{{ icon('pin') }}{{ t('vis_where') }}</h3></div>
+    <div class="vis-split">
+      <div class="vis-eg"><b>{{ s.egypt }}</b><small>{{ t('vis_in_egypt') }}</small></div>
+      <div class="vis-ab"><b>{{ s.abroad }}</b><small>{{ t('vis_abroad') }}</small></div>
+      {% if s.unknown %}<div class="vis-un"><b>{{ s.unknown }}</b><small>{{ t('vis_unknown') }}</small></div>{% endif %}
+    </div>
+    <ul class="vis-list">
+      {% for c in s.countries %}<li><span class="cc{{ ' eg' if c.cc == 'EG' }}">{{ c.cc if c.cc not in ('--',) else '?' }}</span><span dir="auto">{{ c.name }}</span><div class="vis-bar"><i style="width: {{ pct(c.n, s.visitors) }}%"></i></div><b>{{ c.n }}</b></li>{% endfor %}
+    </ul>
+    <p class="muted small">{{ icon('help', 15) }}{{ t('vis_where_note') }}</p>
+  </section>
+
+  <section class="card fade" style="--i:8">
+    <div class="card-top"><h3>{{ icon('wifi') }}{{ t('vis_nets') }}</h3></div>
+    <ul class="vis-list">{% for name, n in s.nets %}<li><span dir="auto">{{ name }}</span><div class="vis-bar"><i style="width: {{ pct(n, s.visitors) }}%"></i></div><b>{{ n }}</b></li>{% endfor %}</ul>
+  </section>
+
+  <section class="card fade" style="--i:9">
+    <div class="card-top"><h3>{{ icon('sliders') }}{{ t('vis_os') }} · {{ t('vis_br') }}</h3></div>
+    <div class="vis-two">
+      <ul class="vis-list">{% for name, n in s.os %}<li><span>{{ name }}</span><div class="vis-bar"><i style="width: {{ pct(n, s.visitors) }}%"></i></div><b>{{ n }}</b></li>{% endfor %}</ul>
+      <ul class="vis-list">{% for name, n in s.br %}<li><span>{{ name }}</span><div class="vis-bar"><i style="width: {{ pct(n, s.visitors) }}%"></i></div><b>{{ n }}</b></li>{% endfor %}</ul>
+    </div>
+  </section>
+</div>
+
+<section class="card fade" style="--i:10;margin-top:16px">
+  <div class="card-top"><h3>{{ icon('clock') }}{{ t('vis_hours') }}</h3></div>
+  {% set hmax = (s.hours|max) or 1 %}
+  <div class="vis-hours" dir="ltr">{% for n in s.hours %}<div title="{{ '%02d'|format(loop.index0) }}:00 · {{ n }}"><i style="height: {{ (100 * n / hmax)|round|int }}%"></i><small>{{ loop.index0 if loop.index0 % 3 == 0 else '' }}</small></div>{% endfor %}</div>
+</section>
+{% endif %}
+
+<section class="card fade" style="--i:11;margin-top:16px">
+  <div class="card-top"><h3>{{ icon('list') }}{{ t('vis_recent') }}</h3></div>
+  <form method="get" class="sbar" style="margin-bottom:14px"><input type="hidden" name="p" value="{{ period }}">
+    {{ search_field(t('vis_search'), name='q', value=q) }}
+    <button class="btn" type="submit">{{ icon('search') }}{{ t('vlt_find') }}</button></form>
+  {% if recent %}
+  <div class="table-wrap"><table class="vis-table">
+    <thead><tr><th>{{ t('vis_when') }}</th><th>{{ t('vis_who') }}</th><th>{{ t('vis_device') }}</th><th>{{ t('vis_ip') }}</th><th>{{ t('vis_place') }}</th><th>{{ t('vis_page') }}</th></tr></thead>
+    <tbody>{% for r in recent %}
+    <tr>
+      <td dir="ltr" class="small">{{ r.t[5:16] }}</td>
+      <td>{% if r.who %}<b dir="auto">{{ names[r.who][0] }}</b><small class="muted"> · {{ names[r.who][1] }}</small>{% else %}<span class="muted">{{ t('vis_guest') }}</span>{% endif %}</td>
+      <td><span class="vis-d">{{ icon({'phone': 'phone', 'tablet': 'tablet'}.get(r.dev, 'monitor'), 16) }}{{ r.os }} · {{ r.br }}</span></td>
+      <td dir="ltr"><a class="vis-ip" href="{{ url_for('visitors_page', p=period, q=r.ip) }}">{{ r.ip }}</a></td>
+      <td><span class="cc{{ ' eg' if r.cc == 'EG' }}">{{ r.cc if r.cc != '--' else '?' }}</span> <span dir="auto">{{ r.country }}</span>{% if r.net %}<small class="muted" dir="auto"> · {{ r.net }}</small>{% endif %}</td>
+      <td dir="ltr" class="small muted">{{ r.page }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% else %}{{ empty(t('vis_none'), 'list') }}{% endif %}
+  {% if s.bots %}<p class="muted small">{{ icon('bot', 15) }}{{ t('vis_bots', n=s.bots) }}</p>{% endif %}
+  <p class="muted small">{{ icon('help', 15) }}{{ t('vis_note', n=old_total) }}</p>
+</section>
+{% endblock %}

@@ -1700,3 +1700,27 @@ def test_wipe_flow_and_execute(client, tmp_path):
     wipe.execute(base=base)
     assert not (base / "data/students.json").exists() and not (base / "data/AI/lectures").exists() and wipe.closed()
     wipe.reopen()
+
+
+def test_visitors_page_devices_and_places():
+    import app as A, config
+    from core import visitors
+    assert visitors.parse_ua("Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 Version/17.2 Mobile/15E148 Safari/604.1")[:2] == ("phone", "iOS 17")
+    assert visitors.parse_ua("Mozilla/5.0 (Linux; Android 13; SM-X200) AppleWebKit/537.36 Chrome/120.0 Safari/537.36")[0] == "tablet"
+    assert visitors.parse_ua("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0 Safari/537.36 Edg/120.0") == ("computer", "Windows", "Edge")
+    assert visitors.parse_ua("python-requests/2.31")[0] == "bot"
+    c = A.app.test_client()
+    c.get("/start", headers={"X-Real-IP": "41.33.10.5", "User-Agent": "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/120.0 Mobile Safari/537.36"})
+    adm = A.app.test_client()
+    with adm.session_transaction() as ses:                    # the main admin (an earlier test may have changed his password)
+        ses["lecturer"] = True; ses["admin_id"] = A.doctors.MASTER
+    h = adm.get("/visitors?p=1&q=41.33.10.5").get_data(as_text=True)
+    assert "41.33.10.5" in h and "Android 14" in h
+    try:
+        import geoip2fast  # noqa: F401
+        assert "Egypt" in h
+    except ImportError:
+        pass
+    assert 'href="/visitors"' in adm.get("/overview").get_data(as_text=True)          # the visits card opens the page
+    st = A.app.test_client(); as_student(st, "VISX")
+    assert st.get("/visitors").status_code == 302

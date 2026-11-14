@@ -38,3 +38,5 @@ data/wipe_pending.json
 data/wipe_auth.json
 data/site_closed.json
 data/wipe_log.jsonl
+data/visitors.jsonl
+data/ipgeo.json
