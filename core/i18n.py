@@ -185,6 +185,7 @@ T = {
     "vlt_xlsx_all": ('All users (Excel)', 'كل المستخدمين (إكسل)'),
     "vlt_search": ('Search by name, username, e-mail, university code or department', 'ابحث بالاسم أو اسم المستخدم أو الإيميل أو الكود الجامعي أو القسم'),
     "vlt_find": ('Search', 'بحث'),
+    "clear": ('Clear', 'مسح'),
     "vlt_all": ('Everyone', 'الكل'),
     "vlt_subadmin": ('Sub-admin', 'أدمن فرعي'),
     "vlt_n_found": ('{n} people', '{n} شخص'),

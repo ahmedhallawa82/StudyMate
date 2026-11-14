@@ -3,13 +3,13 @@
 {% block title %}{{ t('nav_ask') }}{% endblock %}
 {% block content %}
 {{ page_head('🔎', t('nav_ask'), t('tile_ask')) }}
-<p style="margin:-6px 0 12px"><a href="{{ url_for('saved_page') }}">⭐ {{ t('sv_link') }} →</a></p>
+<p style="margin:-6px 0 12px"><a href="{{ url_for('saved_page') }}">{{ icon('star') }}{{ t('sv_link') }} {{ icon('arrow') }}</a></p>
 <div class="grid">
   <section>
     <div class="card">
       <form class="inline" method="get" action="{{ url_for('ask') }}">
         <input type="text" name="q" id="askQ" value="{{ question }}" placeholder="{{ t('ask_ph') }}" autofocus required dir="auto">
-        {% if photo_ok() %}<button class="btn ghost photo-btn" type="button" id="photoBtn" title="{{ t('ph_btn') }}" aria-label="{{ t('ph_btn') }}">📷<span>{{ t('ph_btn') }}</span></button>
+        {% if photo_ok() %}<button class="btn ghost photo-btn" type="button" id="photoBtn" title="{{ t('ph_btn') }}" aria-label="{{ t('ph_btn') }}">{{ icon('camera') }}<span>{{ t('ph_btn') }}</span></button>
         <input type="file" id="photoIn" accept="image/*" hidden>{% endif %}
         <button class="btn" type="submit">{{ t('ask_btn') }}</button>
       </form>
@@ -24,7 +24,7 @@
         {% set v = result.view %}
         {% if v and v.summary %}
         <div class="card sv-sum">
-          <h3>💡 {{ t('sv_summary') }}</h3>
+          <h3>{{ icon('bulb') }}{{ t('sv_summary') }}</h3>
           {% for x in v.summary %}<p dir="auto" data-tr>{{ x.html }} <a class="sv-src" href="#s-{{ x.passage_id }}">{{ x.src }}</a></p>{% endfor %}
         </div>
         {% endif %}
@@ -64,7 +64,7 @@
             <button class="btn ghost small" type="submit">{{ t('no') }}</button></form>
         </div>
         <p style="margin-top:14px"><a class="btn teal small" href="{{ url_for('practice', topic=result.topic) }}">{{ t('practise_topic', topic=result.topic_name) }}</a>
-          <button class="btn ghost small star-btn {{ 'on' if starred }}" type="button" id="starBtn" data-q="{{ question }}" data-slide="{{ result.hits[0].passage_id if result.hits else '' }}" data-topic="{{ result.topic }}">⭐ <span>{{ t('sv_starred') if starred else t('sv_star') }}</span></button></p>
+          <button class="btn ghost small star-btn {{ 'on' if starred }}" type="button" id="starBtn" data-q="{{ question }}" data-slide="{{ result.hits[0].passage_id if result.hits else '' }}" data-topic="{{ result.topic }}">{{ icon('star') }}<span>{{ t('sv_starred') if starred else t('sv_star') }}</span></button></p>
       {% else %}
         <div class="notfound"><b>{{ t('not_found') }}</b><br>{{ t('not_found_body', course=course) }}</div>
         <div class="muted small" style="margin-top:10px">{{ t('right_decision') }}

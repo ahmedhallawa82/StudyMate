@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/ui.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/dark.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/calm.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/kit.css') }}">
 </head>
 <body>
 <header class="top">
@@ -54,12 +55,12 @@
       {% endif %}
     </nav>
     <div class="tools">
-      {% if not is_master_user %}<button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">🛟</button>{% endif %}
+      {% if not is_master_user %}<button type="button" class="tool icon" id="supportBtn" title="{{ t('sup_title') }}" data-tip="{{ t('tip_support') }}" aria-label="{{ t('sup_title') }}">{{ icon('lifebuoy') }}</button>{% endif %}
       {% if quick_links and not is_lecturer %}<button type="button" class="tool qs-pill" id="qsBtn" aria-haspopup="dialog" title="{{ t('qs_title') }} (Ctrl K)" data-tip="{{ t('qs_title') }}" aria-label="{{ t('qs_title') }}">{{ ic('search') }}<span class="qs-t">{{ t('qs_title') }}</span><kbd>Ctrl K</kbd></button>{% endif %}
       {% if me_key %}
-      {% if not is_lecturer %}<a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">📅</a>{% endif %}
+      {% if not is_lecturer %}<a class="tool icon-btn" href="{{ url_for('calendar_page') }}" title="{{ t('nav_calendar') }}" data-tip="{{ t('tip_calendar') }}" aria-label="{{ t('nav_calendar') }}">{{ icon('cal') }}</a>{% endif %}
       <div class="bell" id="bell">
-        <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}" data-tip="{{ t('tip_bell') }}">🔔{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
+        <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}" data-tip="{{ t('tip_bell') }}">{{ icon('bell') }}{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
         <div class="bell-panel" hidden>
           <div class="bell-head"><b>{{ t('notif_title') }}</b>{% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="next" value="{{ request.path }}"><button type="submit" class="linkish">{{ t('notif_mark_all') }}</button></form>{% endif %}</div>
           {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋', 'badge': '🏅', 'chat': '💬', 'study': '📚'}.get(n.kind, '🔔') }}</span><span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
@@ -85,7 +86,7 @@
   {% if wipe_pending %}<a class="wp-banner" href="{{ url_for('vault_danger') }}">⏳ {{ t('wp_banner', d=wipe_pending.due_text) }} — <b>{{ t('wp_cancel') }}</b></a>{% endif %}
   {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
   {% if student_code and not is_lecturer and path.startswith(('/practice', '/progress', '/exams', '/materials')) %}
-  <a class="st-back" href="{{ url_for('studio') }}">← {{ t('nav_studio') }}</a>
+  <a class="st-back" href="{{ url_for('studio') }}">{{ icon('arrow-l') }}{{ t('nav_studio') }}</a>
   {% endif %}
   {% if request.endpoint not in ('home', 'start', 'staff_home', 'student_home', 'lecturer_login', 'register', 'register_student', 'register_doctor', 'forgot') and not embed %}
   <a class="back-arrow" href="{{ url_for('home') }}" id="backArrow" title="{{ t('go_back') }}" aria-label="{{ t('go_back') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>{{ t('go_back') }}</span></a>
@@ -97,7 +98,7 @@
 <div class="modal" id="supportModal" hidden role="dialog" aria-modal="true" aria-labelledby="supTitle">
   <div class="modal-box">
     <button type="button" class="modal-x" data-close aria-label="{{ t('close') }}">×</button>
-    <h3 id="supTitle">🛟 {{ t('sup_title') }}</h3>
+    <h3 id="supTitle">{{ icon('lifebuoy') }}{{ t('sup_title') }}</h3>
     <p class="muted">{{ t('sup_intro') }}</p>
     <form id="supportForm">
       <input type="hidden" name="ident" value="{{ login_alert.ident if login_alert else '' }}">
@@ -109,7 +110,7 @@
       <textarea id="supMsg" name="message" maxlength="2000" required></textarea>
       <button class="btn teal" type="submit">{{ t('sup_send') }}</button>
     </form>
-    <p id="supDone" class="ok-msg" hidden>✅ {{ t('sup_sent') }}</p>
+    <p id="supDone" class="ok-msg" hidden>{{ icon('check') }}{{ t('sup_sent') }}</p>
     <p id="supFail" class="err-msg" hidden>{{ t('sup_fail') }}</p>
   </div>
 </div>
@@ -119,7 +120,7 @@
     <button type="button" class="modal-x" data-close aria-label="{{ t('close') }}">×</button>
     <h3 id="alTitle">{{ t('al_locked_t') if login_alert.kind == 'locked' else t('al_help_t') }}</h3>
     <p>{{ t('al_locked') if login_alert.kind == 'locked' else t('al_help', left=login_alert.left) }}</p>
-    <div class="modal-actions"><button type="button" class="btn teal" id="alertSupport">🛟 {{ t('sup_title') }}</button><button type="button" class="btn ghost" data-close>{{ t('close') }}</button></div>
+    <div class="modal-actions"><button type="button" class="btn teal" id="alertSupport">{{ icon('lifebuoy') }}{{ t('sup_title') }}</button><button type="button" class="btn ghost" data-close>{{ t('close') }}</button></div>
   </div>
 </div>
 {% endif %}
@@ -145,8 +146,8 @@
 
 <script>
 (function () {
-  var btn = document.getElementById('modeBtn'), L = {light: '{{ t("mode_light") }}', dark: '{{ t("mode_dark") }}'};
-  function paint() { var m = document.documentElement.getAttribute('data-mode'); btn.innerHTML = m === 'dark' ? '<span class="mi">☀</span><span class="ml"> ' + L.light + '</span>' : '<span class="mi">☾</span><span class="ml"> ' + L.dark + '</span>'; }
+  var btn = document.getElementById('modeBtn'), L = {light: '{{ t("mode_light") }}', dark: '{{ t("mode_dark") }}'}, I = {sun: {{ icon('sun', 17)|string|tojson }}, moon: {{ icon('moon', 17)|string|tojson }}};
+  function paint() { var m = document.documentElement.getAttribute('data-mode'); btn.innerHTML = m === 'dark' ? '<span class="mi">' + I.sun + '</span><span class="ml"> ' + L.light + '</span>' : '<span class="mi">' + I.moon + '</span><span class="ml"> ' + L.dark + '</span>'; }
   btn.addEventListener('click', function () {
     var m = document.documentElement.getAttribute('data-mode') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-mode', m);
@@ -185,7 +186,7 @@
   <div class="qs-box">
     <input type="search" id="qsInput" placeholder="{{ t('qs_ph') }}" autocomplete="off" aria-label="{{ t('qs_title') }}">
     <ul id="qsList" role="listbox"></ul>
-    <p class="qs-hint muted small">↑ ↓ {{ t('qs_move') }} · Enter {{ t('qs_open') }} · Esc {{ t('qs_close') }}</p>
+    <p class="qs-hint muted small">{{ icon('up') }}{{ icon('down') }}{{ t('qs_move') }} · Enter {{ t('qs_open') }} · Esc {{ t('qs_close') }}</p>
   </div>
 </div>
 <script id="qsData" type="application/json">{{ quick_links|tojson }}</script>
@@ -250,6 +251,16 @@
     place(); window.addEventListener('resize', place); window.addEventListener('load', place);
   });
 })();
+</script>
+<script>
+// search boxes: show the clear button while there is text; clearing re-runs the live filter
+document.addEventListener('input', function (e) { var f = e.target.closest && e.target.closest('.sfield'); if (f) f.classList.toggle('has-text', !!e.target.value); });
+document.addEventListener('click', function (e) {
+  var b = e.target.closest && e.target.closest('.sfield .sclear'); if (!b) return;
+  var i = b.parentNode.querySelector('input'); i.value = ''; b.parentNode.classList.remove('has-text'); i.focus();
+  i.dispatchEvent(new Event('input', {bubbles: true}));
+  if (i.form && i.name && i.form.method.toLowerCase() === 'get' && location.search.indexOf(i.name + '=') > -1) i.form.submit();
+});
 </script>
 {% if embed %}<script>
 // shown inside a pane of another page: tell the parent how tall this page is so the frame has no scrollbar of its own

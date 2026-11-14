@@ -31,7 +31,7 @@
       <p class="muted small" style="margin-top:14px">{{ t('how_level') }}</p>
     </div>
     <div class="card panel" id="reviews" style="margin-top:14px">
-      <h3>🔁 {{ t('sr_title') }}</h3>
+      <h3>{{ icon('refresh') }}{{ t('sr_title') }}</h3>
       <p class="muted small">{{ t('sr_sub') }}</p>
       {% for r in reviews %}
       <div class="sr-row{{ ' due' if r.overdue }}">

@@ -15,13 +15,13 @@
     <p>{{ t('exam_available', n=n) }}</p>
     <div class="ex-opts">
       <div class="ex-opt ready">
-        <h3>⚡ {{ t('ex_ready_title') }}</h3>
+        <h3>{{ icon('zap') }}{{ t('ex_ready_title') }}</h3>
         <p class="muted small">{{ t('ex_ready_sub', n=quick) }}</p>
         <p class="small">⏱ {{ t('ex_ready_time', m=[1, (quick * avg)|round|int]|max) }}</p>
         <form method="post" action="{{ url_for('exams_start') }}"><input type="hidden" name="count" value="{{ quick }}"><button class="btn" type="submit">{{ t('ex_ready_btn') }}</button></form>
       </div>
       <div class="ex-opt">
-        <h3>🛠️ {{ t('ex_create_title') }}</h3>
+        <h3>{{ icon('tools') }}{{ t('ex_create_title') }}</h3>
         <p class="muted small">{{ t('ex_create_sub') }}</p>
         <form method="post" action="{{ url_for('exams_start') }}" id="startForm">
           <p><b>{{ t('exam_choose_n') }}</b></p>

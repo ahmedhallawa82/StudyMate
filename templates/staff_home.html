@@ -8,10 +8,10 @@
     <p class="muted">{{ t('sh_sub_admin') if master else t('sh_sub_doctor') }}</p>
   </div>
   <div class="edu-actions">
-    {% if 'announce' in perms %}<a class="btn ghost" href="{{ url_for('announcements_page') }}">📢 {{ t('ann_title') }}</a>{% endif %}
-    {% if 'data' in perms %}<a class="btn ghost" href="{{ url_for('report_page') }}">🗓 {{ t('rep_link') }}</a>{% endif %}
-    {% if admin_role == 'master' %}<a class="btn ghost" href="{{ url_for('audit_page') }}">🧾 {{ t('aud_link') }}</a>{% endif %}
-    {% if master and 'support' in perms %}<a class="btn ghost" href="{{ url_for('support_inbox') }}">🛟 {{ t('support_inbox') }}{% if support_open %}<span class="sup-count">{{ support_open }}</span>{% endif %}</a>{% endif %}
+    {% if 'announce' in perms %}<a class="btn ghost" href="{{ url_for('announcements_page') }}">{{ icon('mega') }}{{ t('ann_title') }}</a>{% endif %}
+    {% if 'data' in perms %}<a class="btn ghost" href="{{ url_for('report_page') }}">{{ icon('cal') }}{{ t('rep_link') }}</a>{% endif %}
+    {% if admin_role == 'master' %}<a class="btn ghost" href="{{ url_for('audit_page') }}">{{ icon('receipt') }}{{ t('aud_link') }}</a>{% endif %}
+    {% if master and 'support' in perms %}<a class="btn ghost" href="{{ url_for('support_inbox') }}">{{ icon('lifebuoy') }}{{ t('support_inbox') }}{% if support_open %}<span class="sup-count">{{ support_open }}</span>{% endif %}</a>{% endif %}
   </div>
 </div>
 
@@ -19,27 +19,27 @@
   <section class="col-main">
     <div class="stats">
       {% if master %}
-      <div class="stat fade" style="--i:1" title="{{ t('sh_visitors', n=stats.visitors) }}"><div class="ic">🌐</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }}</div></div></div>
-      <a class="stat fade click" style="--i:2" href="{{ url_for('doctors_page') }}" title="{{ t('doc_manage') }}"><div class="ic">👨‍🏫</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></a>
-      <button type="button" class="stat fade click" style="--i:3" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
-      <a class="stat fade click" style="--i:4" href="{{ url_for('all_courses') }}"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></a>
+      <div class="stat fade" style="--i:1" title="{{ t('sh_visitors', n=stats.visitors) }}"><div class="ic">{{ icon('globe') }}</div><div><div class="v" data-count="{{ stats.visits }}">0</div><div class="l">{{ t('sh_traffic') }}</div></div></div>
+      <a class="stat fade click" style="--i:2" href="{{ url_for('doctors_page') }}" title="{{ t('doc_manage') }}"><div class="ic">{{ icon('teacher') }}</div><div><div class="v" data-count="{{ stats.doctors }}">0</div><div class="l">{{ t('sh_doctors') }}</div></div></a>
+      <button type="button" class="stat fade click" style="--i:3" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">{{ icon('cap') }}</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_students') }}</div></div></button>
+      <a class="stat fade click" style="--i:4" href="{{ url_for('all_courses') }}"><div class="ic">{{ icon('book') }}</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_courses') }}</div></div></a>
       {% else %}
-      <a class="stat fade click" style="--i:1" href="{{ url_for('all_courses') }}"><div class="ic">📚</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_my_courses') }}</div></div></a>
-      <button type="button" class="stat fade click" style="--i:2" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">🎓</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_my_students') }}</div></div></button>
-      <div class="stat fade" style="--i:3"><div class="ic">📝</div><div><div class="v" data-count="{{ stats.exams }}">0</div><div class="l">{{ t('sh_exams') }}</div></div></div>
-      <div class="stat fade" style="--i:4"><div class="ic">💬</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('sh_asked') }}</div></div></div>
+      <a class="stat fade click" style="--i:1" href="{{ url_for('all_courses') }}"><div class="ic">{{ icon('book') }}</div><div><div class="v" data-count="{{ stats.courses }}">0</div><div class="l">{{ t('sh_my_courses') }}</div></div></a>
+      <button type="button" class="stat fade click" style="--i:2" onclick="document.getElementById('per-course').classList.toggle('open')" title="{{ t('sh_hint_click') }}"><div class="ic">{{ icon('cap') }}</div><div><div class="v" data-count="{{ stats.students }}">0</div><div class="l">{{ t('sh_my_students') }}</div></div></button>
+      <div class="stat fade" style="--i:3"><div class="ic">{{ icon('note') }}</div><div><div class="v" data-count="{{ stats.exams }}">0</div><div class="l">{{ t('sh_exams') }}</div></div></div>
+      <div class="stat fade" style="--i:4"><div class="ic">{{ icon('chat') }}</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('sh_asked') }}</div></div></div>
       {% endif %}
     </div>
 
     <div class="card per-course fade" id="per-course" style="--i:5">
-      <div class="card-top"><h3>🎓 {{ t('sh_per_course') }}</h3><a href="{{ url_for('students_page') }}">{{ t('nav_students') }} →</a></div>
+      <div class="card-top"><h3>{{ icon('cap') }}{{ t('sh_per_course') }}</h3><a href="{{ url_for('students_page') }}">{{ t('nav_students') }} {{ icon('arrow') }}</a></div>
       {% for c in by_course %}
-      <div class="pc-row"><span>📚 {{ c.title }} <small class="muted">{{ c.code }}</small></span><b>{{ c.n }}</b></div>
+      <div class="pc-row"><span>{{ icon('book') }}{{ c.title }} <small class="muted">{{ c.code }}</small></span><b>{{ c.n }}</b></div>
       {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
     </div>
 
     <div class="card fade" style="--i:6">
-      <div class="card-top"><h3>🌐 {{ t('sh_traffic_week') }}</h3><span class="pill">{{ week_total }} {{ t('sh_visits_unit') }}</span></div>
+      <div class="card-top"><h3>{{ icon('globe') }}{{ t('sh_traffic_week') }}</h3><span class="pill">{{ week_total }} {{ t('sh_visits_unit') }}</span></div>
       <div class="chart">
         {% set wdn = t('home_wd').split(',') %}
         {% for w in week %}
@@ -51,27 +51,27 @@
     <div class="trio">
     {% if main_admin %}
     <div class="card fade">
-      <div class="card-top"><h3>🛡️ {{ t('sh_admins_card') }}</h3><a href="{{ url_for('admin') }}#admins" title="{{ t('adms_tab') }}">+</a></div>
+      <div class="card-top"><h3>{{ icon('shield') }}{{ t('sh_admins_card') }}</h3><a href="{{ url_for('admin') }}#admins" title="{{ t('adms_tab') }}">+</a></div>
       <div class="pc-row"><span>{{ t('role_admin') }} <span class="tag">{{ t('doc_main') }}</span></span></div>
       {% for a in admins_list[:4] %}<div class="pc-row"><span>{{ a.name }}</span><small class="muted" dir="ltr">@{{ a.username }}</small></div>{% endfor %}
     </div>
     {% endif %}
     {% if master %}
     <div class="card fade">
-      <div class="card-top"><h3>👨‍🏫 {{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
+      <div class="card-top"><h3>{{ icon('teacher') }}{{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">{{ icon('arrow') }}</a></div>
       {% for d in team[:5] %}<div class="pc-row"><span>{{ d.name }}</span><small class="muted" dir="ltr">{{ d.courses }}</small></div>
       {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
       {% if team|length > 5 %}<a class="more-row" href="{{ url_for('doctors_page') }}">+{{ team|length - 5 }} {{ t('sh_more') }}</a>{% endif %}
     </div>
     {% else %}
     <div class="card fade">
-      <div class="card-top"><h3>📚 {{ t('sh_my_courses') }}</h3><a href="{{ url_for('admin') }}">→</a></div>
+      <div class="card-top"><h3>{{ icon('book') }}{{ t('sh_my_courses') }}</h3><a href="{{ url_for('admin') }}">{{ icon('arrow') }}</a></div>
       {% for c in courses %}<div class="pc-row"><span>{{ c.name_ar or c.name_en if lang == 'ar' else c.name_en }}</span><small class="muted">{{ c.code }}</small></div>
       {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
     </div>
     {% endif %}
     <div class="card fade">
-      <h3>🆕 {{ t('sh_recent') }}</h3>
+      <h3>{{ icon('sparkle') }}{{ t('sh_recent') }}</h3>
       {% for r in recent %}<div class="pc-row"><span>{{ r.first }} {{ r.last }}</span><small class="muted" dir="ltr">@{{ r.username }}</small></div>
       {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
     </div>
@@ -81,7 +81,7 @@
 
   <aside class="col-side">
 <div class="card cal-big fade" style="--i:1" id="home-cal">
-      <div class="card-top"><h3>📅 {{ t('cal_title') }}</h3><a href="{{ url_for('calendar_page') }}">{{ t('cal_schedule') }} →</a></div>
+      <div class="card-top"><h3>{{ icon('cal') }}{{ t('cal_title') }}</h3><a href="{{ url_for('calendar_page') }}">{{ t('cal_schedule') }} {{ icon('arrow') }}</a></div>
       <div class="cal-grid">
         <section>
           <div class="cal-bar">

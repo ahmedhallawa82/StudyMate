@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head, course_picker with context %}
+{% from "_ui.html" import page_head, course_picker, search_field with context %}
 {% block title %}{{ t('exam_manage_title') }}{% endblock %}
 {% block content %}
 {{ page_head('🧪', t('exam_manage_title') ~ ' · ' ~ course, t('exam_manage_sub')) }}
 
 {{ course_picker(url_for('exams_manage')) }}
-<nav class="ex-tabs fade" role="tablist" style="--i:1">
-  <button type="button" role="tab" data-tab="questions" class="{{ 'on' if tab == 'questions' }}">{{ t('ex_tab_q') }} {% if sm.graded %}<span class="ex-ok">✓</span>{% endif %}</button>
-  <button type="button" role="tab" data-tab="settings" class="{{ 'on' if tab == 'settings' }}">{{ t('ex_tab_s') }}</button>
-  <button type="button" role="tab" data-tab="results" class="{{ 'on' if tab == 'results' }}">{{ t('ex_tab_r') }} <span class="pill">{{ stats.n }}</span></button>
+<nav class="ex-tabs seg top fade" role="tablist" style="--i:1">
+  <button type="button" role="tab" data-tab="questions" class="{{ 'on' if tab == 'questions' }}">{{ icon('list') }}{{ t('ex_tab_q') }} {% if sm.graded %}<span class="ex-ok">{{ icon('check') }}</span>{% endif %}</button>
+  <button type="button" role="tab" data-tab="settings" class="{{ 'on' if tab == 'settings' }}">{{ icon('sliders') }}{{ t('ex_tab_s') }}</button>
+  <button type="button" role="tab" data-tab="results" class="{{ 'on' if tab == 'results' }}">{{ icon('chart') }}{{ t('ex_tab_r') }} <span class="pill">{{ stats.n }}</span></button>
 </nav>
 
 <!-- Questions -->
@@ -17,7 +17,7 @@
     {% for k, v in [('ex_total', sm.total), ('ex_en', sm.en), ('ex_ar', sm.ar), ('ex_mcq', sm.mcq), ('ex_tf', sm.tf), ('ex_essay', sm.essay), ('ex_ready', sm.graded)] if v or k == 'ex_total' %}
     <div><b>{{ v }}</b><small>{{ t(k) }}</small></div>{% endfor %}
   </div>
-  {% if sm.graded %}<p class="ex-ready fade">✅ {{ t('ex_ready_msg', n=sm.graded) }}</p>{% endif %}
+  {% if sm.graded %}<p class="ex-ready fade">{{ icon('check') }}{{ t('ex_ready_msg', n=sm.graded) }}</p>{% endif %}
 
   <div class="card fade" style="--i:3">
     <h2>{{ t('exam_upload_title') }}</h2>
@@ -36,8 +36,8 @@
         <label class="ex-opt"><input type="radio" name="qtype" value="auto" checked> <span><b>{{ t('ex_qtype_auto') }}</b><small>{{ t('ex_qtype_auto_d') }}</small></span></label>
         <label class="ex-opt"><input type="radio" name="qtype" value="tf"> <span><b>{{ t('ex_qtype_tf') }}</b><small>{{ t('ex_qtype_tf_d') }}</small></span></label>
       </div>
-      <p class="ex-step"><b>4</b> <button class="btn" type="submit">⬆️ {{ t('ex_upload') }}</button>
-        <a class="btn ghost small" href="{{ url_for('exams_template') }}">⬇️ {{ t('exam_template') }}</a></p>
+      <p class="ex-step"><b>4</b> <button class="btn" type="submit">{{ icon('upload') }}{{ t('ex_upload') }}</button>
+        <a class="btn ghost small" href="{{ url_for('exams_template') }}">{{ icon('download') }}{{ t('exam_template') }}</a></p>
     </form>
     <p class="muted small">ℹ️ {{ t('ex_format_hint') }} <a href="{{ url_for('help_page') }}#formats">{{ t('ex_format_q') }}</a></p>
   </div>
@@ -45,7 +45,7 @@
   <div class="card fade" style="--i:4">
     <h2>{{ t('exam_bank') }}</h2>
     {% if sm.essay %}<form method="post" class="ex-redetect"><input type="hidden" name="action" value="redetect"><input type="hidden" name="tab" value="questions">
-      <span class="muted small">{{ t('ex_redetect_note', n=sm.essay) }}</span> <button class="btn ghost small" type="submit">🔍 {{ t('ex_redetect') }}</button></form>{% endif %}
+      <span class="muted small">{{ t('ex_redetect_note', n=sm.essay) }}</span> <button class="btn ghost small" type="submit">{{ icon('search') }}{{ t('ex_redetect') }}</button></form>{% endif %}
     {% if not rows %}<p class="muted">{{ t('ex_bank_empty') }}</p>{% else %}
     <div class="table-wrap"><table>
       {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td><td><span class="tag {{ {'mcq': '', 'tf': 'green', 'essay': ''}[r.type] }}">{{ {'mcq': t('exam_type_mcq'), 'tf': t('ex_tf'), 'essay': t('exam_type_essay')}[r.type] }}</span></td>
@@ -68,7 +68,7 @@
       <button class="btn teal" type="submit">{{ t('save') }}</button>
     </form>
   </div>
-  {% if sm.total %}<details class="card ex-danger fade" style="--i:3"><summary>🗑️ {{ t('exam_delete_bank') }}</summary>
+  {% if sm.total %}<details class="card ex-danger fade" style="--i:3"><summary>{{ icon('trash') }}{{ t('exam_delete_bank') }}</summary>
     <form method="post"><input type="hidden" name="action" value="clear"><input type="hidden" name="tab" value="settings">
       <p class="muted small">{{ t('ex_delete_note', code=code) }}</p>
       <input type="text" name="confirm" placeholder="{{ code }}" required dir="ltr" autocomplete="off" style="max-width:220px">
@@ -86,10 +86,12 @@
   <div class="card fade" style="--i:3">
     <h2>{{ t('exam_attempts') }}</h2>
     {% if attempts %}
-    <div class="actions" style="align-items:center;margin-bottom:10px">
-      <input type="text" id="exq" placeholder="{{ t('students_search') }}" style="max-width:260px">
-      <a class="btn ghost small" href="{{ url_for('exams_attempts_export', fmt='xlsx') }}">Excel</a>
-      <a class="btn ghost small" href="{{ url_for('exams_attempts_export', fmt='csv') }}">CSV</a>
+    <div class="tbar">
+      {{ search_field(t('students_search'), id='exq') }}
+      <div class="tbar-end">
+      <a class="btn ghost small" href="{{ url_for('exams_attempts_export', fmt='xlsx') }}">{{ icon('excel') }}Excel</a>
+      <a class="btn ghost small" href="{{ url_for('exams_attempts_export', fmt='csv') }}">{{ icon('download') }}CSV</a>
+      </div>
     </div>
     <div class="table-wrap"><table id="exTbl">
       <tr><th>{{ t('exam_student') }}</th><th>{{ t('exam_date') }}</th><th>{{ t('exam_questions') }}</th><th>{{ t('exam_score') }}</th><th></th></tr>
@@ -102,9 +104,6 @@
 </section>
 
 <style>
-.ex-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
-.ex-tabs button{border:1px solid var(--line,#d9e2e0);background:var(--card,#fff);border-radius:999px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer;color:inherit}
-.ex-tabs button.on{background:var(--teal,#0f8a82);color:#fff;border-color:transparent}
 .ex-ok{margin-inline-start:4px}
 .ex-sum{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between}
 .ex-sum div{flex:1;min-width:90px;text-align:center}.ex-sum b{display:block;font-size:1.5rem}.ex-sum small{color:var(--muted,#6b7a78)}

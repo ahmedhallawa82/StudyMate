@@ -4,7 +4,7 @@
 {% block content %}
 {% set wdn = t('home_wd').split(',') %}
 {% if courses|length > 1 %}<div class="course-chips fade" style="--i:0">{{ course_menu() }}</div>{% endif %}
-{% if announcements %}<div class="card ann-banner fade" style="--i:0"><h3>📢 {{ t('ann_home') }}</h3>
+{% if announcements %}<div class="card ann-banner fade" style="--i:0"><h3>{{ icon('mega') }}{{ t('ann_home') }}</h3>
   {% for a in announcements %}<div class="ann-i"><b dir="auto">{{ a.title }}</b> <small class="muted">· {{ a.time }}</small>{% if a.body %}<p class="small" dir="auto" style="white-space:pre-line;margin:4px 0 0">{{ a.body }}</p>{% endif %}</div>{% endfor %}</div>{% endif %}
 <div class="edu-head fade" style="--i:0">
   <div>
@@ -13,9 +13,9 @@
     <p class="muted">{{ t('home_sub', course=course) }}</p>
   </div>
   <div class="edu-actions">
-    <a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) if nxt.topic else url_for('practice') }}">{{ t('home_continue') }} →</a>
+    <a class="btn teal" href="{{ url_for('practice', topic=nxt.topic) if nxt.topic else url_for('practice') }}">{{ t('home_continue') }} {{ icon('arrow') }}</a>
     <a class="btn ghost" href="{{ url_for('ask') }}">{{ t('home_ask') }}</a>
-    {% if stats.mistakes %}<a class="btn ghost" href="{{ url_for('practice', mode='mistakes') }}">🔁 {{ t('review_btn', n=stats.mistakes) }}</a>{% endif %}
+    {% if stats.mistakes %}<a class="btn ghost" href="{{ url_for('practice', mode='mistakes') }}">{{ icon('refresh') }}{{ t('review_btn', n=stats.mistakes) }}</a>{% endif %}
   </div>
 </div>
 
@@ -31,14 +31,14 @@
     </div>
 
     <div class="stats">
-      <div class="stat fade" style="--i:2"><div class="ic">💬</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('home_asked') }}</div></div></div>
-      <div class="stat fade" style="--i:3"><div class="ic">✅</div><div><div class="v">{% if stats.acc is not none %}<span data-count="{{ stats.acc }}">0</span>%{% else %}–{% endif %}</div><div class="l">{{ t('accuracy') }} · {{ stats.answered }} {{ t('practice_answers') }}</div></div></div>
-      <div class="stat fade" style="--i:4"><div class="ic">🎯</div><div><div class="v"><span data-count="{{ stats.green }}">0</span>/{{ stats.topics }}</div><div class="l">{{ t('topics_green') }}</div></div></div>
-      <div class="stat fade" style="--i:5"><div class="ic">🔥</div><div><div class="v"><span data-count="{{ stats.streak }}">0</span></div><div class="l">{{ t('home_streak') }}</div></div></div>
+      <div class="stat fade" style="--i:2"><div class="ic">{{ icon('chat') }}</div><div><div class="v" data-count="{{ stats.asked }}">0</div><div class="l">{{ t('home_asked') }}</div></div></div>
+      <div class="stat fade" style="--i:3"><div class="ic">{{ icon('check') }}</div><div><div class="v">{% if stats.acc is not none %}<span data-count="{{ stats.acc }}">0</span>%{% else %}–{% endif %}</div><div class="l">{{ t('accuracy') }} · {{ stats.answered }} {{ t('practice_answers') }}</div></div></div>
+      <div class="stat fade" style="--i:4"><div class="ic">{{ icon('target') }}</div><div><div class="v"><span data-count="{{ stats.green }}">0</span>/{{ stats.topics }}</div><div class="l">{{ t('topics_green') }}</div></div></div>
+      <div class="stat fade" style="--i:5"><div class="ic">{{ icon('flame') }}</div><div><div class="v"><span data-count="{{ stats.streak }}">0</span></div><div class="l">{{ t('home_streak') }}</div></div></div>
     </div>
 
     <div class="card fade" style="--i:6">
-      <div class="card-top"><h3>{{ t('home_plan') }}</h3><a href="{{ url_for('plan_page') }}">🗓 {{ t('plan_link') }} →</a></div>
+      <div class="card-top"><h3>{{ t('home_plan') }}</h3><a href="{{ url_for('plan_page') }}">{{ icon('cal') }}{{ t('plan_link') }} {{ icon('arrow') }}</a></div>
       {% if plan %}
       <div class="plan">
         {% for x in plan %}
@@ -73,21 +73,21 @@
     <div class="card cont fade" style="--i:4">
       <small>{{ t('home_continue_card') }}</small>
       {% if cont %}<h3>{{ cont.name }}</h3><p class="small">{{ cont.why }}</p>
-      <a class="btn light" href="{{ url_for('practice', topic=cont.topic) }}">{{ t('practise5') }} →</a>
+      <a class="btn light" href="{{ url_for('practice', topic=cont.topic) }}">{{ t('practise5') }} {{ icon('arrow') }}</a>
       {% else %}<h3>{{ nxt.why }}</h3>{% endif %}
     </div>
 
     <div class="card fade" style="--i:5">
-      <h3>📝 {{ t('home_recent_exams') }}</h3>
+      <h3>{{ icon('note') }}{{ t('home_recent_exams') }}</h3>
       {% if recent_e %}
         {% for e in recent_e %}
         <a class="row-link" href="{{ url_for('exams_result', aid=e.id) }}"><span dir="ltr">{{ e.when }}</span><b>{{ '%g'|format(e.score) }} / {{ e.max }} · {{ e.pct }}%</b></a>
         {% endfor %}
       {% else %}<p class="muted small">{{ t('home_no_exams') }}</p>{% endif %}
-      <p style="margin:10px 0 0"><a href="{{ url_for('exams') }}">{{ t('nav_exams') }} →</a></p>
+      <p style="margin:10px 0 0"><a href="{{ url_for('exams') }}">{{ t('nav_exams') }} {{ icon('arrow') }}</a></p>
     </div>
     <div class="card fade" style="--i:6">
-      <h3>💬 {{ t('home_recent_q') }}</h3>
+      <h3>{{ icon('chat') }}{{ t('home_recent_q') }}</h3>
       {% if recent_q %}
         {% for q in recent_q %}<div class="row-q" dir="auto"><span class="dot {{ 'green' if q.found else 'red' }}"></span>{{ q.q[:70] }}</div>{% endfor %}
       {% else %}<p class="muted small">{{ t('home_no_q') }}</p>{% endif %}

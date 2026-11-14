@@ -7,7 +7,7 @@
   <section>
     {% if last %}
     <div class="flash">{{ t('saved_you') }} <b class="{{ 'ok' if last.correct else 'bad' }}">{{ t('correctly') if last.correct else t('incorrectly') }}</b>.
-      {{ t('mastery') }} {{ last.old }}% → <b>{{ last.new }}%</b> <span class="tag {{ last.colour }}">{{ t(last.colour) }}</span></div>
+      {{ t('mastery') }} {{ last.old }}% {{ icon('arrow') }}<b>{{ last.new }}%</b> <span class="tag {{ last.colour }}">{{ t(last.colour) }}</span></div>
     {% endif %}
     {% if p.review and p.stage == 'finished' %}
     <div class="card review-done">
@@ -15,7 +15,7 @@
       <h2>{{ t('review_done') }}</h2>
       <p>{{ t('review_res', a=p.fixed, b=p.total) }}</p>
       <div class="actions">
-        {% if mistakes %}<a class="btn teal" href="{{ url_for('practice', mode='mistakes') }}">🔁 {{ t('review_again') }} ({{ mistakes }})</a>{% endif %}
+        {% if mistakes %}<a class="btn teal" href="{{ url_for('practice', mode='mistakes') }}">{{ icon('refresh') }}{{ t('review_again') }} ({{ mistakes }})</a>{% endif %}
         <a class="btn ghost" href="{{ url_for('practice', new=1) }}">{{ t('review_more') }}</a>
       </div>
     </div>
@@ -24,7 +24,7 @@
       <div class="progress-steps">
         {% for i in range(p.goal) %}<span class="{{ 'done' if i < p.count }}"></span>{% endfor %}
       </div>
-      <p class="muted small">{{ topic_name }}{% if p.review %} 🔁{% endif %} · {{ t('question_n', i=(p.count % p.goal) + 1, n=p.goal) }}
+      <p class="muted small">{{ topic_name }}{% if p.review %} {{ icon('refresh') }}{% endif %} · {{ t('question_n', i=(p.count % p.goal) + 1, n=p.goal) }}
         {% if p.count >= p.goal %}· {{ t('set_finished') }}{% endif %}
         · {{ t('lecture') }} {{ q.lecture }}</p>
       <div class="question-text" dir="auto" style="text-align:start" data-tr>{{ q.question }}</div>
@@ -60,7 +60,7 @@
     {% endif %}
   </section>
   <aside>
-    {% if mistakes and not (p.review and p.stage == 'finished') %}<a class="btn teal block review-btn" href="{{ url_for('practice', mode='mistakes') }}">🔁 {{ t('review_btn', n=mistakes) }}</a>{% endif %}
+    {% if mistakes and not (p.review and p.stage == 'finished') %}<a class="btn teal block review-btn" href="{{ url_for('practice', mode='mistakes') }}">{{ icon('refresh') }}{{ t('review_btn', n=mistakes) }}</a>{% endif %}
     <div class="card panel">
       <h3>{{ t('choose_topic') }}</h3>
       <ul class="topics">

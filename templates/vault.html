@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head %}
+{% from "_ui.html" import page_head, search_field with context %}
 {% block title %}{{ t('vlt_title') }}{% endblock %}
 {% block content %}
 {{ page_head('🔐', t('vlt_title'), t('vlt_sub')) }}
 {% if locked %}
 <section class="card vlt-lock">
-  <h2>🔒 {{ t('vlt_locked') }}</h2>
+  <h2>{{ icon('lock') }}{{ t('vlt_locked') }}</h2>
   <p class="muted">{{ t('vlt_locked_sub') }}</p>
   <form method="post" class="inline" style="max-width:460px">
     <input type="password" name="pw" placeholder="{{ t('vlt_pw') }}" required autofocus autocomplete="current-password">
@@ -15,24 +15,24 @@
 </section>
 {% else %}
 <div class="vlt-bar">
-  <form method="post" action="{{ url_for('vault_lock') }}"><button class="btn ghost" type="submit">🔒 {{ t('vlt_close') }}</button></form>
-  <a class="btn" href="{{ url_for('vault_all_xlsx') }}">⬇️ {{ t('vlt_xlsx_all') }}</a>
+  <form method="post" action="{{ url_for('vault_lock') }}"><button class="btn ghost" type="submit">{{ icon('lock') }}{{ t('vlt_close') }}</button></form>
+  <a class="btn" href="{{ url_for('vault_all_xlsx') }}">{{ icon('download') }}{{ t('vlt_xlsx_all') }}</a>
 </div>
-<section class="card" style="margin-bottom:14px">
-  <form method="get" class="inline">
-    <input type="search" name="q" value="{{ q }}" placeholder="{{ t('vlt_search') }}" autofocus>
+<section class="card vlt-find" style="margin-bottom:14px">
+  <form method="get" class="sbar">
+    {{ search_field(t('vlt_search'), name='q', value=q, autofocus=True) }}
     {% if role %}<input type="hidden" name="role" value="{{ role }}">{% endif %}
-    <select name="course" onchange="this.form.submit()" aria-label="{{ t('vlt_courses') }}">
+    <label class="ssel{{ ' on' if course }}">{{ icon('cap') }}<select name="course" onchange="this.form.submit()" aria-label="{{ t('vlt_courses') }}">
       <option value="">{{ t('vlt_all_courses') }}</option>
       {% for c, title in course_opts %}<option value="{{ c }}" {{ 'selected' if course == c }}>{{ title }}</option>{% endfor %}
-    </select>
-    <button class="btn" type="submit">{{ t('vlt_find') }}</button>
+    </select></label>
+    <button class="btn" type="submit">{{ icon('search') }}{{ t('vlt_find') }}</button>
   </form>
-  <div class="vlt-chips">
-    <a class="{{ 'on' if not role }}" href="{{ url_for('vault_page', q=q or None, course=course or None) }}">{{ t('vlt_all') }} <b>{{ total }}</b></a>
-    {% for r, lab in [('student', t('role_student')), ('doctor', t('role_doctor')), ('admin', t('vlt_subadmin')), ('main', t('role_admin'))] %}
-    <a class="{{ 'on' if role == r }}" href="{{ url_for('vault_page', role=r, q=q or None, course=course or None) }}">{{ lab }} <b>{{ counts.get(r, 0) }}</b></a>{% endfor %}
-  </div>
+  <nav class="seg" aria-label="{{ t('vlt_role') }}">
+    <a class="{{ 'on' if not role }}" href="{{ url_for('vault_page', q=q or None, course=course or None) }}">{{ icon('users') }}{{ t('vlt_all') }} <b>{{ total }}</b></a>
+    {% for r, lab, ic in [('student', t('role_student'), 'cap'), ('doctor', t('role_doctor'), 'teacher'), ('admin', t('vlt_subadmin'), 'shield'), ('main', t('role_admin'), 'crown')] %}
+    <a class="{{ 'on' if role == r }}" href="{{ url_for('vault_page', role=r, q=q or None, course=course or None) }}">{{ icon(ic) }}{{ lab }} <b>{{ counts.get(r, 0) }}</b></a>{% endfor %}
+  </nav>
 </section>
 <section class="card">
   <p class="muted small" style="margin-top:0">{{ t('vlt_n_found', n=rows|length) }} · {{ t('vlt_click') }}</p>
@@ -53,8 +53,8 @@
     </tbody>
   </table></div>
 </section>
-<a class="card wp-link" href="{{ url_for('vault_danger') }}" style="margin-top:14px"><b>⚠️ {{ t('wp_title') }}</b><small>{{ t('wp_link_sub') }}</small><span>→</span></a>
-<details class="card" style="margin-top:14px"><summary><b>🔑 {{ t('vlt_change_pw') }}</b></summary>
+<a class="card wp-link" href="{{ url_for('vault_danger') }}" style="margin-top:14px"><b>{{ icon('alert') }}{{ t('wp_title') }}</b><small>{{ t('wp_link_sub') }}</small><span>{{ icon('arrow') }}</span></a>
+<details class="card" style="margin-top:14px"><summary><b>{{ icon('key') }}{{ t('vlt_change_pw') }}</b></summary>
   <form method="post" action="{{ url_for('vault_password') }}" class="stack" style="max-width:420px;margin-top:10px">
     <input type="password" name="old" placeholder="{{ t('vlt_pw_current') }}" required autocomplete="current-password">
     <input type="password" name="new" placeholder="{{ t('vlt_pw_new') }}" required minlength="8" autocomplete="new-password">

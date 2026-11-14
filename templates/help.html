@@ -15,7 +15,7 @@
     <div class="mh-item">
       <b>{{ name }}</b>
       <p>{{ t(d) }}</p>
-      <p class="mh-hint">💡 {{ t(h) }}</p>
+      <p class="mh-hint">{{ icon('bulb') }}{{ t(h) }}</p>
     </div>
     {% endfor %}
   </div>
@@ -26,7 +26,7 @@
 
   {% if staff %}
   <details class="card faq-item" id="formats">
-    <summary>🛠 {{ t('help_fmt_title') }}</summary>
+    <summary>{{ icon('tools') }}{{ t('help_fmt_title') }}</summary>
     <div class="faq-a">
       <p class="muted small">{{ t('exam_upload_note') }}</p>
       <p class="muted small"><b>{{ t('exam_format') }}:</b> {{ t('exam_format_note') }}</p>
@@ -36,7 +36,7 @@
   {% endif %}
 
   <details class="card faq-item" id="privacy">
-    <summary>🔒 {{ t('auth_privacy') }}</summary>
+    <summary>{{ icon('lock') }}{{ t('auth_privacy') }}</summary>
     <div class="faq-a"><p>{{ t('login_hint') }}</p><p>{{ t('privacy') }}</p></div>
   </details>
 
@@ -44,7 +44,7 @@
   <details class="card faq-item">
     <summary>{{ f.q }}</summary>
     <div class="faq-a"><p style="white-space:pre-line">{{ f.a }}</p>
-      {% if staff %}<form method="post" onsubmit="return confirm('{{ t('faq_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ f.id }}"><button class="btn ghost" type="submit">🗑 {{ t('faq_del') }}</button></form>{% endif %}
+      {% if staff %}<form method="post" onsubmit="return confirm('{{ t('faq_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ f.id }}"><button class="btn ghost" type="submit">{{ icon('trash') }}{{ t('faq_del') }}</button></form>{% endif %}
     </div>
   </details>
   {% endfor %}
@@ -52,7 +52,7 @@
 
 {% if staff %}
 <div class="card" style="margin-top:18px">
-  <h2>➕ {{ t('faq_add') }}</h2>
+  <h2>{{ icon('plus') }}{{ t('faq_add') }}</h2>
   <p class="muted small">{{ t('faq_add_sub') }}</p>
   <form method="post">
     <input type="hidden" name="action" value="add">

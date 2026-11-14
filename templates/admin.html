@@ -7,13 +7,13 @@
   {% if no_course %}— {{ t('no_course_yet') }}{% endif %}</div>
 
 {{ course_picker(url_for('admin')) }}
-<nav class="adm-tabs fade" role="tablist">
-  {% if not no_course %}<button type="button" role="tab" data-tab="lectures">{{ t('adm_tab_lec') }}</button>{% endif %}
-  <button type="button" role="tab" data-tab="courses">{{ t('adm_tab_courses') }}</button>
-  {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">{{ t('maintenance') }}</button>{% endif %}
-  {% if 'exams' in perms %}<button type="button" role="tab" data-tab="exams">{{ t('nav_exams') }}</button>{% endif %}
-  {% if 'badges' in perms %}<button type="button" role="tab" data-tab="badges">{{ t('adm_badges_link') }}</button>{% endif %}
-  {% if is_master_user %}<button type="button" role="tab" data-tab="admins">{{ t('adms_tab') }}</button>{% endif %}
+<nav class="adm-tabs seg top fade" role="tablist">
+  {% if not no_course %}<button type="button" role="tab" data-tab="lectures">{{ icon('book-open') }}{{ t('adm_tab_lec') }}</button>{% endif %}
+  <button type="button" role="tab" data-tab="courses">{{ icon('book') }}{{ t('adm_tab_courses') }}</button>
+  {% if not no_course %}<button type="button" role="tab" data-tab="maintenance">{{ icon('tools') }}{{ t('maintenance') }}</button>{% endif %}
+  {% if 'exams' in perms %}<button type="button" role="tab" data-tab="exams">{{ icon('exam') }}{{ t('nav_exams') }}</button>{% endif %}
+  {% if 'badges' in perms %}<button type="button" role="tab" data-tab="badges">{{ icon('award') }}{{ t('adm_badges_link') }}</button>{% endif %}
+  {% if is_master_user %}<button type="button" role="tab" data-tab="admins">{{ icon('shield') }}{{ t('adms_tab') }}</button>{% endif %}
 </nav>
 
 <!-- Exams / Badges / Admins: the other pages are shown inside this page (a frame), so nothing leaves the Content page -->
@@ -54,7 +54,7 @@
       </form>
     </div>
     <div class="card" id="videos">
-      <h2>🎬 {{ t('vid_title') }} · {{ course }}</h2>
+      <h2>{{ icon('video') }}{{ t('vid_title') }} · {{ course }}</h2>
       <p class="muted small">{{ t('vid_sub') }}</p>
       <div class="grid-2" style="gap:16px">
         <form method="post" action="{{ url_for('admin_videos') }}" enctype="multipart/form-data">
@@ -76,7 +76,7 @@
       <table style="margin-top:14px"><tr><th>{{ t('title') }}</th><th>{{ t('vid_type') }}</th><th>{{ t('lecture') }}</th><th></th></tr>
         {% for kind, rows in (('recorded', vids.recorded), ('link', vids.links)) %}{% for v in rows %}
         <tr><td dir="auto">{{ v.title }}</td><td>{{ t('vid_recorded') if kind == 'recorded' else 'YouTube' }}</td><td>{{ v.lecture or '—' }}</td>
-          <td><form method="post" action="{{ url_for('admin_videos') }}" onsubmit="return confirm('{{ t('vid_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="id" value="{{ v.id }}"><button class="btn ghost" type="submit">🗑</button></form></td></tr>
+          <td><form method="post" action="{{ url_for('admin_videos') }}" onsubmit="return confirm('{{ t('vid_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="kind" value="{{ kind }}"><input type="hidden" name="id" value="{{ v.id }}"><button class="btn ghost" type="submit">{{ icon('trash') }}</button></form></td></tr>
         {% endfor %}{% endfor %}
       </table>
       {% endif %}
@@ -89,7 +89,7 @@
       </table>
     </div>
     <details class="card adm-danger">
-      <summary>🗑️ {{ t('adm_delete_lecture') }}</summary>
+      <summary>{{ icon('trash') }}{{ t('adm_delete_lecture') }}</summary>
       <p class="muted small">{{ t('adm_delete_lecture_note') }}</p>
       <form method="post" onsubmit="return confirm('{{ t('confirm_delete_lecture') }}')">
         <input type="hidden" name="action" value="delete_lecture">
@@ -120,7 +120,7 @@
         {% for d in doctors %}<li><span>{{ d.name }} <span class="small muted" dir="ltr">({{ d.username }}{% if d.email %} · {{ d.email }}{% endif %})</span></span>
           <span class="pct" style="display:flex;gap:4px;align-items:center">{{ doctor_courses[d.id] }} {{ t('courses') }}
             <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_reset_doctor') }}')"><input type="hidden" name="action" value="reset_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn ghost" style="padding:2px 8px" type="submit">{{ t('new_code') }}</button></form>
-            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_doctor') }}')"><input type="hidden" name="action" value="delete_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn red" style="padding:2px 8px" type="submit">✕</button></form>
+            <form method="post" class="inline" onsubmit="return confirm('{{ t('confirm_delete_doctor') }}')"><input type="hidden" name="action" value="delete_doctor"><input type="hidden" name="doctor" value="{{ d.id }}"><button class="btn red" style="padding:2px 8px" type="submit">{{ icon('x') }}</button></form>
           </span></li>{% endfor %}
       </ul>
       <form method="post"><input type="hidden" name="action" value="add_doctor">
@@ -169,18 +169,18 @@
       <form method="post" enctype="multipart/form-data" class="codes-form">
         <input type="hidden" name="action" value="upload_codes">
         <input type="file" name="codes" accept=".xlsx" required>
-        <button class="btn teal small" type="submit">⬆️ {{ t('codes_upload') }}</button>
-        <a class="btn ghost small" href="{{ url_for('course_codes_template') }}">⬇️ {{ t('codes_template') }}</a>
+        <button class="btn teal small" type="submit">{{ icon('upload') }}{{ t('codes_upload') }}</button>
+        <a class="btn ghost small" href="{{ url_for('course_codes_template') }}">{{ icon('download') }}{{ t('codes_template') }}</a>
       </form>
       {% if catalog %}
       <table class="codes-tbl"><tr><th>{{ t('course_code') }}</th><th>{{ t('course_name_en') }}</th><th>{{ t('course_name_ar') }}</th><th></th></tr>
         {% for c in catalog %}<tr><td dir="ltr"><b>{{ c.code }}</b></td><td dir="ltr">{{ c.name_en or '—' }}</td><td>{{ c.name_ar or '—' }}</td>
           <td>{% if c.code in used_codes %}<span class="pill">{{ t('codes_in_use') }}</span>{% endif %}</td></tr>{% endfor %}
       </table>
-      <form method="post" style="display:inline"><input type="hidden" name="action" value="import_codes"><button class="btn teal small" type="submit">📥 {{ t('codes_import') }}</button></form>
-      <form method="post" style="display:inline" onsubmit="return confirm('{{ t('codes_clear_q') }}')"><input type="hidden" name="action" value="clear_codes"><button class="btn ghost small" type="submit">🗑️ {{ t('codes_clear') }}</button></form>
+      <form method="post" style="display:inline"><input type="hidden" name="action" value="import_codes"><button class="btn teal small" type="submit">{{ icon('inbox') }}{{ t('codes_import') }}</button></form>
+      <form method="post" style="display:inline" onsubmit="return confirm('{{ t('codes_clear_q') }}')"><input type="hidden" name="action" value="clear_codes"><button class="btn ghost small" type="submit">{{ icon('trash') }}{{ t('codes_clear') }}</button></form>
       {% else %}<p class="muted small">{{ t('codes_none') }}</p>
-      <form method="post"><input type="hidden" name="action" value="import_codes"><button class="btn teal small" type="submit">📥 {{ t('codes_import') }}</button></form>{% endif %}
+      <form method="post"><input type="hidden" name="action" value="import_codes"><button class="btn teal small" type="submit">{{ icon('inbox') }}{{ t('codes_import') }}</button></form>{% endif %}
     </div>
     {% endif %}
     <div class="card">
@@ -223,7 +223,7 @@
     </div>
     {% if can_delete_course %}
     <details class="card adm-danger">
-      <summary>🗑️ {{ t('adm_delete_course') }}</summary>
+      <summary>{{ icon('trash') }}{{ t('adm_delete_course') }}</summary>
       <p class="muted small">{{ t('adm_delete_course_note', code=code) }}</p>
       <form method="post">
         <input type="hidden" name="action" value="delete_course">
@@ -263,9 +263,6 @@
 {% endif %}
 
 <style>
-.adm-tabs{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
-.adm-tabs button{border:1px solid var(--line,#d9e2e0);background:var(--card,#fff);border-radius:999px;padding:9px 18px;font:inherit;font-weight:600;cursor:pointer;color:inherit}
-.adm-tabs button.on{background:var(--teal,#0f8a82);color:#fff;border-color:transparent}
 .adm-pane[hidden]{display:none}
 .adm-frame{width:100%;border:0;min-height:520px;display:block;background:transparent}
 .adm-pane > .card, .adm-pane > details.card { margin-bottom:16px }

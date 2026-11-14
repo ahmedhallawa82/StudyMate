@@ -11,7 +11,7 @@
       <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
       <label class="small" for="password" style="margin-top:12px">{{ t('password') }}</label>
       <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password" required>
-      <p class="auth-caps" id="capsNote" hidden>⚠️ {{ t('caps_on') }}</p>
+      <p class="auth-caps" id="capsNote" hidden>{{ icon('alert') }}{{ t('caps_on') }}</p>
       <div class="auth-row">
         <label class="small"><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label>
         <a class="small" href="{{ url_for('forgot') }}">{{ t('forgot_link') }}</a>

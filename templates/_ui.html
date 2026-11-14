@@ -1,5 +1,5 @@
-{% macro page_head(icon, title, sub='') %}
-<div class="page-head fade" style="--i:0"><span class="ph-ic">{{ icon }}</span><div><h1>{{ title }}</h1>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></div>
+{% set _ic = icon %}{% macro page_head(icon, title, sub='') %}
+<div class="page-head fade" style="--i:0"><span class="ph-ic">{{ _ic(icon, 26) }}</span><div><h1>{{ title }}</h1>{% if sub %}<p>{{ sub }}</p>{% endif %}</div></div>
 {% endmacro %}
 
 {% macro course_menu(next_url=None) %}
@@ -29,3 +29,7 @@
 </div>
 {% endif %}
 {% endmacro %}
+
+{% macro search_field(ph, id=None, name=None, value='', autofocus=False, label=None) -%}
+<label class="sfield{{ ' has-text' if value }}">{{ _ic('search') }}<input type="search"{% if id %} id="{{ id }}"{% endif %}{% if name %} name="{{ name }}"{% endif %} value="{{ value or '' }}" placeholder="{{ ph }}" aria-label="{{ label or ph }}" autocomplete="off" dir="auto"{{ ' autofocus' if autofocus }}><button type="button" class="sclear" aria-label="{{ t('clear') }}" tabindex="-1">{{ _ic('x') }}</button></label>
+{%- endmacro %}

@@ -13,7 +13,7 @@
   </div>
   <p class="small muted">{{ t('exam_duration') }}: {{ att.duration // 60 }} {{ t('minutes') }} {{ att.duration % 60 }} {{ t('seconds') }}</p>
   <p class="small"><label><input type="checkbox" id="onlyWrong"> {{ t('exam_only_wrong') }}</label></p>
-  <p>{% if doctor_view %}<a class="btn ghost" href="{{ url_for('exams_manage') }}">←</a>{% else %}<a class="btn" href="{{ url_for('exams') }}">{{ t('exam_again') }}</a>{% endif %}</p>
+  <p>{% if doctor_view %}<a class="btn ghost" href="{{ url_for('exams_manage') }}">{{ icon('arrow-l') }}</a>{% else %}<a class="btn" href="{{ url_for('exams') }}">{{ t('exam_again') }}</a>{% endif %}</p>
 </div>
 {% for d in att.details %}
 <div class="card qres" data-ok="{{ 1 if d.score >= 1 else 0 }}" dir="{{ 'rtl' if d.lang_used == 'ar' else 'ltr' }}">
@@ -23,7 +23,7 @@
   {% if d.type == 'mcq' %}
     {% for o in d.options %}
       <div style="padding:6px 10px;margin:4px 0;border-radius:8px;border:1px solid var(--line);{% if loop.index0 == d.correct_idx %}background:#e9f6ec;{% elif loop.index0 == d.given_idx %}background:#fdecea;{% endif %}">
-        {{ (['أ','ب','ج','د','هـ','و','ز','ح'] if d.lang_used == 'ar' else ['A','B','C','D','E','F','G','H'])[loop.index0] }}) {{ o }}{% if loop.index0 == d.given_idx %} ← {{ t('exam_your_answer') }}{% endif %}{% if loop.index0 == d.correct_idx %} ✓{% endif %}</div>
+        {{ (['أ','ب','ج','د','هـ','و','ز','ح'] if d.lang_used == 'ar' else ['A','B','C','D','E','F','G','H'])[loop.index0] }}) {{ o }}{% if loop.index0 == d.given_idx %} {{ icon('arrow-l') }}{{ t('exam_your_answer') }}{% endif %}{% if loop.index0 == d.correct_idx %} {{ icon('check') }}{% endif %}</div>
     {% endfor %}
   {% else %}
     <p class="small"><b>{{ t('exam_your_answer') }}:</b> {{ d.given or '—' }}</p>

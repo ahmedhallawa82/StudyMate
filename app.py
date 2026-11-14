@@ -32,6 +32,8 @@ from core.topics import load_topics, study_next
 from core.i18n import tr
 
 app = Flask(__name__)
+from core.icons import icon as _icon
+app.jinja_env.globals["icon"] = _icon
 app.jinja_env.globals["photo_ok"] = photoq.available
 app.jinja_env.globals["neural_ok"] = lambda: neural.available()
 app.secret_key = config.SECRET_KEY

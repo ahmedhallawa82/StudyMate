@@ -11,7 +11,7 @@
         <select name="course" required>{% for c in mine %}<option value="{{ c.code }}">{{ c.title }} ({{ t('ann_students', n=c.n) }})</option>{% endfor %}</select></label>
       <label>{{ t('ann_subject') }}<input type="text" name="title" maxlength="120" required></label>
       <label>{{ t('ann_body') }}<textarea name="body" rows="4" maxlength="1500"></textarea></label>
-      <button class="btn" type="submit">📢 {{ t('ann_send') }}</button>
+      <button class="btn" type="submit">{{ icon('mega') }}{{ t('ann_send') }}</button>
     </form>
   </section>
   <aside class="card">
@@ -20,7 +20,7 @@
     <div style="padding:8px 0;border-top:1px solid var(--line)">
       <b dir="auto">{{ r.title }}</b> <small class="muted">· {{ r.course }} · {{ r.time }}</small>
       {% if r.body %}<p class="small" dir="auto" style="white-space:pre-line;margin:4px 0">{{ r.body }}</p>{% endif %}
-      <form method="post" onsubmit="return confirm('{{ t('faq_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ r.id }}"><button class="btn ghost small" type="submit">🗑</button></form>
+      <form method="post" onsubmit="return confirm('{{ t('faq_del_confirm') }}')"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{ r.id }}"><button class="btn ghost small" type="submit">{{ icon('trash') }}</button></form>
     </div>
     {% else %}<p class="muted">{{ t('ann_none') }}</p>{% endfor %}
   </aside>

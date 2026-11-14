@@ -692,14 +692,14 @@ def test_staff_home_admin_and_doctor(admin):
     import app as A
     r = admin.get("/overview")
     html = r.get_data(as_text=True)
-    assert r.status_code == 200 and "per-course" in html and "👨‍🏫" in html          # admin: doctors / students / traffic / courses
+    assert r.status_code == 200 and "per-course" in html and "Doctors registered" in html          # admin: doctors / students / traffic / courses
     assert admin.get("/", headers={"Sec-Fetch-Site": "same-origin"}).headers["Location"].endswith("/overview")
     did, code = doctors.add("Dr Home")
     try:
         d = A.app.test_client()
         d.post("/lecturer", data={"username": doctors.username_of(doctors.get(did)), "password": code})
         h = d.get("/overview").get_data(as_text=True)
-        assert "per-course" in h and "👨‍🏫" not in h and "Dr Home" in h               # doctor: his courses / students / exams / questions
+        assert "per-course" in h and "Doctors registered" not in h and "Dr Home" in h               # doctor: his courses / students / exams / questions
     finally:
         doctors.remove(did)
 

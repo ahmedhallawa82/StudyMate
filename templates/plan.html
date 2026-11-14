@@ -9,7 +9,7 @@
     <b>{{ t('plan_today') if d.date == today else d.date }}</b>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:8px">
       {% for x in d.topics %}
-      <a class="btn ghost" href="{{ url_for('practice', topic=x.topic) }}">{{ x.name }} <small class="muted">· {{ t('plan_level', p=x.pct) }}</small> →</a>
+      <a class="btn ghost" href="{{ url_for('practice', topic=x.topic) }}">{{ x.name }} <small class="muted">· {{ t('plan_level', p=x.pct) }}</small> {{ icon('arrow') }}</a>
       {% endfor %}
     </div>
   </div>

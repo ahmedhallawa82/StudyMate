@@ -3,11 +3,11 @@
 {% block title %}{{ t('wp_title') }}{% endblock %}
 {% block content %}
 {{ page_head('⚠️', t('wp_title'), t('wp_sub')) }}
-<p style="margin:-6px 0 14px"><a href="{{ url_for('vault_page') }}">← {{ t('vlt_title') }}</a></p>
+<p style="margin:-6px 0 14px"><a href="{{ url_for('vault_page') }}">{{ icon('arrow-l') }}{{ t('vlt_title') }}</a></p>
 
 {% if closed %}
 <section class="card wp-card wp-closed">
-  <h2>⛔ {{ t('wp_closed_now') }}</h2>
+  <h2>{{ icon('ban') }}{{ t('wp_closed_now') }}</h2>
   <p class="muted">{{ t('wp_closed_sub') }}</p>
   <form method="post" action="{{ url_for('vault_reopen') }}"><button class="btn" type="submit">{{ t('wp_reopen') }}</button></form>
 </section>
@@ -20,12 +20,12 @@
   <p class="wp-clock" data-left="{{ pending.left }}">--:--:--</p>
   <p class="small"><b>{{ t('wp_what') }}:</b> {% for c in pending.cats %}<span class="tag">{{ t('wp_c_' ~ c) }}</span> {% endfor %}</p>
   <p class="muted small">{{ t('wp_pending_hint') }}</p>
-  <form method="post"><input type="hidden" name="action" value="cancel"><button class="btn wp-cancel" type="submit">✋ {{ t('wp_cancel') }}</button></form>
+  <form method="post"><input type="hidden" name="action" value="cancel"><button class="btn wp-cancel" type="submit">{{ icon('hand') }}{{ t('wp_cancel') }}</button></form>
 </section>
 
 {% elif not code_set %}
 <section class="card wp-card">
-  <h2>🔑 {{ t('wp_setcode_t') }}</h2>
+  <h2>{{ icon('key') }}{{ t('wp_setcode_t') }}</h2>
   <p class="muted">{{ t('wp_setcode_sub', n=8) }}</p>
   <form method="post" class="stack" style="max-width:440px">
     <input type="hidden" name="action" value="setcode">
@@ -46,7 +46,7 @@
     <div class="wp-grid">
     {% for c in cats %}<label class="wp-opt"><input type="checkbox" name="cats" value="{{ c }}" class="wp-one"> <span><b>{{ t('wp_c_' ~ c) }}</b><small>{{ t('wp_d_' ~ c) }}</small></span></label>{% endfor %}
     </div>
-    <p style="margin-top:14px"><button class="btn wp-red" type="submit">{{ t('wp_next') }} →</button></p>
+    <p style="margin-top:14px"><button class="btn wp-red" type="submit">{{ t('wp_next') }} {{ icon('arrow') }}</button></p>
   </form>
   <form method="post"><input type="hidden" name="action" value="back"><button class="btn ghost small" type="submit">{{ t('wp_stop') }}</button></form>
 </section>
@@ -54,7 +54,7 @@
 {% elif st.stage == 'confirm' %}
 <ol class="wp-steps"><li class="done">{{ t('wp_s1') }}</li><li class="done">{{ t('wp_s2') }}</li><li class="on">{{ t('wp_s3') }}</li><li>{{ t('wp_s4') }}</li></ol>
 <section class="card wp-card wp-warn">
-  <h2>⚠️ {{ t('wp_warn_t') }}</h2>
+  <h2>{{ icon('alert') }}{{ t('wp_warn_t') }}</h2>
   <p>{{ t('wp_warn_b') }}</p>
   <p><b>{{ t('wp_what') }}:</b> {% for c in st.cats %}<span class="tag">{{ t('wp_c_' ~ c) }}</span> {% endfor %}</p>
   <form method="post" class="stack" style="max-width:480px" id="wpConfirm">
@@ -65,7 +65,7 @@
       <label>{{ t('wp_delay') }}</label>
       <div class="wp-delay">{% for h in [3, 24] %}<label><input type="radio" name="delay" value="{{ h }}" {{ 'checked' if h == 24 }}> {{ t('wp_after_h', h=h) }}</label>{% endfor %}</div>
       <input type="password" name="code" placeholder="{{ t('wp_code') }}" required autocomplete="off">
-      <button class="btn wp-red" type="submit">🗑 {{ t('wp_final') }}</button>
+      <button class="btn wp-red" type="submit">{{ icon('trash') }}{{ t('wp_final') }}</button>
     </div>
   </form>
   <form method="post" style="margin-top:10px"><input type="hidden" name="action" value="back"><button class="btn ghost small" type="submit">{{ t('wp_stop') }}</button></form>
@@ -80,7 +80,7 @@
   <form method="post" class="inline" style="max-width:560px">
     <input type="hidden" name="action" value="phrase">
     <input type="text" name="phrase" required autocomplete="off" dir="auto" placeholder="delete all data">
-    <button class="btn wp-red" type="submit">{{ t('wp_next') }} →</button>
+    <button class="btn wp-red" type="submit">{{ t('wp_next') }} {{ icon('arrow') }}</button>
   </form>
 </section>
 {% endif %}

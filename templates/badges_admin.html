@@ -3,7 +3,7 @@
 {% block title %}{{ t('ba_title') }}{% endblock %}
 {% block content %}
 {{ page_head('🏅', t('ba_title'), t('ba_sub')) }}
-{% if not master %}<p class="muted small fade">🔒 {{ t('ba_scope_doc') }}</p>{% endif %}
+{% if not master %}<p class="muted small fade">{{ icon('lock') }}{{ t('ba_scope_doc') }}</p>{% endif %}
 <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
   <div class="card fade" style="--i:1"><small class="muted">{{ t('ba_students') }}</small><h2>{{ rows|length }}</h2></div>
   <div class="card fade" style="--i:2"><small class="muted">{{ t('ba_earned_total') }}</small><h2>{{ total_earned }}</h2></div>
@@ -12,7 +12,7 @@
 </div>
 
 <div class="card fade" style="--i:4">
-  <h3>➕ {{ t('ba_new') }}</h3>
+  <h3>{{ icon('plus') }}{{ t('ba_new') }}</h3>
   <form method="post" class="codes-form">
     <input type="hidden" name="action" value="create_badge">
     <div class="actions" style="align-items:flex-end;flex-wrap:wrap">
@@ -34,12 +34,12 @@
         <small class="muted"> · {{ t('ba_by', who=b.owner_name) }} · {{ t('ba_given', n=b.n) }}</small>
         <div class="muted small">{{ b.desc }}</div></div>
       <form method="post" onsubmit="return confirm('{{ t('ba_del_ask') }}')"><input type="hidden" name="action" value="delete_badge"><input type="hidden" name="badge" value="{{ b.id }}">
-        <button class="btn ghost small" type="submit">🗑 {{ t('ba_del') }}</button></form>
+        <button class="btn ghost small" type="submit">{{ icon('trash') }}{{ t('ba_del') }}</button></form>
     </div>
     {% if b.got %}<div class="actions" style="flex-wrap:wrap;margin-top:6px">{% for g in b.got %}
       <form method="post" style="display:inline"><input type="hidden" name="action" value="revoke_badge"><input type="hidden" name="badge" value="{{ b.id }}"><input type="hidden" name="student" value="{{ g.code }}">
-        <button class="pill" type="submit" title="✖">{{ g.name }} ✖</button></form>{% endfor %}</div>{% endif %}
-    <details style="margin-top:8px"><summary class="btn ghost small" style="display:inline-block">🎁 {{ t('ba_give') }}</summary>
+        <button class="pill" type="submit" title="✖">{{ g.name }} {{ icon('x') }}</button></form>{% endfor %}</div>{% endif %}
+    <details style="margin-top:8px"><summary class="btn ghost small" style="display:inline-block">{{ icon('gift') }}{{ t('ba_give') }}</summary>
       <form method="post" style="margin-top:8px">
         <input type="hidden" name="action" value="award_badge"><input type="hidden" name="badge" value="{{ b.id }}">
         <label style="display:block"><input type="checkbox" name="all_students" value="1"> {{ t('ba_all') }}</label>

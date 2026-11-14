@@ -1,26 +1,28 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head %}
+{% from "_ui.html" import page_head, search_field with context %}
 {% block title %}{{ t('doc_title') }}{% endblock %}
 {% block content %}
 {{ page_head('👨‍🏫', t('doc_title'), t('doc_sub')) }}
 {% if requests_ %}
 <div class="card" style="margin-bottom:16px">
-  <h3>📥 {{ t('doc_req_title') }} <span class="badge">{{ requests_|length }}</span></h3>
+  <h3>{{ icon('inbox') }}{{ t('doc_req_title') }} <span class="badge">{{ requests_|length }}</span></h3>
   {% for r in requests_ %}
   <div style="display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 0;border-top:1px solid var(--line)">
-    <div><b>{{ r.name }}</b> <small class="muted" dir="ltr">@{{ r.username }} · {{ r.email }} · {{ r.time }}</small><div class="small" dir="auto">🏛 {{ r.dept }}</div></div>
+    <div><b>{{ r.name }}</b> <small class="muted" dir="ltr">@{{ r.username }} · {{ r.email }} · {{ r.time }}</small><div class="small" dir="auto">{{ icon('building') }}{{ r.dept }}</div></div>
     <form method="post" style="display:flex;gap:8px"><input type="hidden" name="id" value="{{ r.id }}">
-      <button class="btn small" name="action" value="approve">✓ {{ t('doc_req_approve') }}</button><button class="btn ghost small" name="action" value="reject">{{ t('doc_req_reject') }}</button></form>
+      <button class="btn small" name="action" value="approve">{{ icon('check') }}{{ t('doc_req_approve') }}</button><button class="btn ghost small" name="action" value="reject">{{ t('doc_req_reject') }}</button></form>
   </div>{% endfor %}
 </div>
 {% endif %}
 <div class="card">
-  <div class="actions" style="margin:0 0 12px;align-items:center">
-    <input type="text" id="q" placeholder="{{ t('doc_search') }}" style="max-width:320px">
-    <span class="muted small">{{ rows|length }} {{ t('doc_count') }}</span>
-    <a class="btn ghost small" href="{{ url_for('export_doctors', fmt='xlsx') }}">Excel</a>
-    <a class="btn ghost small" href="{{ url_for('export_doctors', fmt='csv') }}">CSV</a>
-    <a class="btn small" href="{{ url_for('admin') }}">{{ t('doc_manage') }}</a>
+  <div class="tbar">
+    {{ search_field(t('doc_search'), id='q') }}
+    <span class="sbar-meta"><b>{{ rows|length }}</b> {{ t('doc_count') }}</span>
+    <div class="tbar-end">
+    <a class="btn ghost small" href="{{ url_for('export_doctors', fmt='xlsx') }}">{{ icon('excel') }}Excel</a>
+    <a class="btn ghost small" href="{{ url_for('export_doctors', fmt='csv') }}">{{ icon('download') }}CSV</a>
+    <a class="btn small" href="{{ url_for('admin') }}">{{ icon('sliders') }}{{ t('doc_manage') }}</a>
+    </div>
   </div>
   {% if rows %}
   <div class="table-wrap"><table id="tbl">
@@ -31,7 +33,7 @@
       <td><span class="who-cell">{% if r.avatar %}<img class="mini-av" src="{{ url_for('avatar', key=r.key) }}" alt="">{% else %}<span class="mini-av">{{ r.name[:1]|upper }}</span>{% endif %}<b>{{ r.name }}</b></span></td>
       <td dir="ltr">{{ r.username }}</td><td dir="ltr">{{ r.email or '–' }}</td><td dir="auto">{{ r.dept or '–' }}</td>
       <td>{% for c in r.courses %}<span class="tag">{{ c }}</span> {% else %}–{% endfor %}</td><td class="num">{{ r.students }}</td>
-      <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 'd:' ~ r.id}) }}">💬 {{ t('students_message') }}</a></td></tr>{% endfor %}
+      <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 'd:' ~ r.id}) }}">{{ icon('chat') }}{{ t('students_message') }}</a></td></tr>{% endfor %}
   </table></div>
   {% else %}<p class="muted">{{ t('doc_none') }}</p>{% endif %}
 </div>

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head %}
+{% from "_ui.html" import page_head, search_field with context %}
 {% block title %}{{ t('cov_title') }}{% endblock %}
 {% block content %}
 {{ page_head('📚', t('cov_title'), t('cov_sub')) }}
 <div class="card">
-  <div class="actions" style="margin:0 0 12px;align-items:center">
-    <input type="text" id="q" placeholder="{{ t('cov_search') }}" style="max-width:320px">
-    <span class="muted small">{{ rows|length }} {{ t('cov_title') }}</span>
+  <div class="tbar">
+    {{ search_field(t('cov_search'), id='q') }}
+    <span class="sbar-meta"><b>{{ rows|length }}</b> {{ t('cov_title') }}</span>
   </div>
   <div class="table-wrap"><table id="tbl">
     <tr><th>{{ t('cov_code') }}</th><th>{{ t('cov_name') }}</th>{% if master %}<th>{{ t('cov_doctor') }}</th>{% endif %}<th class="num">{{ t('cov_lectures') }}</th><th class="num">{{ t('cov_slides') }}</th><th class="num">{{ t('cov_students') }}</th><th class="num">{{ t('cov_questions') }}</th><th></th></tr>

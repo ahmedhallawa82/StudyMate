@@ -4,8 +4,8 @@
 <div class="auth fade" style="--i:1">
   {% include "_auth_brand.html" %}
   <section class="auth-form">
-    <h1>🎓 {{ t('register_title') }}</h1>
-    <p class="muted"><a href="{{ url_for('register') }}">← {{ t('reg_back') }}</a></p>
+    <h1>{{ icon('cap') }}{{ t('register_title') }}</h1>
+    <p class="muted"><a href="{{ url_for('register') }}">{{ icon('arrow-l') }}{{ t('reg_back') }}</a></p>
     <form method="post" action="{{ url_for('register_student') }}">
       <div class="grid-2" style="gap:10px">
         <div><label class="small">{{ t('first_name') }}</label><input type="text" name="first" required maxlength="40" value="{{ request.form.first }}"></div>

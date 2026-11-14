@@ -54,7 +54,7 @@
     </div>
     {% if is_master_user %}
     <div class="card fade" style="--i:4">
-      <h2>🔒 {{ t('mdl_title') }}</h2>
+      <h2>{{ icon('lock') }}{{ t('mdl_title') }}</h2>
       <p class="muted small">{{ t('mdl_unlock_sub') }}</p>
       <form method="post" action="{{ url_for('models_unlock') }}">
         <label for="mpw">{{ t('mdl_pw') }}</label><input id="mpw" type="password" name="pw" autocomplete="off" required>
@@ -64,7 +64,7 @@
     {% endif %}
     {% if admin_role == 'master' %}
     <div class="card fade vlt-entry" style="--i:4">
-      <h2>🔐 {{ t('vlt_title') }}</h2>
+      <h2>{{ icon('lock') }}{{ t('vlt_title') }}</h2>
       <p class="muted small">{{ t('vlt_entry_sub') }}</p>
       <form method="post" action="{{ url_for('vault_page') }}">
         <label for="vpw">{{ t('vlt_pw') }}</label><input id="vpw" type="password" name="pw" autocomplete="off" required>

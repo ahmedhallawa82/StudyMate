@@ -40,13 +40,13 @@
     <p class="vlt-meta">{{ vi('clock', 15) }} {{ t('vlt_last') }}: <span dir="ltr">{{ p.last or '–' }}</span>{% if p.created %} · {{ t('vlt_created') }}: <span dir="ltr">{{ p.created }}</span>{% endif %}</p>
   </div>
   <div class="vlt-actions">
-    <a class="btn" href="{{ url_for('vault_user_xlsx', key=p.key) }}">{{ vi('down', 16) }} {{ t('vlt_xlsx_one') }}</a>
-    <a class="btn ghost" href="{{ url_for('vault_page') }}">{{ vi('back', 16) }} {{ t('vlt_title') }}</a>
+    <a class="btn" href="{{ url_for('vault_user_xlsx', key=p.key) }}">{{ icon('down', 16) }}{{ t('vlt_xlsx_one') }}</a>
+    <a class="btn ghost" href="{{ url_for('vault_page') }}">{{ icon('back', 16) }}{{ t('vlt_title') }}</a>
   </div>
 </section>
 
 <section class="card vlt-summary">
-  <h2>{{ vi('list') }} {{ t('vlt_summary') }}</h2>
+  <h2>{{ icon('list') }}{{ t('vlt_summary') }}</h2>
   {% if p.kind == 's' %}
   <ul>
     <li>{{ t('vlt_s_courses', n=p.courses|length) }}{% if p.courses %}: <b>{% for c, title in p.courses %}{{ title }}{{ ', ' if not loop.last }}{% endfor %}</b>{% endif %}</li>
@@ -65,35 +65,35 @@
   </ul>
   {% endif %}
   {% if chips %}
-  <div class="vlt-chips" style="margin-top:10px">
-    <span class="muted small">{{ t('vlt_filter') }}:</span>
-    <a class="{{ 'on' if not sel }}" href="{{ url_for('vault_user', key=p.key) }}" data-keep-tab>{{ t('vlt_all_courses') }}</a>
+  <div class="vlt-filter"><span class="muted small">{{ icon('filter', 15) }}{{ t('vlt_filter') }}</span>
+  <nav class="seg">
+    <a class="{{ 'on' if not sel }}" href="{{ url_for('vault_user', key=p.key) }}" data-keep-tab>{{ icon('book') }}{{ t('vlt_all_courses') }}</a>
     {% for c, title, n in chips %}<a class="{{ 'on' if sel == c }}" href="{{ url_for('vault_user', key=p.key, course=c) }}" data-keep-tab>{{ title }} <b>{{ n }}</b></a>{% endfor %}
-  </div>{% if sel %}<p class="muted small" style="margin:6px 0 0">{{ t('vlt_filtered', c=titles.get(sel, sel)) }}</p>{% endif %}
+  </nav></div>{% if sel %}<p class="muted small" style="margin:6px 0 0">{{ t('vlt_filtered', c=titles.get(sel, sel)) }}</p>{% endif %}
   {% endif %}
 </section>
 
-<nav class="vlt-tabs" role="tablist">
-  <button type="button" data-tab="files">{{ vi('file', 16) }} {{ t('vlt_tab_files') }} <b>{{ n_files }}</b></button>
-  <button type="button" data-tab="activity">{{ vi('chart', 16) }} {{ t('vlt_tab_activity') }}</button>
-  <button type="button" data-tab="chat">{{ vi('chat', 16) }} {{ t('nav_chat') }} <b>{{ p.chat.threads|length }}</b></button>
-  <button type="button" data-tab="account">{{ vi('user', 16) }} {{ t('vlt_account') }}</button>
-  <button type="button" data-tab="more">{{ vi('bell', 16) }} {{ t('vlt_tab_more') }}</button>
+<nav class="vlt-tabs seg top" role="tablist">
+  <button type="button" data-tab="files">{{ icon('file', 16) }}{{ t('vlt_tab_files') }} <b>{{ n_files }}</b></button>
+  <button type="button" data-tab="activity">{{ icon('chart', 16) }}{{ t('vlt_tab_activity') }}</button>
+  <button type="button" data-tab="chat">{{ icon('chat', 16) }}{{ t('nav_chat') }} <b>{{ p.chat.threads|length }}</b></button>
+  <button type="button" data-tab="account">{{ icon('user', 16) }}{{ t('vlt_account') }}</button>
+  <button type="button" data-tab="more">{{ icon('bell', 16) }}{{ t('vlt_tab_more') }}</button>
 </nav>
 
 <div class="vlt-pane" data-pane="files">
-  {% if av %}<section class="card vlt-sec"><h3>{{ vi('image') }} {{ t('vlt_avatar') }}</h3>
+  {% if av %}<section class="card vlt-sec"><h3>{{ icon('image') }}{{ t('vlt_avatar') }}</h3>
     <a href="{{ url_for('vault_file', kind='avatar', name=p.key) }}" target="_blank"><img class="vlt-thumb" src="{{ av }}" alt=""></a></section>{% endif %}
-  {% if p.uploads %}<section class="card vlt-sec"><h3>{{ vi('camera') }} {{ t('vlt_photoq') }} <span class="cnt">{{ p.uploads|length }}</span></h3>
+  {% if p.uploads %}<section class="card vlt-sec"><h3>{{ icon('camera') }}{{ t('vlt_photoq') }} <span class="cnt">{{ p.uploads|length }}</span></h3>
     <div class="vlt-gallery">{% for u in p.uploads %}
       <figure><a href="{{ url_for('vault_file', kind='upload', name=u.file) }}" target="_blank"><img src="{{ url_for('vault_file', kind='upload', name=u.file) }}" alt="" loading="lazy"></a>
         <figcaption><small dir="ltr">{{ u.time }}</small><span dir="auto">“{{ u.note }}”</span></figcaption></figure>{% endfor %}</div></section>{% endif %}
-  {% if lect %}<section class="card vlt-sec"><h3>{{ vi('book') }} {{ t('vlt_lectures') }} <span class="cnt">{{ p.lectures|length }}</span></h3>
+  {% if lect %}<section class="card vlt-sec"><h3>{{ icon('book') }}{{ t('vlt_lectures') }} <span class="cnt">{{ p.lectures|length }}</span></h3>
     {% for c, files in lect.items() %}<details class="vlt-group" {{ 'open' if lect|length == 1 }}><summary><b>{{ titles.get(c, c) }}</b> <span class="cnt">{{ files|length }}</span></summary>
-      <ul class="vlt-files">{% for fn in files %}<li>{{ vi('file', 16) }} <a href="{{ url_for('vault_file', kind='lecture', name=c ~ '/' ~ fn, dl=1) }}" dir="auto">{{ fn }}</a></li>{% endfor %}</ul></details>{% endfor %}</section>{% endif %}
-  {% if p.videos %}<section class="card vlt-sec"><h3>{{ vi('video') }} {{ t('vlt_videos') }} <span class="cnt">{{ p.videos|length }}</span></h3>
-    <ul class="vlt-files">{% for v in p.videos %}<li>{{ vi('video', 16) }} <span dir="auto">{{ v.title }}</span> <small class="muted">· {{ titles.get(v.course, v.course) }} · {{ v.added }}</small></li>{% endfor %}</ul></section>{% endif %}
-  {% if sent or got %}<section class="card vlt-sec"><h3>{{ vi('clip') }} {{ t('vlt_chat_files') }} <span class="cnt">{{ p.chat.files|length }}</span></h3>
+      <ul class="vlt-files">{% for fn in files %}<li>{{ icon('file', 16) }}<a href="{{ url_for('vault_file', kind='lecture', name=c ~ '/' ~ fn, dl=1) }}" dir="auto">{{ fn }}</a></li>{% endfor %}</ul></details>{% endfor %}</section>{% endif %}
+  {% if p.videos %}<section class="card vlt-sec"><h3>{{ icon('video') }}{{ t('vlt_videos') }} <span class="cnt">{{ p.videos|length }}</span></h3>
+    <ul class="vlt-files">{% for v in p.videos %}<li>{{ icon('video', 16) }}<span dir="auto">{{ v.title }}</span> <small class="muted">· {{ titles.get(v.course, v.course) }} · {{ v.added }}</small></li>{% endfor %}</ul></section>{% endif %}
+  {% if sent or got %}<section class="card vlt-sec"><h3>{{ icon('clip') }}{{ t('vlt_chat_files') }} <span class="cnt">{{ p.chat.files|length }}</span></h3>
     {% for group, items in [(t('vlt_chat_sent'), sent), (t('vlt_chat_got'), got)] if items %}<h4 class="muted">{{ group }} ({{ items|length }})</h4>
     <ul class="vlt-files">{% for f in items %}<li>{% if f.img %}<img src="{{ url_for('vault_file', kind='chat', name=f.fid) }}" alt="" loading="lazy">{% else %}{{ vi('clip', 16) }}{% endif %}
       <a href="{{ url_for('vault_file', kind='chat', name=f.fid, dl=1, n=f.fname) }}" dir="auto">{{ f.fname }}</a> <small class="muted">· {{ (f.size / 1024)|round|int }} KB · {{ t('vlt_to') if f.from_me else t('vlt_from') }} {{ f.with }} · <span dir="ltr">{{ f.time }}</span></small></li>{% endfor %}</ul>{% endfor %}</section>{% endif %}
@@ -102,41 +102,41 @@
 
 <div class="vlt-pane" data-pane="activity" hidden>
 {% if p.kind == 's' %}
-  <section class="card vlt-sec"><h3>{{ vi('q') }} {{ t('vlt_q') }} <span class="cnt">{{ p.questions|length }}</span></h3>
-  {% if p.questions %}<div class="table-wrap"><table><thead><tr><th>{{ t('vlt_time') }}</th><th>{{ t('vlt_course') }}</th><th>{{ t('vlt_question') }}</th><th>{{ t('vlt_topic') }}</th><th>{{ t('vlt_slide') }}</th><th>{{ t('vlt_result') }}</th><th>👍/👎</th></tr></thead><tbody>
-  {% for r in p.questions[:150] %}<tr><td dir="ltr" class="small">{{ (r.time|string)[:16] }}</td><td>{{ titles.get(r.course, r.course) }}</td><td dir="auto">{{ r.question }}</td><td class="small">{{ r.topic if r.topic and r.topic != 'None' else '–' }}</td><td dir="ltr">{{ r.first_slide or '–' }}</td><td>{% if r.found != 'no' %}<span class="ok-t">✔</span>{% else %}<span class="bad-t">✘ {{ t('vlt_nf') }}</span>{% endif %}</td><td>{{ {'yes': '👍', 'no': '👎'}.get(r.helpful, '–') }}</td></tr>{% endfor %}
+  <section class="card vlt-sec"><h3>{{ icon('q') }}{{ t('vlt_q') }} <span class="cnt">{{ p.questions|length }}</span></h3>
+  {% if p.questions %}<div class="table-wrap"><table><thead><tr><th>{{ t('vlt_time') }}</th><th>{{ t('vlt_course') }}</th><th>{{ t('vlt_question') }}</th><th>{{ t('vlt_topic') }}</th><th>{{ t('vlt_slide') }}</th><th>{{ t('vlt_result') }}</th><th>{{ icon('thumb-up') }}/{{ icon('thumb-down') }}</th></tr></thead><tbody>
+  {% for r in p.questions[:150] %}<tr><td dir="ltr" class="small">{{ (r.time|string)[:16] }}</td><td>{{ titles.get(r.course, r.course) }}</td><td dir="auto">{{ r.question }}</td><td class="small">{{ r.topic if r.topic and r.topic != 'None' else '–' }}</td><td dir="ltr">{{ r.first_slide or '–' }}</td><td>{% if r.found != 'no' %}<span class="ok-t">{{ icon('check') }}</span>{% else %}<span class="bad-t">{{ icon('x') }}{{ t('vlt_nf') }}</span>{% endif %}</td><td>{{ {'yes': '👍', 'no': '👎'}.get(r.helpful, '–') }}</td></tr>{% endfor %}
   </tbody></table></div>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endif %}</section>
   <div class="vlt-grid">
-  <section class="card vlt-sec"><h3>{{ vi('check') }} {{ t('vlt_a') }} <span class="cnt">{{ p.answers|length }}</span></h3>
+  <section class="card vlt-sec"><h3>{{ icon('check') }}{{ t('vlt_a') }} <span class="cnt">{{ p.answers|length }}</span></h3>
   {% if p.answers %}<div class="table-wrap"><table><thead><tr><th>{{ t('vlt_time') }}</th><th>{{ t('vlt_topic') }}</th><th>{{ t('vlt_result') }}</th><th>{{ t('vlt_hints') }}</th></tr></thead><tbody>
   {% for r in p.answers[:80] %}<tr><td dir="ltr" class="small">{{ (r.time|string)[:16] }}</td><td class="small">{{ r.topic }}</td><td>{{ '✔' if (r.correct|string) in ('1', 'True') else '✘' }}</td><td>{{ r.hints_used }}</td></tr>{% endfor %}
   </tbody></table></div>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endif %}</section>
-  <section class="card vlt-sec"><h3>{{ vi('exam') }} {{ t('nav_exams') }} <span class="cnt">{{ p.attempts|length }}</span></h3>
+  <section class="card vlt-sec"><h3>{{ icon('exam') }}{{ t('nav_exams') }} <span class="cnt">{{ p.attempts|length }}</span></h3>
     {% for a in p.attempts %}<p>{{ titles.get(a.course, a.course) }} · <span dir="ltr">{{ (a.started|string)[:16] }}</span> · <b>{{ a.pct if a.pct is not none else '–' }}%</b> <small class="muted">{{ a.status }}</small></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
-    <h3 style="margin-top:16px">{{ vi('star') }} {{ t('sv_link') }} <span class="cnt">{{ p.saved|length }}</span></h3>
+    <h3 style="margin-top:16px">{{ icon('star') }}{{ t('sv_link') }} <span class="cnt">{{ p.saved|length }}</span></h3>
     {% for x in p.saved[:30] %}<p dir="auto">{{ x.question }} <small class="muted">· {{ x.slide }}</small></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
-    {% if p.badges %}<h3 style="margin-top:16px">{{ vi('award') }} {{ t('nav_badges') }} <span class="cnt">{{ p.badges|length }}</span></h3>{% for b in p.badges %}<p class="small">{{ b.badge }} · <span dir="ltr">{{ b.time }}</span></p>{% endfor %}{% endif %}
+    {% if p.badges %}<h3 style="margin-top:16px">{{ icon('award') }}{{ t('nav_badges') }} <span class="cnt">{{ p.badges|length }}</span></h3>{% for b in p.badges %}<p class="small">{{ b.badge }} · <span dir="ltr">{{ b.time }}</span></p>{% endfor %}{% endif %}
     <p class="muted small" style="margin-top:12px">{{ t('vlt_visits', n=p.visits|length) }}</p></section>
   </div>
 {% else %}
   <div class="vlt-grid">
-  <section class="card vlt-sec"><h3>{{ vi('list') }} {{ t('vlt_actions') }} <span class="cnt">{{ p.audit|length }}</span></h3>
+  <section class="card vlt-sec"><h3>{{ icon('list') }}{{ t('vlt_actions') }} <span class="cnt">{{ p.audit|length }}</span></h3>
     <div class="vlt-timeline">{% for r in p.audit[:100] %}<p><span dir="ltr" class="muted small">{{ r.time }}</span> <b>{{ r.action|replace('_', ' ') }}</b> <span dir="auto" class="small">{{ r.target }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}</div></section>
-  <section class="card vlt-sec"><h3>{{ vi('mega') }} {{ t('ann_title') }} <span class="cnt">{{ p.announcements|length }}</span></h3>
+  <section class="card vlt-sec"><h3>{{ icon('mega') }}{{ t('ann_title') }} <span class="cnt">{{ p.announcements|length }}</span></h3>
     {% for a in p.announcements %}<p><b dir="auto">{{ a.title }}</b> <small class="muted">· {{ titles.get(a.course, a.course) }} · <span dir="ltr">{{ a.time }}</span></small><br><span dir="auto" class="small">{{ a.body }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
-    <h3 style="margin-top:16px">{{ vi('cal') }} {{ t('nav_calendar') }} <span class="cnt">{{ p.events|length }}</span></h3>
+    <h3 style="margin-top:16px">{{ icon('cal') }}{{ t('nav_calendar') }} <span class="cnt">{{ p.events|length }}</span></h3>
     {% for e in p.events %}<p class="small" dir="auto">{{ e.title }} · {{ titles.get(e.course, e.course) }} · <span dir="ltr">{{ e.when }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
-    <h3 style="margin-top:16px">{{ vi('award') }} {{ t('vlt_badges_made') }} <span class="cnt">{{ p.made_badges|length }}</span></h3>
+    <h3 style="margin-top:16px">{{ icon('award') }}{{ t('vlt_badges_made') }} <span class="cnt">{{ p.made_badges|length }}</span></h3>
     {% for b in p.made_badges %}<p class="small">{{ b.icon }} <span dir="auto">{{ b.name }}</span> · <span dir="ltr">{{ b.created }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}</section>
   </div>
 {% endif %}
 </div>
 
 <div class="vlt-pane" data-pane="chat" hidden>
-  <section class="card vlt-sec"><h3>{{ vi('chat') }} {{ t('nav_chat') }} <small class="muted">{{ t('vlt_chat_sum', n=p.chat.threads|length, m=p.chat.sent) }}</small></h3>
+  <section class="card vlt-sec"><h3>{{ icon('chat') }}{{ t('nav_chat') }} <small class="muted">{{ t('vlt_chat_sum', n=p.chat.threads|length, m=p.chat.sent) }}</small></h3>
   {% for th in p.chat.threads %}
   <details class="vlt-thread"><summary><b dir="auto">{{ th.with }}</b> <small class="muted">· {{ th.n }} · <span dir="ltr">{{ th.last }}</span></small></summary>
-    <div class="vlt-msgs">{% for m in th.msgs %}<div class="{{ 'me' if m.from == p.key else 'them' }}"><small dir="ltr">{{ m.time }}</small><span dir="auto">{{ m.text }}</span>{% if m.file %}<a href="{{ url_for('vault_file', kind='chat', name=m.file.fid, dl=1, n=m.file.fname) }}">📎 {{ m.file.fname }}</a>{% endif %}</div>{% endfor %}</div>
+    <div class="vlt-msgs">{% for m in th.msgs %}<div class="{{ 'me' if m.from == p.key else 'them' }}"><small dir="ltr">{{ m.time }}</small><span dir="auto">{{ m.text }}</span>{% if m.file %}<a href="{{ url_for('vault_file', kind='chat', name=m.file.fid, dl=1, n=m.file.fname) }}">{{ icon('clip') }}{{ m.file.fname }}</a>{% endif %}</div>{% endfor %}</div>
   </details>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}
   {% if p.chat.requests %}<p class="small" style="margin-top:10px"><b>{{ t('vlt_requests') }}:</b> {% for r in p.chat.requests %}{{ r.with }} ({{ r.state }}{{ ', ' ~ t('vlt_by_me') if r.asked_by_me }}){{ ' · ' if not loop.last }}{% endfor %}</p>{% endif %}
   {% if p.chat.blocked %}<p class="small"><b>{{ t('vlt_blocked') }}:</b> {{ p.chat.blocked|join(', ') }}</p>{% endif %}</section>
@@ -156,9 +156,9 @@
     <tr><th>{{ t('vlt_password') }}</th><td>
       {% if p.pw_plain %}<code dir="ltr" class="vlt-pw">{{ p.pw_plain }}</code><br><small class="muted">{{ t('vlt_pw_sys') }}</small>
       {% elif p.role == 'main' %}<small class="muted">{{ t('vlt_pw_env') }}</small>
-      {% else %}🔒 <small class="muted">{{ t('vlt_pw_hash') }}</small>{% endif %}
+      {% else %}{{ icon('lock') }}<small class="muted">{{ t('vlt_pw_hash') }}</small>{% endif %}
       {% if p.role != 'main' %}<form method="post" action="{{ url_for('vault_reset', key=p.key) }}" onsubmit="return confirm({{ t('vlt_reset_confirm')|tojson }})" style="margin-top:8px">
-        <button class="btn ghost small" type="submit">🔁 {{ t('vlt_reset') }}</button></form>{% endif %}
+        <button class="btn ghost small" type="submit">{{ icon('refresh') }}{{ t('vlt_reset') }}</button></form>{% endif %}
     </td></tr>
     <tr><th>{{ t('vlt_key') }}</th><td dir="ltr"><code>{{ p.key }}</code></td></tr>
   </table></section>
@@ -166,9 +166,9 @@
 
 <div class="vlt-pane" data-pane="more" hidden>
   <div class="vlt-grid">
-  <section class="card vlt-sec"><h3>{{ vi('help') }} {{ t('vlt_support') }} <span class="cnt">{{ p.support|length }}</span></h3>
+  <section class="card vlt-sec"><h3>{{ icon('help') }}{{ t('vlt_support') }} <span class="cnt">{{ p.support|length }}</span></h3>
     {% for m in p.support %}<p><small dir="ltr" class="muted">{{ m.time }} · {{ m.status }}</small><br><span dir="auto">{{ m.message }}</span></p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}</section>
-  <section class="card vlt-sec"><h3>{{ vi('bell') }} {{ t('notif_title') }} <span class="cnt">{{ p.notifs|length }}</span></h3>
+  <section class="card vlt-sec"><h3>{{ icon('bell') }}{{ t('notif_title') }} <span class="cnt">{{ p.notifs|length }}</span></h3>
     {% for n in p.notifs[:30] %}<p class="small"><span dir="ltr" class="muted">{{ n.time }}</span> · <span dir="auto">{{ n.title }}</span>{{ ' •' if n.unread }}</p>{% else %}<p class="muted">{{ t('vlt_none_yet') }}</p>{% endfor %}</section>
   </div>
 </div>

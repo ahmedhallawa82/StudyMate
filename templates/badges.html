@@ -27,9 +27,9 @@
       <span class="bd-ic{{ ' on' if b.earned }}">{{ b.icon }}</span>
       <b>{{ b.name }}</b>
       <small>{{ b.desc }}</small>
-      {% if b.earned %}{% if b.note %}<small class="muted">“{{ b.note }}”</small>{% endif %}<span class="bd-when">✓ {{ t('bg_earned', d=b.when) }}</span>
-      {% elif g.id == 'special' %}<span class="bd-when">🔒</span>
-      {% else %}<div class="bd-bar sm"><i style="width: {{ b.pct }}%"></i></div><span class="bd-when">🔒 {{ b.value }} / {{ b.target }}</span>{% endif %}
+      {% if b.earned %}{% if b.note %}<small class="muted">“{{ b.note }}”</small>{% endif %}<span class="bd-when">{{ icon('check') }}{{ t('bg_earned', d=b.when) }}</span>
+      {% elif g.id == 'special' %}<span class="bd-when">{{ icon('lock') }}</span>
+      {% else %}<div class="bd-bar sm"><i style="width: {{ b.pct }}%"></i></div><span class="bd-when">{{ icon('lock') }}{{ b.value }} / {{ b.target }}</span>{% endif %}
     </div>
     {% endfor %}
   </div>

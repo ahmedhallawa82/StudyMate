@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head, course_picker with context %}
+{% from "_ui.html" import page_head, course_picker, search_field with context %}
 {% block title %}{{ t('studio_title') }}{% endblock %}
 {% set tools = [
   ('report', 'st_report', 'st_report_s', 'M6 3h9l4 4v14H6z M14 3v5h5 M9 13h7 M9 17h7'),
@@ -19,11 +19,11 @@
 <div class="card"><p class="muted">{{ t('st_empty') }}</p></div>
 {% else %}
 <div class="card st-pick fade" style="--i:2">
-  <label for="stLecture">📖 {{ t('st_lecture') }}</label>
-  <select id="stLecture" onchange="location.href='{{ url_for('studio') }}?lecture=' + this.value + '&tool=' + (window.studioTool ? window.studioTool() : 'quiz')">
+  <label for="stLecture">{{ icon('book-open') }}{{ t('st_lecture') }}</label>
+  <label class="ssel">{{ icon('book-open') }}<select id="stLecture" onchange="location.href='{{ url_for('studio') }}?lecture=' + this.value + '&tool=' + (window.studioTool ? window.studioTool() : 'quiz')">
     <option value="all"{{ ' selected' if not lecture }}>{{ t('st_all') }}</option>
     {% for l in lectures %}<option value="{{ l.n }}"{{ ' selected' if l.n == lecture }}>{{ t('lecture') }} {{ l.n }}: {{ l.title }} ({{ l.slides }})</option>{% endfor %}
-  </select>
+  </select></label>
   <span class="muted small">{{ t('st_note_en') }}</span>
 </div>
 
@@ -43,7 +43,7 @@
   </a>
   {% endfor %}
 </div>
-{% if photo_ok() %}<a class="st-practice fade" style="--i:3;margin:0 0 16px" href="{{ url_for('ask', photo=1) }}"><span class="ic">📷</span><span><b>{{ t('ph_tile') }}</b><small>{{ t('ph_tile_sub') }}</small></span><span class="go">→</span></a>{% endif %}
+{% if photo_ok() %}<a class="st-practice fade" style="--i:3;margin:0 0 16px" href="{{ url_for('ask', photo=1) }}"><span class="ic">{{ icon('camera') }}</span><span><b>{{ t('ph_tile') }}</b><small>{{ t('ph_tile_sub') }}</small></span><span class="go">{{ icon('arrow') }}</span></a>{% endif %}
 
 <section class="card st-panel fade" style="--i:4" id="stPanel">
 
@@ -88,16 +88,16 @@
     <div class="st-head"><div><h2>{{ t('st_quiz') }}</h2><p class="muted small">{{ t('st_quiz_s') }}</p></div>
       <div class="actions"><button type="button" class="btn ghost" data-act="quiz-reset">{{ t('st_reset') }}</button>
         <a class="btn" href="{{ url_for('studio', lecture=lecture or 'all', tool='quiz', seed=seed + 1) }}">{{ t('st_newquiz') }}</a></div></div>
-    <a class="st-practice" href="{{ url_for('practice') }}"><span class="ic">✏️</span><span><b>{{ t('st_practice_t') }}</b><small>{{ t('st_practice_s') }}</small></span><span class="go">→</span></a>
+    <a class="st-practice" href="{{ url_for('practice') }}"><span class="ic">{{ icon('edit') }}</span><span><b>{{ t('st_practice_t') }}</b><small>{{ t('st_practice_s') }}</small></span><span class="go">{{ icon('arrow') }}</span></a>
     <div class="st-quiz" id="stQuiz"></div>
   </div>
 
   <!-- Data table -->
   <div class="st-pane" data-pane="table" {{ 'hidden' if tool != 'table' }}>
     <div class="st-head"><div><h2>{{ t('st_table') }}</h2><p class="muted small">{{ t('st_table_s') }}</p></div>
-      <div class="actions"><a class="btn" href="{{ url_for('studio_xlsx', lecture=lecture or 'all') }}">{{ t('st_xlsx') }}</a></div></div>
+      <div class="actions"><a class="btn" href="{{ url_for('studio_xlsx', lecture=lecture or 'all') }}">{{ icon('excel') }}{{ t('st_xlsx') }}</a></div></div>
     {% if kit.terms %}
-    <p><input type="search" id="stFilter" class="st-filter" placeholder="{{ t('st_filter') }}"></p>
+    <div class="tbar">{{ search_field(t('st_filter'), id='stFilter') }}</div>
     <div class="table-wrap"><table class="st-table" id="stTable">
       <thead><tr><th>{{ t('st_col_term') }}</th><th>{{ t('st_col_ar') }}</th><th>{{ t('st_col_def') }}</th><th>{{ t('st_col_slide') }}</th><th>{{ t('st_col_lec') }}</th></tr></thead>
       <tbody>{% for d in kit.terms %}<tr><td dir="ltr"><b>{{ d.term }}</b></td><td dir="rtl">{{ d.ar }}</td><td dir="ltr">{{ d.definition }}</td><td>{{ d.slide }}</td><td>{{ d.lecture }}</td></tr>{% endfor %}</tbody>
@@ -143,7 +143,7 @@
   <div class="st-pane" data-pane="videos" {{ 'hidden' if tool != 'videos' }}>
     <div class="st-head"><div><h2>{{ t('st_videos') }}</h2><p class="muted small">{{ t('st_videos_s') }}</p></div></div>
     <div class="st-player" id="stPlayer" hidden><div class="st-player-box" id="stPlayerBox"></div><p class="small" id="stPlayerTitle"></p></div>
-    <h3>🎞️ {{ t('vid_recorded') }}</h3>
+    <h3>{{ icon('video') }}{{ t('vid_recorded') }}</h3>
     {% if vids.recorded %}<div class="st-vids">{% for v in vids.recorded %}
       <button type="button" class="st-vid" data-kind="file" data-src="{{ url_for('video_file', fid=v.id) }}" data-title="{{ v.title }}"><span class="st-play">▶</span><b dir="auto">{{ v.title }}</b><small>{% if v.lecture %}{{ t('lecture') }} {{ v.lecture }} · {% endif %}{{ (v.size / 1048576)|round(1) }} MB</small></button>{% endfor %}</div>
     {% else %}<p class="muted">{{ t('vid_none_rec') }}</p>{% endif %}

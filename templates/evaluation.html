@@ -3,7 +3,7 @@
 {% block title %}{{ t('mdl_title') }}{% endblock %}
 {% block content %}
 {{ page_head('🧮', t('mdl_title'), t('mdl_sub')) }}
-<form method="post" action="{{ url_for('models_lock') }}" style="margin:0 0 14px"><button class="btn ghost" type="submit">🔒 {{ t('mdl_lock') }}</button></form>
+<form method="post" action="{{ url_for('models_lock') }}" style="margin:0 0 14px"><button class="btn ghost" type="submit">{{ icon('lock') }}{{ t('mdl_lock') }}</button></form>
 <div class="card" style="margin-bottom:16px" id="advice">
   <h2>{{ t('adv_title') }}</h2>
   <ul class="adv">{% for lvl, key, args in advice %}<li class="{{ lvl }}">{{ {'bad':'🔴','warn':'🟠','info':'🔵','ok':'🟢'}[lvl] }} {{ t(key, **args) }}{% if key == 'adv_no_notebook' %} <a href="#colab">{{ t('nbr_go') }}</a>{% endif %}</li>{% endfor %}</ul>
@@ -11,12 +11,12 @@
 <div class="card" style="margin-bottom:16px" id="colab">
   <h2>{{ t('nbr_title') }}</h2>
   <p class="muted">{{ t('nbr_sub') }}</p>
-  <p><a class="btn ghost" href="{{ colab.search }}" target="_blank" rel="noopener">📓 {{ t('nbr_open_search') }}</a>
-     <a class="btn ghost" href="{{ colab.image }}" target="_blank" rel="noopener">🖼️ {{ t('nbr_open_image') }}</a></p>
+  <p><a class="btn ghost" href="{{ colab.search }}" target="_blank" rel="noopener">{{ icon('notebook') }}{{ t('nbr_open_search') }}</a>
+     <a class="btn ghost" href="{{ colab.image }}" target="_blank" rel="noopener">{{ icon('image') }}{{ t('nbr_open_image') }}</a></p>
   <p class="muted">{{ t('nbr_how') }}</p>
   <form method="post" action="{{ url_for('models_notebook') }}" enctype="multipart/form-data" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-    <input type="file" name="file" accept=".zip,.json" multiple required><button class="btn" type="submit">⬆️ {{ t('nbr_upload') }}</button></form>
-  <details style="margin-top:12px"><summary><b>⚡ {{ t('nbr_direct') }}</b></summary>
+    <input type="file" name="file" accept=".zip,.json" multiple required><button class="btn" type="submit">{{ icon('upload') }}{{ t('nbr_upload') }}</button></form>
+  <details style="margin-top:12px"><summary><b>{{ icon('zap') }}{{ t('nbr_direct') }}</b></summary>
     <p class="muted">{{ t('nbr_direct_how') }}</p>
     <pre dir="ltr" style="white-space:pre-wrap;user-select:all">SITE  = "{{ request.host_url.rstrip('/') }}"
 TOKEN = "{{ colab_token }}"</pre></details>
@@ -57,7 +57,7 @@ TOKEN = "{{ colab_token }}"</pre></details>
   <p class="muted small">{{ t('mdl_cm_sub', a=(ae.topic.accuracy * 100)|round(1), n=ae.topic.n, k=ae.topic.labels|length) }}</p>
   {% set mx = ae.topic.matrix|map('max')|max or 1 %}
   <div class="table-wrap"><table class="cm">
-    <tr><th>{{ t('mdl_cm_true') }} ↓ / {{ t('mdl_cm_pred') }} →</th>{% for l in ae.topic.labels %}<th class="num">{{ l }}</th>{% endfor %}</tr>
+    <tr><th>{{ t('mdl_cm_true') }} {{ icon('down') }}/ {{ t('mdl_cm_pred') }} {{ icon('arrow') }}</th>{% for l in ae.topic.labels %}<th class="num">{{ l }}</th>{% endfor %}</tr>
     {% for row in ae.topic.matrix %}{% set ri = loop.index0 %}<tr><th>{{ ae.topic.labels[ri] }}</th>
       {% for v in row %}<td class="num {{ 'diag' if loop.index0 == ri }}" style="--a:{{ (v / mx)|round(2) }}">{{ v if v else '' }}</td>{% endfor %}</tr>{% endfor %}
   </table></div>
@@ -70,11 +70,11 @@ TOKEN = "{{ colab_token }}"</pre></details>
     <table><tr><th>{{ t('mdl_when') }}</th><th class="num">{{ t('mdl_slides') }}</th><th class="num">TF-IDF</th><th class="num">BM25</th><th class="num">Hybrid</th><th class="num">LSA</th></tr>
       {% for h in ae.history|reverse %}<tr><td>{{ h.when }}</td><td class="num">{{ h.slides }}</td><td class="num">{{ (h.tfidf * 100)|round(1) }}%</td><td class="num">{{ (h.bm25 * 100)|round(1) }}%</td><td class="num">{{ (h.hybrid * 100)|round(1) }}%</td><td class="num">{{ (h.lsa * 100)|round(1) }}%</td></tr>{% endfor %}</table></details>
   {% endif %}
-  <form method="post" action="{{ url_for('models_evaluate') }}" style="margin-top:12px"><button class="btn ghost" type="submit">🔄 {{ t('mdl_reeval') }}</button></form>
+  <form method="post" action="{{ url_for('models_evaluate') }}" style="margin-top:12px"><button class="btn ghost" type="submit">{{ icon('refresh') }}{{ t('mdl_reeval') }}</button></form>
 </div>
 {% else %}
 <div class="card" style="margin-bottom:16px"><p class="muted">{{ t('mdl_auto_none') }}</p>
-  <form method="post" action="{{ url_for('models_evaluate') }}"><button class="btn" type="submit">🔄 {{ t('mdl_reeval') }}</button></form></div>
+  <form method="post" action="{{ url_for('models_evaluate') }}"><button class="btn" type="submit">{{ icon('refresh') }}{{ t('mdl_reeval') }}</button></form></div>
 {% endif %}
 {% if not r %}
 {% if not ae %}<div class="card">{{ t('no_eval_course') if auto else t('ev_none') }}</div>{% endif %}

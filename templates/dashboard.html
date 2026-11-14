@@ -44,7 +44,7 @@
       <td class="num">{{ (r.level ~ '%') if r.level is not none else '—' }}</td>
       <td class="small">{{ r.last or '—' }}{% if r.days is not none %}<br><small class="muted">{{ t('risk_days', n=r.days) }}</small>{% endif %}</td>
       <td>{% for w in r.reasons %}<span class="tag {{ 'red' if w == 'low' else 'amber' }}">{{ t('risk_' ~ w) }}</span> {% endfor %}</td>
-      <td><form method="post" action="{{ url_for('dashboard_remind') }}"><input type="hidden" name="student" value="{{ r.code }}"><button class="btn ghost small" type="submit">🔔 {{ t('remind_btn') }}</button></form></td></tr>{% endfor %}
+      <td><form method="post" action="{{ url_for('dashboard_remind') }}"><input type="hidden" name="student" value="{{ r.code }}"><button class="btn ghost small" type="submit">{{ icon('bell') }}{{ t('remind_btn') }}</button></form></td></tr>{% endfor %}
   </table></div>
   {% else %}<p class="muted">{{ t('risk_none') }}</p>{% endif %}
 </div>
@@ -58,7 +58,7 @@
     <tr><td class="small">{{ q.time }}</td><td>{{ q.student_code }}</td><td dir="auto">{{ q.question }}</td>
       <td>{% if q.found == 'no' %}<span class="tag red">{{ t('fu_nf') }}</span>{% else %}<span class="tag green">{{ t('fu_yes') }}</span>{% endif %}</td>
       <td>
-        {% if q.fu %}<span class="tag green">✔ {{ t('fu_done') }}</span><br><small class="muted">{{ q.fu.by }} · {{ q.fu.when }}{% if q.fu.note %}<br>{{ q.fu.note }}{% endif %}</small>
+        {% if q.fu %}<span class="tag green">{{ icon('check') }}{{ t('fu_done') }}</span><br><small class="muted">{{ q.fu.by }} · {{ q.fu.when }}{% if q.fu.note %}<br>{{ q.fu.note }}{% endif %}</small>
           <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px"><input type="hidden" name="id" value="{{ q.id }}"><input type="hidden" name="action" value="reopen"><button class="btn ghost" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_reopen') }}</button></form>
         {% else %}<span class="tag amber">{{ t('fu_open') }}</span>
           <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px;display:flex;gap:4px"><input type="hidden" name="id" value="{{ q.id }}"><input name="note" placeholder="{{ t('fu_note') }}" maxlength="300" style="min-width:110px"><button class="btn" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_mark') }}</button></form>

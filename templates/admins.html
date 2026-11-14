@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head %}
+{% from "_ui.html" import page_head, search_field with context %}
 {% block title %}{{ t('adms_tab') }}{% endblock %}
 {% block content %}
 {{ page_head('🛡️', t('adms_tab'), t('adms_sub')) }}
 <div class="card adm-form">
-  <h3>➕ {{ t('adms_add') }}</h3>
+  <h3>{{ icon('plus') }}{{ t('adms_add') }}</h3>
   <form method="post" autocomplete="off">
     <input type="hidden" name="action" value="add_admin">
     <div class="adm-fields">
@@ -23,7 +23,7 @@
 </div>
 
 <div class="card">
-  <h3>🛡️ {{ t('adms_list') }} <span class="pill">{{ rows|length }}</span></h3>
+  <h3>{{ icon('shield') }}{{ t('adms_list') }} <span class="pill">{{ rows|length }}</span></h3>
   {% for r in rows %}
   <details class="adm-row">
     <summary><b>{{ r.name }}</b> <span class="muted" dir="ltr">@{{ r.username }}</span>
@@ -40,18 +40,17 @@
     </form>
     <form method="post" class="adm-edit" onsubmit="return confirm('{{ t('adms_confirm_del') }}')">
       <input type="hidden" name="action" value="delete_admin"><input type="hidden" name="admin" value="{{ r.id }}">
-      <button class="btn ghost small" type="submit">🗑️ {{ t('adms_delete') }}</button>
+      <button class="btn ghost small" type="submit">{{ icon('trash') }}{{ t('adms_delete') }}</button>
     </form>
   </details>
   {% else %}<p class="muted">{{ t('adms_none') }}</p>{% endfor %}
 </div>
 <div class="card">
-  <h3>👥 {{ t('adms_users') }} <span class="pill">{{ total_students }}</span></h3>
+  <h3>{{ icon('users') }}{{ t('adms_users') }} <span class="pill">{{ total_students }}</span></h3>
   <p class="muted small">{{ t('adms_users_sub') }}</p>
-  <form method="get" class="adm-edit" style="margin:0 0 10px">
-    <input type="text" name="q" value="{{ q }}" placeholder="{{ t('adms_search_ph') }}" style="flex:1;min-width:200px">
-    <button class="btn small" type="submit">{{ t('doc_search_btn') }}</button>
-    {% if q %}<a class="btn ghost small" href="{{ url_for('admins_page') }}">✕</a>{% endif %}
+  <form method="get" class="sbar" style="margin:0 0 12px">
+    {{ search_field(t('adms_search_ph'), name='q', value=q) }}
+    <button class="btn" type="submit">{{ icon('search') }}{{ t('doc_search_btn') }}</button>
   </form>
   {% for u in people %}
   <details class="adm-row">
@@ -60,13 +59,13 @@
     {% if u.admin %}
     <form method="post" class="adm-edit" onsubmit="return confirm('{{ t('adms_confirm_remove') }}')">
       <input type="hidden" name="action" value="delete_admin"><input type="hidden" name="admin" value="{{ u.admin }}"><input type="hidden" name="q" value="{{ q }}">
-      <button class="btn ghost small" type="submit">➖ {{ t('adms_remove') }}</button>
+      <button class="btn ghost small" type="submit">{{ icon('minus') }}{{ t('adms_remove') }}</button>
     </form>
     {% else %}
     <form method="post" class="adm-edit">
       <input type="hidden" name="action" value="make_admin"><input type="hidden" name="student" value="{{ u.code }}"><input type="hidden" name="q" value="{{ q }}">
       <div class="adm-perms"><label class="chk perm-all"><input type="checkbox" data-all> <b>{{ t('perm_all') }}</b></label>{% for p in perms %}<label class="chk"><input type="checkbox" name="perms" value="{{ p }}" {{ 'checked' if p in ('content','exams','badges') }}> {{ t(labels[p]) }}</label>{% endfor %}</div>
-      <button class="btn small" type="submit">🛡️ {{ t('adms_make') }}</button>
+      <button class="btn small" type="submit">{{ icon('shield') }}{{ t('adms_make') }}</button>
     </form>
     {% endif %}
   </details>

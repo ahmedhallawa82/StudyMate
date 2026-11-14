@@ -4,8 +4,8 @@
 <div class="auth fade" style="--i:1">
   {% include "_auth_brand.html" %}
   <section class="auth-form">
-    <h1>👨‍🏫 {{ t('reg_doc_title') }}</h1>
-    <p class="muted"><a href="{{ url_for('register') }}">← {{ t('reg_back') }}</a></p>
+    <h1>{{ icon('teacher') }}{{ t('reg_doc_title') }}</h1>
+    <p class="muted"><a href="{{ url_for('register') }}">{{ icon('arrow-l') }}{{ t('reg_back') }}</a></p>
     <p class="muted small">{{ t('reg_doc_info') }}</p>
     <form method="post" action="{{ url_for('register_doctor') }}">
       <label class="small">{{ t('prof_name') }}</label><input type="text" name="name" required maxlength="60" value="{{ request.form.name }}" autocomplete="name">
