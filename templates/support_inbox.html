@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ t('support_inbox') }}{% endblock %}
 {% block content %}
-<div class="page-head fade" style="--i:0"><div class="pic">{{ icon('lifebuoy') }}</div><div><h1>{{ t('support_inbox') }}</h1></div></div>
+{% from "_ui.html" import page_head %}{{ page_head('lifebuoy', t('support_inbox'), t('sup_inbox_sub')) }}
 {% if reset %}<div class="card fade {{ 'reset-ok' if reset.ok else '' }}" style="--i:1">
   {% if reset.ok %}<h3>{{ icon('key') }}{{ t('sup_reset_done') }}</h3>
   <p>{{ reset.name }} · <code dir="ltr">{{ reset.user }}</code></p>
@@ -10,9 +10,9 @@
   {% else %}<p class="err-msg">{{ t('sup_reset_none') }}</p>{% endif %}
 </div>{% endif %}
 <div class="card fade" style="--i:1">
-  <form method="post" class="sup-lookup"><input type="hidden" name="action" value="reset">
-    <input type="text" name="who" placeholder="{{ t('sup_reset_ph') }}" dir="ltr" required>
-    <button class="btn small teal" type="submit">{{ icon('key') }}{{ t('sup_reset') }}</button></form>
+  <form method="post" class="sbar"><input type="hidden" name="action" value="reset">
+    <label class="sfield">{{ icon('user') }}<input type="search" name="who" placeholder="{{ t('sup_reset_ph') }}" aria-label="{{ t('sup_reset_ph') }}" dir="ltr" required autocomplete="off"><button type="button" class="sclear" aria-label="{{ t('clear') }}" tabindex="-1">{{ icon('x') }}</button></label>
+    <button class="btn" type="submit">{{ icon('key') }}{{ t('sup_reset') }}</button></form>
 </div>
 <div class="card fade" style="--i:2">
   {% for m in items %}
@@ -25,6 +25,6 @@
     {% if m.acct %}<form method="post" style="display:inline"><input type="hidden" name="action" value="reset"><input type="hidden" name="who" value="{{ m.ident }}"><input type="hidden" name="who2" value="{{ m.contact }}">
       <button class="btn small teal" type="submit">{{ icon('key') }}{{ t('sup_reset') }}</button></form>{% endif %}
   </div>
-  {% else %}<p class="muted">{{ t('sup_none') }}</p>{% endfor %}
+  {% else %}{{ empty(t('sup_none'), 'inbox') }}{% endfor %}
 </div>
 {% endblock %}

@@ -35,7 +35,7 @@
       <div class="card-top"><h3>{{ icon('cap') }}{{ t('sh_per_course') }}</h3><a href="{{ url_for('students_page') }}">{{ t('nav_students') }} {{ icon('arrow') }}</a></div>
       {% for c in by_course %}
       <div class="pc-row"><span>{{ icon('book') }}{{ c.title }} <small class="muted">{{ c.code }}</small></span><b>{{ c.n }}</b></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+      {% else %}{{ empty(t('sh_none'), 'inbox', True) }}{% endfor %}
     </div>
 
     <div class="card fade" style="--i:6">
@@ -51,7 +51,7 @@
     <div class="trio">
     {% if main_admin %}
     <div class="card fade">
-      <div class="card-top"><h3>{{ icon('shield') }}{{ t('sh_admins_card') }}</h3><a href="{{ url_for('admin') }}#admins" title="{{ t('adms_tab') }}">+</a></div>
+      <div class="card-top"><h3>{{ icon('shield') }}{{ t('sh_admins_card') }}</h3><a href="{{ url_for('admin') }}#admins" title="{{ t('adms_tab') }}">{{ icon('plus') }}</a></div>
       <div class="pc-row"><span>{{ t('role_admin') }} <span class="tag">{{ t('doc_main') }}</span></span></div>
       {% for a in admins_list[:4] %}<div class="pc-row"><span>{{ a.name }}</span><small class="muted" dir="ltr">@{{ a.username }}</small></div>{% endfor %}
     </div>
@@ -60,20 +60,20 @@
     <div class="card fade">
       <div class="card-top"><h3>{{ icon('teacher') }}{{ t('sh_team') }}</h3><a href="{{ url_for('admin') }}">{{ icon('arrow') }}</a></div>
       {% for d in team[:5] %}<div class="pc-row"><span>{{ d.name }}</span><small class="muted" dir="ltr">{{ d.courses }}</small></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+      {% else %}{{ empty(t('sh_none'), 'inbox', True) }}{% endfor %}
       {% if team|length > 5 %}<a class="more-row" href="{{ url_for('doctors_page') }}">+{{ team|length - 5 }} {{ t('sh_more') }}</a>{% endif %}
     </div>
     {% else %}
     <div class="card fade">
       <div class="card-top"><h3>{{ icon('book') }}{{ t('sh_my_courses') }}</h3><a href="{{ url_for('admin') }}">{{ icon('arrow') }}</a></div>
       {% for c in courses %}<div class="pc-row"><span>{{ c.name_ar or c.name_en if lang == 'ar' else c.name_en }}</span><small class="muted">{{ c.code }}</small></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+      {% else %}{{ empty(t('sh_none'), 'inbox', True) }}{% endfor %}
     </div>
     {% endif %}
     <div class="card fade">
       <h3>{{ icon('sparkle') }}{{ t('sh_recent') }}</h3>
       {% for r in recent %}<div class="pc-row"><span>{{ r.first }} {{ r.last }}</span><small class="muted" dir="ltr">@{{ r.username }}</small></div>
-      {% else %}<p class="muted small">{{ t('sh_none') }}</p>{% endfor %}
+      {% else %}{{ empty(t('sh_none'), 'inbox', True) }}{% endfor %}
     </div>
     </div>
 

@@ -11,14 +11,14 @@
       <a href="{{ url_for('ask', q=s.question) }}" dir="auto">{{ s.question }}</a>
       <form method="post" action="{{ url_for('saved_remove') }}"><input type="hidden" name="id" value="{{ s.id }}"><button class="btn ghost small" type="submit" title="{{ t('sv_remove') }}">{{ icon('x') }}</button></form>
     </div>
-    {% else %}<p class="muted">{{ t('sv_none') }}</p>{% endfor %}
+    {% else %}{{ empty(t('sv_none'), 'star') }}{% endfor %}
   </section>
   <aside class="card">
     <h3>{{ icon('clock') }}{{ t('sv_recent') }}</h3>
     {% for r in recent %}
     <div style="padding:6px 0;border-top:1px solid var(--line)"><a href="{{ url_for('ask', q=r.q) }}" dir="auto">{{ r.q }}</a>
       <div class="muted small">{{ r.time }}{% if not r.found %} · {{ t('not_found') }}{% endif %}</div></div>
-    {% else %}<p class="muted">{{ t('sv_none_recent') }}</p>{% endfor %}
+    {% else %}{{ empty(t('sv_none_recent'), 'clock') }}{% endfor %}
   </aside>
 </div>
 {% endblock %}

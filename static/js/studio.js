@@ -6,6 +6,7 @@
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var fmt = function (s, o) { return s.replace(/\{(\w+)\}/g, function (_, k) { return o[k]; }); };
+  var SV = function (d, n) { return '<svg class="ico" width="' + n + '" height="' + n + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + d + '"/></svg>'; };
   var el = function (tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
   var css = function (v, d) { return (getComputedStyle(document.documentElement).getPropertyValue(v) || d).trim() || d; };
 
@@ -31,9 +32,9 @@
     var box = $('#stFlash'); box.innerHTML = '';
     if (!total) { box.appendChild(el('p', 'muted', U.nocards)); return; }
     if (!deck.length) {
-      var done = el('div', 'st-done'); done.appendChild(el('div', 'big', '🎉')); done.appendChild(el('h3', '', U.deck_done));
+      var done = el('div', 'st-done'); var bg = el('div', 'big win'); bg.innerHTML = SV('M12 3a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM8.5 14.5L7 22l5-3 5 3-1.5-7.5', 34); done.appendChild(bg); done.appendChild(el('h3', '', U.deck_done));
       done.appendChild(el('p', 'muted', fmt(U.known_n, { a: Object.keys(firstTry).filter(function (k) { return firstTry[k]; }).length, b: total })));
-      var again = el('button', 'btn', '↺'); again.type = 'button'; again.addEventListener('click', flashReset); done.appendChild(again); box.appendChild(done); return;
+      var again = el('button', 'btn'); again.innerHTML = SV('M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4', 18) + '<span>' + (U.again || '') + '</span>'; again.type = 'button'; again.addEventListener('click', flashReset); done.appendChild(again); box.appendChild(done); return;
     }
     var c = deck[0];
     box.appendChild(el('div', 'muted small', fmt(U.card_of, { i: Math.min(known + 1, total), n: total })));
@@ -61,9 +62,9 @@
     var Q = K.quiz;
     if (!Q.length) { box.appendChild(el('p', 'muted', U.noquiz)); return; }
     if (qi >= Q.length) {
-      var done = el('div', 'st-done'); done.appendChild(el('div', 'big', score >= Q.length * 0.7 ? '🎉' : '💪'));
+      var done = el('div', 'st-done'); var big = el('div', 'big ' + (score >= Q.length * 0.7 ? 'win' : 'try')); big.innerHTML = SV(score >= Q.length * 0.7 ? 'M12 3a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM8.5 14.5L7 22l5-3 5 3-1.5-7.5' : 'M3 17l6-6 4 4 8-8M15 7h6v6', 34); done.appendChild(big);
       done.appendChild(el('h3', '', fmt(U.score, { a: score, b: Q.length })));
-      var again = el('button', 'btn', '↺'); again.type = 'button'; again.addEventListener('click', quizReset); done.appendChild(again); box.appendChild(done); return;
+      var again = el('button', 'btn'); again.innerHTML = SV('M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4', 18) + '<span>' + (U.again || '') + '</span>'; again.type = 'button'; again.addEventListener('click', quizReset); done.appendChild(again); box.appendChild(done); return;
     }
     var q = Q[qi];
     box.appendChild(el('div', 'muted small', fmt(U.q_of, { i: qi + 1, n: Q.length, l: q.lecture })));
@@ -74,11 +75,12 @@
     var nextBtn = el('button', 'btn', qi + 1 === Q.length ? U.finish : U.next); nextBtn.type = 'button'; nextBtn.hidden = true; box.appendChild(nextBtn);
     answered = false;
     q.options.forEach(function (o, i) {
-      var b = el('button', 'st-opt', o); b.type = 'button'; b.dir = 'ltr';
+      var b = el('button', 'st-opt'); b.type = 'button'; b.dir = 'ltr'; b.style.setProperty('--i', i);
+      b.appendChild(el('span', 'st-l', 'ABCDEFGH'.charAt(i))); b.appendChild(el('span', 'st-t', o));
       b.addEventListener('click', function () {
         if (answered) return; answered = true;
         var ok = i === q.answer; if (ok) score++;
-        $$('.st-opt', opts).forEach(function (x, j) { x.disabled = true; if (j === q.answer) x.classList.add('ok'); else if (j === i) x.classList.add('bad'); });
+        $$('.st-opt', opts).forEach(function (x, j) { x.disabled = true; if (j === q.answer) { x.classList.add('ok'); x.firstChild.innerHTML = SV('M5 12.5l4.5 4.5L19 7.5', 16); } else if (j === i) { x.classList.add('bad'); x.firstChild.innerHTML = SV('M6 6l12 12M18 6L6 18', 16); } });
         fb.appendChild(el('b', ok ? 'ok' : 'bad', (ok ? U.right : U.wrong) + ' '));
         fb.appendChild(document.createTextNode(fmt(U.from_slide, { n: q.slide }) + ' '));
         var why = el('span', 'muted', q.why); why.dir = 'ltr'; fb.appendChild(why);

@@ -11,12 +11,12 @@
     <p class="muted small">{{ t('bg_note') }}</p>
   </div>
   <div class="bd-sum-side">
-    {% if latest %}<div class="bd-mini"><span class="bd-ic on">{{ latest.icon }}</span><div><small class="muted">{{ t('bg_latest') }}</small><b>{{ latest.name }}</b></div></div>{% endif %}
-    {% if nxt %}<div class="bd-mini"><span class="bd-ic">{{ nxt.icon }}</span><div><small class="muted">{{ t('bg_next') }}</small><b>{{ nxt.name }}</b>
+    {% if latest %}<div class="bd-mini"><span class="bd-ic on">{{ icon(latest.icon, 24) }}</span><div><small class="muted">{{ t('bg_latest') }}</small><b>{{ latest.name }}</b></div></div>{% endif %}
+    {% if nxt %}<div class="bd-mini"><span class="bd-ic">{{ icon(nxt.icon, 24) }}</span><div><small class="muted">{{ t('bg_next') }}</small><b>{{ nxt.name }}</b>
       <div class="bd-bar sm"><i style="width: {{ nxt.pct }}%"></i></div><small class="muted">{{ nxt.value }} / {{ nxt.target }}</small></div></div>{% endif %}
   </div>
 </div>
-{% if not got %}<p class="muted fade" style="--i:2">{{ t('bg_none') }}</p>{% endif %}
+{% if not got %}{{ empty(t('bg_none'), 'award') }}{% endif %}
 {% for g in groups %}
 <section class="bd-group fade" style="--i:{{ loop.index + 1 }}">
   <h3>{{ g.name }} <span class="pill">{{ g.got }}/{{ g['items']|length }}</span></h3>
@@ -24,7 +24,7 @@
     {% for b in g['items'] %}
     <div class="bd{{ ' on' if b.earned }}{{ ' new' if b.new }}" style="--k:{{ loop.index0 }}" title="{{ b.desc }}">
       {% if b.new %}<span class="bd-new">{{ t('bg_new') }}</span>{% endif %}
-      <span class="bd-ic{{ ' on' if b.earned }}">{{ b.icon }}</span>
+      <span class="bd-ic{{ ' on' if b.earned }}">{{ icon(b.icon, 26) }}</span>
       <b>{{ b.name }}</b>
       <small>{{ b.desc }}</small>
       {% if b.earned %}{% if b.note %}<small class="muted">“{{ b.note }}”</small>{% endif %}<span class="bd-when">{{ icon('check') }}{{ t('bg_earned', d=b.when) }}</span>

@@ -21,7 +21,7 @@
     <div class="ct-nums"><span><b>{{ c.questions }}</b> {{ t('rep_q') }}</span><span><b>{{ c.not_found }}</b> {{ t('rep_nf') }}</span><span><b>{{ c.students }}</b> {{ t('rep_st') }}</span></div>
     <span class="ct-go">{{ t('rep_open') }} {{ icon('arrow') }}</span>
   </a>
-  {% else %}<p class="muted">{{ t('rep_no_courses') }}</p>{% endfor %}
+  {% else %}{{ empty(t('rep_no_courses'), 'book') }}{% endfor %}
 </div>
 {% endif %}
 {% for c in (cards if detail else []) %}
@@ -35,14 +35,14 @@
   </div>
   <div class="grid">
     <div><h3>{{ t('rep_weak') }}</h3>
-      {% for w in c.weak %}<p>{{ w.name }} <small class="muted">· {{ t('rep_avg', a=w.avg, n=w.n) }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}</div>
+      {% for w in c.weak %}<p>{{ w.name }} <small class="muted">· {{ t('rep_avg', a=w.avg, n=w.n) }}</small></p>{% else %}{{ empty(t('rep_none'), 'chart') }}{% endfor %}</div>
     <div><h3>{{ t('rep_missing') }}</h3>
-      {% for m in c.missing %}<p dir="auto">{{ m.question }} <small class="muted">{{ t('rep_n_times', n=m.n) }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}
+      {% for m in c.missing %}<p dir="auto">{{ m.question }} <small class="muted">{{ t('rep_n_times', n=m.n) }}</small></p>{% else %}{{ empty(t('rep_none'), 'chart') }}{% endfor %}
       {% if c.missing %}<p class="muted small">{{ t('rep_hint') }}</p>{% endif %}</div>
   </div>
   {% if detail %}
   <h3 style="margin-top:14px">{{ t('rep_recent') }}</h3>
-  {% for q in recent %}<p dir="auto">{{ q.question }} <small class="muted">· {{ (q.time|string)[:16] }} · {{ '✔' if q.found != 'no' else '✘' }}</small></p>{% else %}<p class="muted">{{ t('rep_none') }}</p>{% endfor %}
+  {% for q in recent %}<p dir="auto">{{ q.question }} <small class="muted">· {{ (q.time|string)[:16] }} · {{ '✔' if q.found != 'no' else '✘' }}</small></p>{% else %}{{ empty(t('rep_none'), 'chart') }}{% endfor %}
   <p style="margin-top:12px"><a class="btn" href="{{ url_for('choose_course', code=c.code, next=url_for('dashboard')) }}">{{ icon('chart') }}{{ t('rep_dash') }}</a>
      <a class="btn ghost" href="{{ url_for('report_page') }}">{{ icon('arrow-l') }}{{ t('rep_back_all') }}</a></p>
   {% endif %}

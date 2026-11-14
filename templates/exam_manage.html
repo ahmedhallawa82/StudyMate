@@ -46,7 +46,7 @@
     <h2>{{ t('exam_bank') }}</h2>
     {% if sm.essay %}<form method="post" class="ex-redetect"><input type="hidden" name="action" value="redetect"><input type="hidden" name="tab" value="questions">
       <span class="muted small">{{ t('ex_redetect_note', n=sm.essay) }}</span> <button class="btn ghost small" type="submit">{{ icon('search') }}{{ t('ex_redetect') }}</button></form>{% endif %}
-    {% if not rows %}<p class="muted">{{ t('ex_bank_empty') }}</p>{% else %}
+    {% if not rows %}{{ empty(t('ex_bank_empty'), 'exam') }}{% else %}
     <div class="table-wrap"><table>
       {% for r in rows %}<tr><td dir="ltr">{{ r.n }}</td><td><span class="tag {{ {'mcq': '', 'tf': 'green', 'essay': ''}[r.type] }}">{{ {'mcq': t('exam_type_mcq'), 'tf': t('ex_tf'), 'essay': t('exam_type_essay')}[r.type] }}</span></td>
         {% if sm.en and sm.ar %}<td dir="ltr">{{ 'EN' if r.en }} {{ 'AR' if r.ar }}</td>{% endif %}<td dir="auto">{{ r.q }}</td>
@@ -99,7 +99,7 @@
         <td>{% if a.status == 'done' %}{{ '%g'|format(a.score) }} ({{ a.pct }}%){% else %}…{% endif %}</td>
         <td>{% if a.status == 'done' %}<a href="{{ url_for('exams_attempt', aid=a.id) }}">{{ t('exam_open') }}</a>{% endif %}</td></tr>{% endfor %}
     </table></div>
-    {% else %}<p class="muted">{{ t('ex_no_attempts') }}</p>{% endif %}
+    {% else %}{{ empty(t('ex_no_attempts'), 'users') }}{% endif %}
   </div>
 </section>
 

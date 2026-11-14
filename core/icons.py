@@ -11,6 +11,7 @@ P = {
     # navigation and actions
     "home": "M3 11l9-8 9 8M5 10v10h14V10",
     "search": "M20 20l-4.2-4.2M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z",
+    "ask": "M13 21H6V3h8l4 4v4M14 3v5h4M16.5 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 22l-2.3-2.3",
     "x": "M6 6l12 12M18 6L6 18",
     "check": "M5 12.5l4.5 4.5L19 7.5",
     "plus": "M12 5v14M5 12h14",
@@ -89,8 +90,22 @@ P = {
     "mail": "M3 5h18v14H3zM3 6l9 7 9-7",
     "sun": "M12 17a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM12 1v2M12 21v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M1 12h2M21 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4",
     "moon": "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z",
+    "sprout": "M12 21v-9M12 12c0-4-3-6-7-6 0 4 3 6 7 6zM12 10c0-3 2.5-5 6-5 0 3-2.5 5-6 5z",
+    "leaf": "M5 19c0-8 6-14 15-14 0 9-6 15-14 15zM5 19l8-8",
+    "tree": "M12 22v-5M12 2l6 9h-3l4 6H5l4-6H6z",
+    "trophy": "M8 4h8v5a4 4 0 0 1-8 0zM8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 21h6M10 17h4v4h-4z",
+    "gem": "M6 3h12l4 6-10 12L2 9zM2 9h20M9 3l3 18 3-18",
+    "brain": "M9 4a3 3 0 0 0-3 3 3 3 0 0 0-2 5 3 3 0 0 0 2 5 3 3 0 0 0 3 3 2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zM15 4a3 3 0 0 1 3 3 3 3 0 0 1 2 5 3 3 0 0 1-2 5 3 3 0 0 1-3 3 2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+    "sunrise": "M3 18h18M5 14a7 7 0 0 1 14 0M12 3v4M4.6 7.6l1.8 1.8M19.4 7.6l-1.8 1.8M8 21h8",
+    "percent": "M19 5L5 19M7 9a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4z",
+    "medal": "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8 12l3 3 5-6",
+    "heart": "M12 20s-8-4.6-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15.4 12 20 12 20z",
+    "rocket": "M5 15c-1.5 1.5-2 5-2 5s3.5-.5 5-2M9 15l-3-3c2-6 7-9 14-9 0 7-3 12-9 14zM15 9a1 1 0 1 0 0-.01",
     "sparkle": "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z",
 }
+
+NOTIF = {"exam": "exam", "student": "cap", "security": "shield", "welcome": "sparkle", "badge": "award", "chat": "chat",
+         "announce": "mega", "report": "chart", "study": "target", "support": "lifebuoy"}
 
 FLIP = {"arrow", "arrow-l", "back", "next"}       # mirrored on right-to-left pages
 
@@ -108,7 +123,8 @@ EMOJI = {
     "⬆️": "upload", "⬇️": "download", "📥": "inbox", "📭": "inbox",
     "🔎": "search", "🔍": "search", "📈": "trend", "📊": "chart", "🧾": "receipt", "🌐": "globe",
     "🛠️": "tools", "🛠": "tools", "👍": "thumb-up", "👎": "thumb-down", "📷": "camera", "🖼️": "image", "🖼": "image",
-    "🎬": "video", "🆕": "sparkle", "🎞️": "video", "🎞": "video",
+    "🎬": "video", "🌱": "sprout", "🌿": "leaf", "🌳": "tree", "🏆": "trophy", "👑": "crown", "💎": "gem", "🧠": "brain",
+    "🏹": "medal", "🌟": "star", "💯": "percent", "🌅": "sunrise", "🦉": "moon", "🎉": "award", "👋": "sparkle", "🚀": "rocket", "❤️": "heart", "🆕": "sparkle", "🎞️": "video", "🎞": "video",
 }
 
 
@@ -121,3 +137,17 @@ def icon(name, size=18, cls=""):
     return Markup('<svg class="ico{}" width="{}" height="{}" viewBox="0 0 24 24" fill="none" stroke="currentColor" '
                   'stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{}"/></svg>'
                   ).format(extra, size, size, d)
+
+
+def empty(text, name="inbox", small=False):
+    """The one 'nothing here yet' block of the site: an icon in a soft circle and a line of text."""
+    return Markup('<div class="empty{}"><span class="empty-ic">{}</span><p>{}</p></div>').format(" small" if small else "", icon(name, 22), text)
+
+
+import re as _re
+_LEAD = _re.compile("^(?:" + "|".join(_re.escape(k) for k in sorted(EMOJI, key=len, reverse=True)) + r")\s*")
+
+
+def noemoji(text):
+    """Drop an emoji at the start of an old notification title (they now get an icon instead)."""
+    return _LEAD.sub("", text or "")

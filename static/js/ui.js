@@ -109,7 +109,7 @@
       var li = document.createElement('li'), a = document.createElement('a');
       li.setAttribute('role', 'option'); if (n === 0) li.className = 'on';
       a.href = it.u; a.innerHTML = '<span class="qs-ic"></span><span class="qs-t"></span>';
-      a.firstChild.textContent = it.i; a.lastChild.textContent = it.t;
+      a.firstChild.innerHTML = it.i; a.lastChild.textContent = it.t;
       li.appendChild(a); list.appendChild(li);
     });
   }

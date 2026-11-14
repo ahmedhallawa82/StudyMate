@@ -9,7 +9,7 @@
     <p>{{ t('exam_active_note') }}</p>
     <p><a class="btn" href="{{ url_for('exams_take') }}">{{ t('exam_resume') }}</a></p>
   {% elif n == 0 %}
-    <p class="muted">{{ t('exam_none') }}</p>
+    {{ empty(t('exam_none'), 'exam') }}
   {% else %}
     <p class="muted small">{{ t('exam_rules') }}</p>
     <p>{{ t('exam_available', n=n) }}</p>

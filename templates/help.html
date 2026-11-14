@@ -57,12 +57,12 @@
   <form method="post">
     <input type="hidden" name="action" value="add">
     <div class="grid-2" style="gap:14px">
-      <div><label for="qen">{{ t('faq_q_en') }}</label><input id="qen" name="q_en" maxlength="300" dir="ltr">
-        <label for="aen">{{ t('faq_a_en') }}</label><textarea id="aen" name="a_en" rows="4" maxlength="1500" dir="ltr"></textarea></div>
-      <div><label for="qar">{{ t('faq_q_ar') }}</label><input id="qar" name="q_ar" maxlength="300" dir="rtl">
-        <label for="aar">{{ t('faq_a_ar') }}</label><textarea id="aar" name="a_ar" rows="4" maxlength="1500" dir="rtl"></textarea></div>
+      <div><label for="qen">{{ t('faq_q_en') }}</label><input type="text" id="qen" name="q_en" maxlength="300" dir="ltr">
+        <label for="aen" style="margin-top:10px">{{ t('faq_a_en') }}</label><textarea id="aen" name="a_en" rows="4" maxlength="1500" dir="ltr"></textarea></div>
+      <div><label for="qar">{{ t('faq_q_ar') }}</label><input type="text" id="qar" name="q_ar" maxlength="300" dir="rtl">
+        <label for="aar" style="margin-top:10px">{{ t('faq_a_ar') }}</label><textarea id="aar" name="a_ar" rows="4" maxlength="1500" dir="rtl"></textarea></div>
     </div>
-    <p><button class="btn" type="submit">{{ t('faq_save') }}</button></p>
+    <p><button class="btn" type="submit">{{ icon('check') }}{{ t('faq_save') }}</button></p>
   </form>
 </div>
 {% endif %}

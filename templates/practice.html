@@ -11,7 +11,7 @@
     {% endif %}
     {% if p.review and p.stage == 'finished' %}
     <div class="card review-done">
-      <div class="big">🎉</div>
+      <div class="big win">{{ icon('award', 34) }}</div>
       <h2>{{ t('review_done') }}</h2>
       <p>{{ t('review_res', a=p.fixed, b=p.total) }}</p>
       <div class="actions">

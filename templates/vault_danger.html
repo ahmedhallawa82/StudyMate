@@ -3,7 +3,7 @@
 {% block title %}{{ t('wp_title') }}{% endblock %}
 {% block content %}
 {{ page_head('⚠️', t('wp_title'), t('wp_sub')) }}
-<p style="margin:-6px 0 14px"><a href="{{ url_for('vault_page') }}">{{ icon('arrow-l') }}{{ t('vlt_title') }}</a></p>
+<p style="margin:-6px 0 14px"><a class="lnk" href="{{ url_for('vault_page') }}">{{ icon('arrow-l') }}{{ t('vlt_title') }}</a></p>
 
 {% if closed %}
 <section class="card wp-card wp-closed">

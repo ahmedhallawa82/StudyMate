@@ -38,7 +38,7 @@
         <a href="{{ url_for('practice', topic=r.topic) }}">{{ r.name }}</a>
         <span class="tag {{ 'amber' if r.overdue else '' }}">{{ t('sr_due_now') if r.overdue else t('sr_due_on', d=r.due) }}</span>
       </div>
-      {% else %}<p class="muted small">{{ t('sr_none') }}</p>{% endfor %}
+      {% else %}{{ empty(t('sr_none'), 'refresh', True) }}{% endfor %}
     </div>
   </aside>
 </div>

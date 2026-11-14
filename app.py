@@ -32,8 +32,13 @@ from core.topics import load_topics, study_next
 from core.i18n import tr
 
 app = Flask(__name__)
-from core.icons import icon as _icon
+from core.icons import icon as _icon, empty as _empty, NOTIF as _NOTIF, noemoji as _noemoji
+from core.auditlabels import label as _aud_label
 app.jinja_env.globals["icon"] = _icon
+app.jinja_env.globals["empty"] = _empty
+app.jinja_env.globals["notif_icon"] = lambda k: _NOTIF.get(k, "bell")
+app.jinja_env.filters["noemoji"] = _noemoji
+app.jinja_env.globals["aud_label"] = _aud_label
 app.jinja_env.globals["photo_ok"] = photoq.available
 app.jinja_env.globals["neural_ok"] = lambda: neural.available()
 app.secret_key = config.SECRET_KEY
@@ -396,7 +401,7 @@ def quick_links():
 
     def add(icon, key, endpoint, words="", **kw):
         try:
-            items.append({"i": icon, "t": T(key), "u": url_for(endpoint, **kw), "k": words})
+            items.append({"i": str(_icon({"⚙️": "sliders", "📋": "list", "❔": "help", "📄": "file", "🎒": "book", "👤": "user", "🏠": "home", "🎯": "target", "🔎": "ask"}.get(icon, icon), 18)), "t": T(key), "u": url_for(endpoint, **kw), "k": words})
         except Exception:                                    # noqa: BLE001 - a missing route must never break a page
             pass
     if session.get("lecturer"):
@@ -1375,7 +1380,7 @@ def announcements_page():
             else:
                 item = announce.add(code, title, body, admin_id(), actor())
                 targets = ["s:" + st["code"] for st in course_students(code)]
-                notify.push(targets, "announce", f"📢 {item['title']}", item["body"][:200], url_for("student_home"))
+                notify.push(targets, "announce", item['title'], item["body"][:200], url_for("student_home"))
                 audit.record(actor(), "announcement", f"{code}: {item['title']}")
                 flash_t("ann_sent", n=len(targets))
         elif action == "delete":
@@ -2373,7 +2378,7 @@ def badges_admin():
             b = custom_badges.create(request.form.get("name"), request.form.get("icon"), request.form.get("desc"), me_key, actor())
             if b:
                 # tell every student the badge can reach how to get it
-                notify.push(["s:" + c for c in aud_codes], "badge", f"🏅 {b['name']} · " + tr("bg_available", "en") + " / " + tr("bg_available", "ar"),
+                notify.push(["s:" + c for c in aud_codes], "badge", f"{b['name']} · " + tr("bg_available", "en") + " / " + tr("bg_available", "ar"),
                             (b["desc"] or ""), link)
                 flash_t("bg_created", name=b["name"], n=len(aud_codes))
             else:
@@ -2386,7 +2391,7 @@ def badges_admin():
                 picked = aud_codes if request.form.get("all_students") else {c for c in request.form.getlist("students") if c in aud_codes}
                 note = request.form.get("note", "")
                 new = custom_badges.award(b["id"], sorted(picked), me_key, note)
-                notify.push(["s:" + c for c in new], "badge", f"🏅 {b['name']} · " + tr("bg_got_it", "en") + " / " + tr("bg_got_it", "ar"),
+                notify.push(["s:" + c for c in new], "badge", f"{b['name']} · " + tr("bg_got_it", "en") + " / " + tr("bg_got_it", "ar"),
                             (note.strip() or b["desc"] or ""), link)
                 flash_t("bg_awarded", name=b["name"], n=len(new))
         elif act == "revoke_badge":

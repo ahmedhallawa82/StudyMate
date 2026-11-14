@@ -7,8 +7,8 @@
   <aside class="chat-side card">
     <form method="post" class="chat-new">
       <label for="chatUser">{{ t('chat_new') }}</label>
-      <div class="chat-new-row"><input id="chatUser" name="username" type="text" dir="ltr" placeholder="{{ t('chat_username_ph') }}" autocomplete="off" required>
-        <button class="btn teal small" type="submit">{{ t('chat_open') }}</button></div>
+      <div class="chat-new-row"><label class="sfield">{{ icon('user') }}<input id="chatUser" name="username" type="search" dir="ltr" placeholder="{{ t('chat_username_ph') }}" aria-label="{{ t('chat_username_ph') }}" autocomplete="off" required><button type="button" class="sclear" aria-label="{{ t('clear') }}" tabindex="-1">{{ icon('x') }}</button></label>
+        <button class="btn" type="submit" title="{{ t('chat_open') }}">{{ icon('arrow') }}{{ t('chat_open') }}</button></div>
     </form>
     <div class="chat-list">
       {% if incoming %}<div class="chat-sec">{{ t('chat_requests') }}</div>
@@ -26,7 +26,7 @@
         <span class="chat-meta"><b>{{ p.name }}</b><small dir="auto">{{ p.last }}</small></span>
         {% if p.unread %}<span class="badge">{{ p.unread if p.unread < 10 else '9+' }}</span>{% endif %}
       </a>
-      {% else %}{% if not incoming and not outgoing %}<p class="muted small" style="padding:10px">{{ t('chat_none') }}</p>{% endif %}{% endfor %}
+      {% else %}{% if not incoming and not outgoing %}{{ empty(t('chat_none'), 'chat', True) }}{% endif %}{% endfor %}
       {% if blocked %}<details class="chat-blocked"><summary>{{ icon('ban') }}{{ t('chat_blocked_list', n=blocked|length) }}</summary>
         {% for p in blocked %}<form method="post" action="{{ url_for('chat_respond') }}" class="chat-bl-row"><span>{{ p.name }}</span><input type="hidden" name="with" value="{{ p.key }}"><input type="hidden" name="action" value="unblock"><button class="btn ghost small" type="submit">{{ t('chat_unblock') }}</button></form>{% endfor %}</details>{% endif %}
     </div>
@@ -62,13 +62,13 @@
     <form class="chat-form" id="chatForm" autocomplete="off">
       <label class="btn ghost chat-attach" title="{{ t('chat_attach') }}">{{ icon('clip') }}<input type="file" id="chatFile" hidden></label>
       <textarea id="chatText" rows="1" maxlength="1000" placeholder="{{ t('chat_type') }}" dir="auto"></textarea>
-      <button class="btn" type="submit">{{ t('chat_send') }}</button>
+      <button class="btn" type="submit">{{ icon('arrow') }}{{ t('chat_send') }}</button>
     </form>
     <p class="muted small" id="chatPicked" hidden style="padding:0 14px 8px"></p>
     <p class="muted small chat-err" id="chatErr" hidden></p>
     {% endif %}
     {% else %}
-    <div class="chat-blank"><span style="font-size:48px">{{ icon('chat') }}</span><p>{{ t('chat_pick') }}</p></div>
+    <div class="chat-blank">{{ empty(t('chat_pick'), 'chat') }}</div>
     {% endif %}
   </section>
 </div>
@@ -117,7 +117,7 @@
 .chat { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 14px; align-items: stretch; }
 .chat-side, .chat-main { padding: 0; display: flex; flex-direction: column; min-height: 520px; max-height: 72vh; overflow: hidden; }
 .chat-new { padding: 14px; border-bottom: 1px solid var(--line, #e5e7eb); }
-.chat-new label { font-weight: 700; display: block; margin-bottom: 6px; }
+.chat-new > label { font-weight: 700; display: block; margin-bottom: 6px; }
 .chat-new-row { display: flex; gap: 8px; } .chat-new-row input { flex: 1; min-width: 0; }
 .chat-list { overflow: auto; flex: 1; }
 .chat-row { display: flex; align-items: center; gap: 10px; padding: 11px 14px; text-decoration: none; color: inherit; border-bottom: 1px solid var(--line, #eef0f0); }

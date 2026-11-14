@@ -2,16 +2,18 @@
 {% from "_ui.html" import page_head %}
 {% block title %}{{ t('nav_ask') }}{% endblock %}
 {% block content %}
-{{ page_head('🔎', t('nav_ask'), t('tile_ask')) }}
-<p style="margin:-6px 0 12px"><a href="{{ url_for('saved_page') }}">{{ icon('star') }}{{ t('sv_link') }} {{ icon('arrow') }}</a></p>
+{{ page_head('ask', t('nav_ask'), t('tile_ask')) }}
+<p style="margin:-6px 0 12px"><a class="lnk" href="{{ url_for('saved_page') }}">{{ icon('star') }}{{ t('sv_link') }} {{ icon('arrow') }}</a></p>
 <div class="grid">
   <section>
     <div class="card">
-      <form class="inline" method="get" action="{{ url_for('ask') }}">
-        <input type="text" name="q" id="askQ" value="{{ question }}" placeholder="{{ t('ask_ph') }}" autofocus required dir="auto">
+      <form class="sbar ask-bar" method="get" action="{{ url_for('ask') }}">
+        <label class="sfield{{ ' has-text' if question }}">{{ icon('ask') }}<input type="search" name="q" id="askQ" value="{{ question }}" placeholder="{{ t('ask_ph') }}" aria-label="{{ t('ask_ph') }}" autofocus required dir="auto" autocomplete="off"><button type="button" class="sclear" aria-label="{{ t('clear') }}" tabindex="-1">{{ icon('x') }}</button></label>
+        <div class="ask-acts">
         {% if photo_ok() %}<button class="btn ghost photo-btn" type="button" id="photoBtn" title="{{ t('ph_btn') }}" aria-label="{{ t('ph_btn') }}">{{ icon('camera') }}<span>{{ t('ph_btn') }}</span></button>
         <input type="file" id="photoIn" accept="image/*" hidden>{% endif %}
-        <button class="btn" type="submit">{{ t('ask_btn') }}</button>
+        <button class="btn" type="submit">{{ icon('arrow') }}{{ t('ask_btn') }}</button>
+        </div>
       </form>
       {% if photo_ok() %}<p class="photo-msg{{ ' on' if request.args.photo }}" id="photoMsg" {% if not request.args.photo %}hidden{% endif %}>{{ t('ph_intro') }}</p>{% endif %}
       <p class="muted small" style="margin:8px 0 0">{{ t('ask_hint') }}</p>

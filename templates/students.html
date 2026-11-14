@@ -25,7 +25,7 @@
       <td><a class="btn small" href="{{ url_for('chat_page', **{'with': 's:' ~ r.code}) }}">{{ icon('chat') }}{{ t('students_message') }}</a></td></tr>{% endfor %}
   </table></div>
   </form>
-  {% else %}<p class="muted">{{ t('students_none') }}</p>{% endif %}
+  {% else %}{{ empty(t('students_none'), 'users') }}{% endif %}
 </div>
 {% endblock %}
 {% block scripts %}

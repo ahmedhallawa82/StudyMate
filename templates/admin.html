@@ -179,7 +179,7 @@
       </table>
       <form method="post" style="display:inline"><input type="hidden" name="action" value="import_codes"><button class="btn teal small" type="submit">{{ icon('inbox') }}{{ t('codes_import') }}</button></form>
       <form method="post" style="display:inline" onsubmit="return confirm('{{ t('codes_clear_q') }}')"><input type="hidden" name="action" value="clear_codes"><button class="btn ghost small" type="submit">{{ icon('trash') }}{{ t('codes_clear') }}</button></form>
-      {% else %}<p class="muted small">{{ t('codes_none') }}</p>
+      {% else %}{{ empty(t('codes_none'), 'key', True) }}
       <form method="post"><input type="hidden" name="action" value="import_codes"><button class="btn teal small" type="submit">{{ icon('inbox') }}{{ t('codes_import') }}</button></form>{% endif %}
     </div>
     {% endif %}

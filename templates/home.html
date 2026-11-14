@@ -50,7 +50,7 @@
         </a>
         {% endfor %}
       </div>
-      {% else %}<p class="muted">🎉 {{ t('home_all_topics') }}</p>{% endif %}
+      {% else %}<p class="muted">{{ icon('award') }}{{ t('home_all_topics') }}</p>{% endif %}
     </div>
 
   </section>
@@ -83,14 +83,14 @@
         {% for e in recent_e %}
         <a class="row-link" href="{{ url_for('exams_result', aid=e.id) }}"><span dir="ltr">{{ e.when }}</span><b>{{ '%g'|format(e.score) }} / {{ e.max }} · {{ e.pct }}%</b></a>
         {% endfor %}
-      {% else %}<p class="muted small">{{ t('home_no_exams') }}</p>{% endif %}
-      <p style="margin:10px 0 0"><a href="{{ url_for('exams') }}">{{ t('nav_exams') }} {{ icon('arrow') }}</a></p>
+      {% else %}{{ empty(t('home_no_exams'), 'exam', True) }}{% endif %}
+      <p style="margin:10px 0 0"><a class="lnk" href="{{ url_for('exams') }}">{{ t('nav_exams') }} {{ icon('arrow') }}</a></p>
     </div>
     <div class="card fade" style="--i:6">
       <h3>{{ icon('chat') }}{{ t('home_recent_q') }}</h3>
       {% if recent_q %}
         {% for q in recent_q %}<div class="row-q" dir="auto"><span class="dot {{ 'green' if q.found else 'red' }}"></span>{{ q.q[:70] }}</div>{% endfor %}
-      {% else %}<p class="muted small">{{ t('home_no_q') }}</p>{% endif %}
+      {% else %}{{ empty(t('home_no_q'), 'ask', True) }}{% endif %}
     </div>
   </aside>
 </div>

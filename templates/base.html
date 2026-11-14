@@ -1,5 +1,5 @@
 {% macro ic(n) -%}
-{%- set d = {'home':'M3 11l9-8 9 8M5 10v10h14V10','search':'M20 20l-4-4M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z','dash':'M5 20V11M12 20V4M19 20v-6','tools':'M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-2.6-.7-.7-2.6z','exam':'M5 4h14v16H5zM9 9h6M9 13h6','badge':'M12 3a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM8.5 14.5L7 22l5-3 5 3-1.5-7.5','chat':'M4 4h16v13H8l-4 4z','help':'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5','studio':'M2 9l10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5','book':'M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM4 17a3 3 0 0 1 3-3h12'} -%}
+{%- set d = {'home':'M3 11l9-8 9 8M5 10v10h14V10','search':'M20 20l-4-4M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z','ask':'M13 21H6V3h8l4 4v4M14 3v5h4M16.5 20a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM21 22l-2.3-2.3','dash':'M5 20V11M12 20V4M19 20v-6','tools':'M14.7 6.3a4 4 0 0 0-5 5L3 18l3 3 6.7-6.7a4 4 0 0 0 5-5l-2.4 2.4-2.6-.7-.7-2.6z','exam':'M5 4h14v16H5zM9 9h6M9 13h6','badge':'M12 3a6 6 0 1 0 0 12 6 6 0 0 0 0-12zM8.5 14.5L7 22l5-3 5 3-1.5-7.5','chat':'M4 4h16v13H8l-4 4z','help':'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.5','studio':'M2 9l10-5 10 5-10 5zM6 11v5c3 2.5 9 2.5 12 0v-5','book':'M4 4h12a3 3 0 0 1 3 3v13H7a3 3 0 0 1-3-3zM4 17a3 3 0 0 1 3-3h12'} -%}
 <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ d[n] }}"/></svg>
 {%- endmacro %}
 <!doctype html>
@@ -43,7 +43,7 @@
       {% elif student_code %}
       {% if not first_visit %}
       <a href="{{ url_for('student_home') }}" class="{{ 'active' if path.startswith('/home') }}" title="{{ t('nav_home') }}" data-tip="{{ t('tip_nav_home') }}"><span class="ni">{{ ic('home') }}</span><span class="nl">{{ t('nav_home') }}</span></a>
-      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}" data-tip="{{ t('tip_nav_ask') }}"><span class="ni">{{ ic('search') }}</span><span class="nl">{{ t('nav_ask') }}</span></a>
+      <a href="{{ url_for('ask') }}" class="{{ 'active' if path.startswith('/ask') }}" title="{{ t('nav_ask') }}" data-tip="{{ t('tip_nav_ask') }}"><span class="ni">{{ ic('ask') }}</span><span class="nl">{{ t('nav_ask') }}</span></a>
       <a href="{{ url_for('studio') }}" class="{{ 'active' if path.startswith(('/studio', '/practice', '/progress', '/exams', '/materials')) }}" title="{{ t('nav_studio') }}" data-tip="{{ t('tip_nav_studio') }}"><span class="ni">{{ ic('studio') }}</span><span class="nl">{{ t('nav_studio') }}</span></a>
       {% if student_code and not is_lecturer %}<a href="{{ url_for('my_courses') }}" class="{{ 'active' if path.startswith('/my-courses') }}" title="{{ t('my_courses') }}" data-tip="{{ t('tip_my_courses') }}"><span class="ni">{{ ic('book') }}</span><span class="nl">{{ t('my_courses') }}</span></a>{% endif %}
       {% if me_key %}<a href="{{ url_for('badges_page') }}" class="{{ 'active' if path.startswith('/badges') }}" title="{{ t('nav_badges') }}" data-tip="{{ t('tip_nav_badges') }}"><span class="ni">{{ ic('badge') }}</span><span class="nl">{{ t('nav_badges') }}</span>{% if badge_new %}<span class="badge nav-badge">{{ badge_new if badge_new < 10 else '9+' }}</span>{% endif %}</a>{% endif %}
@@ -63,8 +63,8 @@
         <button type="button" class="tool icon-btn" aria-haspopup="true" aria-expanded="false" aria-label="{{ t('notif_title') }}" title="{{ t('notif_title') }}" data-tip="{{ t('tip_bell') }}">{{ icon('bell') }}{% if unread %}<span class="badge">{{ unread if unread < 10 else '9+' }}</span>{% endif %}</button>
         <div class="bell-panel" hidden>
           <div class="bell-head"><b>{{ t('notif_title') }}</b>{% if unread %}<form method="post" action="{{ url_for('notifications_read') }}"><input type="hidden" name="next" value="{{ request.path }}"><button type="submit" class="linkish">{{ t('notif_mark_all') }}</button></form>{% endif %}</div>
-          {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ {'exam': '📝', 'student': '🎓', 'security': '🔒', 'welcome': '👋', 'badge': '🏅', 'chat': '💬', 'study': '📚'}.get(n.kind, '🔔') }}</span><span class="n-body"><b>{{ n.title }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
-          {% else %}<p class="muted small" style="padding:14px">{{ t('notif_none') }}</p>{% endfor %}
+          {% for n in notifs %}<a class="notif-row{{ ' unread' if n.unread }}" href="{{ n.link or url_for('notifications_page') }}"><span class="n-ic k-{{ n.kind }}">{{ icon(notif_icon(n.kind), 18) }}</span><span class="n-body"><b>{{ n.title|noemoji }}</b>{% if n.body %}<span>{{ n.body }}</span>{% endif %}<small dir="ltr">{{ n.time }}</small></span></a>
+          {% else %}{{ empty(t('notif_none'), 'bell', True) }}{% endfor %}
           <a class="bell-all" href="{{ url_for('notifications_page') }}">{{ t('notif_see_all') }}</a>
         </div>
       </div>
@@ -83,12 +83,12 @@
   </div>
 </header>
 <main>
-  {% if wipe_pending %}<a class="wp-banner" href="{{ url_for('vault_danger') }}">⏳ {{ t('wp_banner', d=wipe_pending.due_text) }} — <b>{{ t('wp_cancel') }}</b></a>{% endif %}
+  {% if wipe_pending %}<a class="wp-banner" href="{{ url_for('vault_danger') }}">{{ icon('clock') }}{{ t('wp_banner', d=wipe_pending.due_text) }} — <b>{{ t('wp_cancel') }}</b></a>{% endif %}
   {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
-  {% if student_code and not is_lecturer and path.startswith(('/practice', '/progress', '/exams', '/materials')) %}
-  <a class="st-back" href="{{ url_for('studio') }}">{{ icon('arrow-l') }}{{ t('nav_studio') }}</a>
-  {% endif %}
-  {% if request.endpoint not in ('home', 'start', 'staff_home', 'student_home', 'lecturer_login', 'register', 'register_student', 'register_doctor', 'forgot') and not embed %}
+  {% set in_studio = student_code and not is_lecturer and path.startswith(('/practice', '/progress', '/exams', '/materials')) %}
+  {% if in_studio %}
+  <a class="back-arrow" href="{{ url_for('studio') }}" title="{{ t('nav_studio') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>{{ t('nav_studio') }}</span></a>
+  {% elif request.endpoint not in ('home', 'start', 'staff_home', 'student_home', 'lecturer_login', 'register', 'register_student', 'register_doctor', 'forgot') and not embed %}
   <a class="back-arrow" href="{{ url_for('home') }}" id="backArrow" title="{{ t('go_back') }}" aria-label="{{ t('go_back') }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg><span>{{ t('go_back') }}</span></a>
   <script>document.getElementById('backArrow').addEventListener('click', function (e) { if (history.length > 1 && document.referrer.indexOf(location.host) > -1) { e.preventDefault(); history.back(); } });</script>
   {% endif %}
@@ -250,6 +250,41 @@
     inp.addEventListener('pw-show', function () { set(true); });
     place(); window.addEventListener('resize', place); window.addEventListener('load', place);
   });
+})();
+</script>
+<script>
+// buttons: a soft ripple from where they were pressed; tabs and filter chips: a background that slides to the chosen one
+(function () {
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!still) document.addEventListener('pointerdown', function (e) {
+    var b = e.target.closest && e.target.closest('.btn'); if (!b || b.disabled) return;
+    var r = b.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2, s = document.createElement('span');
+    s.className = 'rp'; s.style.width = s.style.height = d + 'px'; s.style.left = (e.clientX - r.left - d / 2) + 'px'; s.style.top = (e.clientY - r.top - d / 2) + 'px';
+    b.appendChild(s); setTimeout(function () { s.remove(); }, 600);
+  });
+  function place(seg, ind, instant) {
+    var on = seg.querySelector(':scope > .on');
+    if (!on) { ind.style.opacity = 0; return; }
+    if (instant) ind.style.transition = 'none';
+    ind.style.opacity = 1; ind.style.width = on.offsetWidth + 'px'; ind.style.height = on.offsetHeight + 'px';
+    ind.style.transform = 'translate(' + on.offsetLeft + 'px,' + on.offsetTop + 'px)';
+    if (instant) { ind.offsetWidth; ind.style.transition = ''; }
+  }
+  function setup() {
+    document.querySelectorAll('.seg').forEach(function (seg) {
+      if (seg.querySelector('.seg-ind')) return;
+      var ind = document.createElement('span'); ind.className = 'seg-ind'; seg.insertBefore(ind, seg.firstChild); seg.classList.add('has-ind');
+      place(seg, ind, true);
+      new MutationObserver(function () { place(seg, ind); }).observe(seg, {attributes: true, subtree: true, attributeFilter: ['class']});
+      seg.addEventListener('click', function (e) {          // a chip that opens another page: slide first, the page follows
+        var a = e.target.closest('a'); if (!a || !seg.contains(a) || a.classList.contains('on') || still || e.ctrlKey || e.metaKey) return;
+        seg.querySelectorAll(':scope > .on').forEach(function (x) { x.classList.remove('on'); }); a.classList.add('on');
+      });
+      window.addEventListener('resize', function () { place(seg, ind, true); });
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setup); else setup();
+  window.addEventListener('load', setup);
 })();
 </script>
 <script>

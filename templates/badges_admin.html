@@ -8,7 +8,7 @@
   <div class="card fade" style="--i:1"><small class="muted">{{ t('ba_students') }}</small><h2>{{ rows|length }}</h2></div>
   <div class="card fade" style="--i:2"><small class="muted">{{ t('ba_earned_total') }}</small><h2>{{ total_earned }}</h2></div>
   <div class="card fade" style="--i:3"><small class="muted">{{ t('ba_popular') }}</small>
-    <div class="actions" style="margin-top:6px">{% for p in popular %}<span class="pill" title="{{ p.name }}">{{ p.icon }} {{ p.n }}</span>{% else %}<span class="muted">–</span>{% endfor %}</div></div>
+    <div class="actions" style="margin-top:6px">{% for p in popular %}<span class="pill" title="{{ p.name }}">{{ icon(p.icon, 15) }}{{ p.n }}</span>{% else %}<span class="muted">–</span>{% endfor %}</div></div>
 </div>
 
 <div class="card fade" style="--i:4">
@@ -17,7 +17,7 @@
     <input type="hidden" name="action" value="create_badge">
     <div class="actions" style="align-items:flex-end;flex-wrap:wrap">
       <label style="flex:1;min-width:200px">{{ t('ba_name') }}<input type="text" name="name" maxlength="40" required></label>
-      <label style="width:110px">{{ t('ba_icon') }}<input type="text" name="icon" maxlength="4" value="🏅" style="text-align:center;font-size:1.3rem"></label>
+      <fieldset class="ic-pick"><legend>{{ t('ba_icon') }}</legend>{% for n in ['award', 'star', 'trophy', 'medal', 'crown', 'gem', 'flame', 'zap', 'target', 'rocket', 'heart', 'bulb', 'brain', 'cap', 'sparkle', 'sprout'] %}<label title="{{ n }}"><input type="radio" name="icon" value="{{ n }}"{{ ' checked' if loop.first }}><span>{{ icon(n, 20) }}</span></label>{% endfor %}</fieldset>
     </div>
     <label>{{ t('ba_desc') }}<textarea name="desc" rows="2" maxlength="200"></textarea></label>
     <button class="btn" type="submit">{{ t('ba_create') }}</button>
@@ -26,11 +26,11 @@
 
 <div class="card fade" style="--i:5">
   <h3>{{ t('ba_mine') }}</h3>
-  {% if not cards %}<p class="muted">{{ t('ba_none_mine') }}</p>{% endif %}
+  {% if not cards %}{{ empty(t('ba_none_mine'), 'award') }}{% endif %}
   {% for b in cards %}
   <div class="bd-adm" style="border-top:1px solid var(--line,#e5e7eb);padding:12px 0">
     <div class="actions" style="align-items:center;justify-content:space-between">
-      <div><span class="bd-ic on" style="display:inline-grid">{{ b.icon }}</span> <b>{{ b.name }}</b>
+      <div><span class="bd-ic on" style="display:inline-grid">{{ icon(b.icon, 24) }}</span> <b>{{ b.name }}</b>
         <small class="muted"> · {{ t('ba_by', who=b.owner_name) }} · {{ t('ba_given', n=b.n) }}</small>
         <div class="muted small">{{ b.desc }}</div></div>
       <form method="post" onsubmit="return confirm('{{ t('ba_del_ask') }}')"><input type="hidden" name="action" value="delete_badge"><input type="hidden" name="badge" value="{{ b.id }}">
@@ -38,7 +38,7 @@
     </div>
     {% if b.got %}<div class="actions" style="flex-wrap:wrap;margin-top:6px">{% for g in b.got %}
       <form method="post" style="display:inline"><input type="hidden" name="action" value="revoke_badge"><input type="hidden" name="badge" value="{{ b.id }}"><input type="hidden" name="student" value="{{ g.code }}">
-        <button class="pill" type="submit" title="✖">{{ g.name }} {{ icon('x') }}</button></form>{% endfor %}</div>{% endif %}
+        <button class="pill" type="submit" title="{{ t('ba_del') }}">{{ g.name }} {{ icon('x') }}</button></form>{% endfor %}</div>{% endif %}
     <details style="margin-top:8px"><summary class="btn ghost small" style="display:inline-block">{{ icon('gift') }}{{ t('ba_give') }}</summary>
       <form method="post" style="margin-top:8px">
         <input type="hidden" name="action" value="award_badge"><input type="hidden" name="badge" value="{{ b.id }}">
@@ -57,8 +57,8 @@
   <div style="overflow:auto"><table class="codes-tbl">
     <tr><th>{{ t('ba_students') }}</th><th>{{ t('ba_col_auto') }}</th><th>{{ t('ba_col_special') }}</th><th>{{ t('ba_col_total') }}</th></tr>
     {% for r in rows %}<tr><td><b>{{ r.name }}</b><br><small class="muted">{{ r.code }}</small></td>
-      <td>{% for b in r.auto %}<span title="{{ b.name }}">{{ b.icon }}</span> {% else %}–{% endfor %}</td>
-      <td>{% for b in r.custom %}<span title="{{ b.name }}">{{ b.icon }}</span> {% else %}–{% endfor %}</td>
+      <td>{% for b in r.auto %}<span class="bd-tiny" title="{{ b.name }}">{{ icon(b.icon, 15) }}</span> {% else %}–{% endfor %}</td>
+      <td>{% for b in r.custom %}<span class="bd-tiny" title="{{ b.name }}">{{ icon(b.icon, 15) }}</span> {% else %}–{% endfor %}</td>
       <td><b>{{ r.total }}</b></td></tr>{% endfor %}
   </table></div>{% endif %}
 </div>

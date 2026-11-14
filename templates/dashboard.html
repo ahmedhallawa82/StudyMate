@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% from "_ui.html" import page_head, course_menu with context %}
+{% from "_ui.html" import page_head, course_picker with context %}
 {% block title %}{{ t('dash_title') }}{% endblock %}
 {% block content %}
 {{ page_head('📊', t('nav_dashboard'), t('dashboard_sub')) }}
-<h2 style="margin-top:0;color:var(--teal-dark);display:flex;align-items:center;gap:12px;flex-wrap:wrap">{{ t('dash_title') }} · {{ course_menu(url_for('dashboard')) }}</h2>
-<p class="muted">{{ t('dash_sub') }}
-  <a class="btn ghost small" href="{{ url_for('download_logs') }}">{{ t('download_logs') }}</a></p>
+{{ course_picker(url_for('dashboard')) }}
+<p class="muted dash-src">{{ t('dash_sub') }}
+  <a class="btn ghost small" href="{{ url_for('download_logs') }}">{{ icon('excel') }}{{ t('download_logs') }}</a></p>
 <div class="grid-4" style="margin-bottom:16px">
   <div class="kpi"><div class="v">{{ kpi.students }}</div><div class="l">{{ t('students_codes') }}</div></div>
   <div class="kpi"><div class="v">{{ kpi.questions }}</div><div class="l">{{ t('questions_asked') }} · {{ kpi.not_found }} {{ t('not_found_n') }}</div></div>
@@ -13,15 +13,15 @@
   <div class="kpi"><div class="v">{{ kpi.helpful ~ '%' if kpi.helpful is not none else '–' }}</div><div class="l">{{ t('answers_marked_helpful') }}</div></div>
 </div>
 {% if not kpi.questions and not kpi.answers %}
-<div class="card">{{ t('no_activity') }}</div>
+<div class="card">{{ empty(t('no_activity'), 'chart') }}</div>
 {% endif %}
 <div class="grid-2">
   <div class="card"><h3>{{ t('most_asked') }}</h3>
     {% if top %}<p class="small muted">{{ t('top') }}: {% for t in top %}{{ t.name }} ({{ t.n }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
-    <canvas id="asked" height="220"></canvas></div>
+    {% if top %}<canvas id="asked" height="220"></canvas>{% else %}{{ empty(t('empty_chart'), 'chart') }}{% endif %}</div>
   <div class="card"><h3>{{ t('lowest_scores') }}</h3>
     {% if lowest %}<p class="small muted">{{ t('weakest') }}: {% for t in lowest %}{{ t.name }} {{ t.avg }}% (n={{ t.n }}){{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
-    <canvas id="scores" height="220"></canvas></div>
+    {% if lowest %}<canvas id="scores" height="220"></canvas>{% else %}{{ empty(t('empty_chart'), 'chart') }}{% endif %}</div>
   <div class="card"><h3>{{ t('students_per_colour') }}</h3><canvas id="colours" height="240"></canvas></div>
   <div class="card"><h3>{{ t('visits_day') }}</h3><canvas id="visits" height="240"></canvas></div>
 </div>
@@ -33,7 +33,7 @@
     <tr><th>{{ t('question') }}</th><th class="num">{{ t('ua_times') }}</th><th class="num">{{ t('ua_students') }}</th><th>{{ t('ua_last') }}</th></tr>
     {% for u in unanswered %}<tr><td dir="auto">{{ u.question }}</td><td class="num"><b>{{ u.n }}</b></td><td class="num">{{ u.students }}</td><td class="small">{{ u.last }}</td></tr>{% endfor %}
   </table></div>
-  {% else %}<p class="muted">{{ t('ua_none') }}</p>{% endif %}
+  {% else %}{{ empty(t('ua_none'), 'check') }}{% endif %}
 </div>
 <div class="card" id="risk"><h3>{{ t('risk_title') }}</h3>
   <p class="muted small">{{ t('risk_sub', d=inactive_days) }}</p>
@@ -46,7 +46,7 @@
       <td>{% for w in r.reasons %}<span class="tag {{ 'red' if w == 'low' else 'amber' }}">{{ t('risk_' ~ w) }}</span> {% endfor %}</td>
       <td><form method="post" action="{{ url_for('dashboard_remind') }}"><input type="hidden" name="student" value="{{ r.code }}"><button class="btn ghost small" type="submit">{{ icon('bell') }}{{ t('remind_btn') }}</button></form></td></tr>{% endfor %}
   </table></div>
-  {% else %}<p class="muted">{{ t('risk_none') }}</p>{% endif %}
+  {% else %}{{ empty(t('risk_none'), 'check') }}{% endif %}
 </div>
 </div>
 <div class="card" id="followup"><h3>{{ t('fu_title') }}</h3>
@@ -61,7 +61,7 @@
         {% if q.fu %}<span class="tag green">{{ icon('check') }}{{ t('fu_done') }}</span><br><small class="muted">{{ q.fu.by }} · {{ q.fu.when }}{% if q.fu.note %}<br>{{ q.fu.note }}{% endif %}</small>
           <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px"><input type="hidden" name="id" value="{{ q.id }}"><input type="hidden" name="action" value="reopen"><button class="btn ghost" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_reopen') }}</button></form>
         {% else %}<span class="tag amber">{{ t('fu_open') }}</span>
-          <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px;display:flex;gap:4px"><input type="hidden" name="id" value="{{ q.id }}"><input name="note" placeholder="{{ t('fu_note') }}" maxlength="300" style="min-width:110px"><button class="btn" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_mark') }}</button></form>
+          <form method="post" action="{{ url_for('dashboard_followup') }}" style="margin-top:4px;display:flex;gap:4px"><input type="hidden" name="id" value="{{ q.id }}"><input type="text" name="note" placeholder="{{ t('fu_note') }}" maxlength="300" style="min-width:110px"><button class="btn" type="submit" style="padding:2px 10px;font-size:12px">{{ t('fu_mark') }}</button></form>
         {% endif %}
       </td></tr>
     {% endfor %}
@@ -79,11 +79,12 @@ Chart.defaults.color = css.getPropertyValue('--muted').trim() || '#555';
 Chart.defaults.borderColor = css.getPropertyValue('--line').trim() || '#ddd';
 Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
 const teal = css.getPropertyValue('--teal').trim() || '#2f6f6a', orange = css.getPropertyValue('--orange').trim() || '#e4572e';
+Chart.defaults.elements.bar.borderRadius = 8; Chart.defaults.animation.duration = 700;
 const opts = (extra) => Object.assign({responsive: true, plugins: {legend: {display: false}}}, extra || {});
-new Chart(document.getElementById('asked'), {type: 'bar',
+if (document.getElementById('asked')) new Chart(document.getElementById('asked'), {type: 'bar',
   data: {labels: D.asked_labels, datasets: [{data: D.asked_values, backgroundColor: teal}]},
   options: opts({indexAxis: 'y', scales: {x: {beginAtZero: true, ticks: {precision: 0}}}})});
-new Chart(document.getElementById('scores'), {type: 'bar',
+if (document.getElementById('scores')) new Chart(document.getElementById('scores'), {type: 'bar',
   data: {labels: D.score_labels, datasets: [{data: D.score_values,
     backgroundColor: D.score_values.map(v => v < 40 ? '#d9534f' : v < 70 ? '#f0a73a' : '#4caf6a')}]},
   options: opts({indexAxis: 'y', scales: {x: {min: 0, max: 100}}})});

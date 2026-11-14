@@ -43,7 +43,7 @@
       <button class="btn ghost small" type="submit">{{ icon('trash') }}{{ t('adms_delete') }}</button>
     </form>
   </details>
-  {% else %}<p class="muted">{{ t('adms_none') }}</p>{% endfor %}
+  {% else %}{{ empty(t('adms_none'), 'shield') }}{% endfor %}
 </div>
 <div class="card">
   <h3>{{ icon('users') }}{{ t('adms_users') }} <span class="pill">{{ total_students }}</span></h3>
@@ -69,7 +69,7 @@
     </form>
     {% endif %}
   </details>
-  {% else %}<p class="muted">{{ t('adms_no_users') }}</p>{% endfor %}
+  {% else %}{{ empty(t('adms_no_users'), 'users') }}{% endfor %}
   {% if found > people|length %}<p class="muted small">{{ t('adms_more', n=found - people|length) }}</p>{% endif %}
 </div>
 <style>
