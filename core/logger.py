@@ -1,8 +1,15 @@
-"""Excel database (logs.xlsx). Every write goes through ONE function: log_to_excel()."""
-import queue
+"""Log database (SQLite). Every write goes through ONE function: log_to_excel().
+
+The name is kept from the Excel days so the rest of the site did not change; the data now lives in a SQLite file
+(logs.db, next to the old logs.xlsx). Why: Excel rewrites the whole file on every save, SQLite adds one row;
+many people can write at the same time; and a query does not have to read the whole file.
+
+* `logs.xlsx` is imported ONCE the first time the database is created (nothing is lost, the old file stays as a backup).
+* The Dashboard's "Download logs.xlsx" button builds an Excel file from the database (export_xlsx)."""
+import io
+import sqlite3
 import threading
 from datetime import datetime
-from openpyxl import Workbook, load_workbook
 
 import config
 
@@ -14,180 +21,177 @@ SHEETS = {
     "Feedback": ["id", "time", "student_code", "question_log_id", "helpful", "comment", "course"],
     "Students": ["id", "time", "student_code", "first_name", "last_name", "email"],
     "Exams": ["id", "time", "student_code", "attempt_id", "n_questions", "correct", "score_pct", "duration_sec", "lang", "wrong", "course"],
+    "Assistant": ["id", "time", "student_code", "question", "intent", "matched", "course"],   # what people ask the chat assistant
 }
 _lock = threading.Lock()
+_ready = set()          # database files already created / checked in this process
 
 
-def _open(path):
-    if path.exists():
-        wb = load_workbook(path)
-    else:
-        wb = Workbook()
-        wb.remove(wb.active)
+def db_path(path=None):
+    """The SQLite file that belongs to a log path (config.LOGS_XLSX -> logs.db)."""
+    p = path or config.LOGS_XLSX
+    return p.with_suffix(".db")
+
+
+def _connect(path=None):
+    db = db_path(path)
+    if db in _ready and not db.exists():              # the file was deleted (Danger zone): build it again
+        _ready.discard(db)
+    fresh = not db.exists()
+    con = sqlite3.connect(db, timeout=30)
+    con.row_factory = sqlite3.Row
+    con.execute("PRAGMA journal_mode=WAL")
+    con.execute("PRAGMA synchronous=NORMAL")
+    if db not in _ready:
+        with _lock:
+            _init(con, path or config.LOGS_XLSX, fresh)
+            _ready.add(db)
+    return con
+
+
+def _init(con, xlsx, fresh):
+    for name, cols in SHEETS.items():
+        # no column types on purpose: numbers stay numbers, text stays text, exactly as they were in Excel
+        con.execute(f'CREATE TABLE IF NOT EXISTS "{name}" (id INTEGER PRIMARY KEY AUTOINCREMENT, '
+                    + ", ".join(f'"{c}"' for c in cols[1:]) + ")")
+        have = {r[1] for r in con.execute(f'PRAGMA table_info("{name}")')}
+        for c in cols:                                    # a database made before a column existed
+            if c not in have:
+                con.execute(f'ALTER TABLE "{name}" ADD COLUMN "{c}"')
+        for c in ("student_code", "course"):
+            if c in cols:
+                con.execute(f'CREATE INDEX IF NOT EXISTS "ix_{name}_{c}" ON "{name}" ("{c}")')
+    con.commit()
+    if fresh and xlsx.exists():
+        try:
+            _import_xlsx(con, xlsx)
+        except Exception as e:                            # a broken old file must not stop the site
+            print("logs.xlsx import:", e)
+
+
+def _import_xlsx(con, xlsx):
+    """One-time copy of the old Excel log into the new database (ids and times are kept)."""
+    from openpyxl import load_workbook
+    wb = load_workbook(xlsx, read_only=True)
     for name, cols in SHEETS.items():
         if name not in wb.sheetnames:
-            ws = wb.create_sheet(name)
-            ws.append(cols)
-        else:                                   # older file without the new columns -> add their headers
-            ws = wb[name]
-            have = [c.value for c in ws[1]]
-            for col in cols[len(have):]:
-                if col not in have:
-                    ws.cell(row=1, column=len(have) + 1, value=col)
-                    have.append(col)
-    return wb
+            continue
+        rows = list(wb[name].iter_rows(values_only=True))
+        if len(rows) < 2:
+            continue
+        header = [h for h in rows[0]]
+        out = []
+        for r in rows[1:]:
+            if not any(v is not None for v in r):
+                continue
+            d = dict(zip(header, r))
+            out.append([_clean(d.get(c)) for c in cols])
+        if out:
+            q = ", ".join(f'"{c}"' for c in cols)
+            con.executemany(f'INSERT OR IGNORE INTO "{name}" ({q}) VALUES ({",".join("?" * len(cols))})', out)
+    wb.close()
+    con.commit()
 
 
-def _next_id(ws):
-    """One more than the biggest id in column A (rows can be deleted, so max_row is not safe any more)."""
-    ids = [r[0] for r in ws.iter_rows(min_row=2, max_col=1, values_only=True) if isinstance(r[0], (int, float))]
-    return int(max(ids)) + 1 if ids else 1
-
-
-_CACHE = {}          # path -> (mtime_ns, {sheet: [row dicts]})  (re-read only when the file changes)
-_Q = queue.Queue()   # page-visit rows waiting to be written by the background thread
-_worker = None
-
-
-def _writer():
-    """Writes queued visit rows in one batch (one load + one save), so a page view never waits for the Excel file."""
-    while True:
-        batch = [_Q.get()]
-        try:
-            while True:
-                batch.append(_Q.get_nowait())
-        except queue.Empty:
-            pass
-        try:
-            by_path = {}
-            for sheet, record, path in batch:
-                by_path.setdefault(path, []).append((sheet, record))
-            for path, items in by_path.items():
-                with _lock:
-                    wb = _open(path)
-                    for sheet, record in items:
-                        ws = wb[sheet]
-                        rec = {"id": _next_id(ws), "time": record.pop("_time"), **record}
-                        ws.append([rec.get(c, "") for c in SHEETS[sheet]])
-                    wb.save(path)
-                    _CACHE.pop(path, None)
-        except Exception as e:            # logging must never break the site
-            print("log writer:", e)
-        finally:
-            for _ in batch:
-                _Q.task_done()
+def _clean(v):
+    """Excel showed an empty cell as nothing; keep that (no empty strings in the database)."""
+    if isinstance(v, str) and v == "":
+        return None
+    if isinstance(v, float) and v.is_integer():
+        return int(v)
+    return v
 
 
 def log_async(sheet: str, record: dict, path=None):
-    """Fire-and-forget append (used for page visits). Returns at once."""
-    global _worker
-    path = path or config.LOGS_XLSX
-    if _worker is None or not _worker.is_alive():
-        _worker = threading.Thread(target=_writer, daemon=True)
-        _worker.start()
-    _Q.put((sheet, {**record, "_time": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}, path))
+    """Append a page-visit row. A SQLite insert takes about a millisecond, so no background thread is needed any more."""
+    try:
+        log_to_excel(sheet, record, path=path)
+    except Exception as e:                                # logging must never break the site
+        print("log writer:", e)
 
 
 def log_to_excel(sheet: str, record: dict, update_id: int = None, path=None) -> int:
     """Append `record` to `sheet` (or update the row whose id == update_id). Returns the row id."""
-    path = path or config.LOGS_XLSX
     cols = SHEETS[sheet]
-    with _lock:
-        wb = _open(path)
-        ws = wb[sheet]
+    con = _connect(path)
+    try:
         if update_id is not None:
-            for row in ws.iter_rows(min_row=2):
-                if row[0].value == update_id:
-                    for key, val in record.items():
-                        if key in cols:
-                            row[cols.index(key)].value = val
-                    break
-            row_id = update_id
-        else:
-            row_id = _next_id(ws)  # first record gets id 1
-            rec = {"id": row_id, "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), **record}
-            ws.append([rec.get(c, "") for c in cols])
-        wb.save(path)
-        _CACHE.pop(path, None)
-    return row_id
+            sets = {k: _clean(v) for k, v in record.items() if k in cols and k != "id"}
+            if sets:
+                con.execute(f'UPDATE "{sheet}" SET ' + ", ".join(f'"{k}"=?' for k in sets) + " WHERE id=?",
+                            [*sets.values(), update_id])
+                con.commit()
+            return update_id
+        rec = {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"), **record}
+        keys = [c for c in cols if c != "id" and c in rec]
+        cur = con.execute(f'INSERT INTO "{sheet}" (' + ", ".join(f'"{k}"' for k in keys) + ") VALUES ("
+                          + ",".join("?" * len(keys)) + ")", [_clean(rec[k]) for k in keys])
+        con.commit()
+        return cur.lastrowid
+    finally:
+        con.close()
 
 
 def read_sheet(sheet: str, path=None):
-    """Read a sheet as a list of dicts (dashboard, mastery replay, home). The file is parsed once per change, not once per call."""
-    path = path or config.LOGS_XLSX
-    if not path.exists():
-        return []
-    if _worker is not None:
-        _Q.join()                                # let pending visit rows reach the file first
-    mt = path.stat().st_mtime_ns
-    hit = _CACHE.get(path)
-    if not hit or hit[0] != mt:
-        wb = load_workbook(path, read_only=True)
-        data = {}
-        for name in wb.sheetnames:
-            rows = list(wb[name].iter_rows(values_only=True))
-            if not rows:
-                data[name] = []
-                continue
-            header = rows[0]
-            out = [dict(zip(header, r)) for r in rows[1:] if any(v is not None for v in r)]
-            for r in out:                        # rows written before multi-course belong to the first course
-                if not r.get("course"):
-                    r["course"] = config.DEFAULT_COURSE
-            data[name] = out
-        wb.close()
-        hit = _CACHE[path] = (mt, data)
-    return [dict(r) for r in hit[1].get(sheet, [])]
+    """Read a sheet as a list of dicts, oldest first (dashboard, mastery replay, home)."""
+    con = _connect(path)
+    try:
+        rows = [dict(r) for r in con.execute(f'SELECT * FROM "{sheet}" ORDER BY id')]
+    finally:
+        con.close()
+    if "course" in SHEETS[sheet]:
+        for r in rows:                                    # rows written before multi-course belong to the first course
+            if not r.get("course"):
+                r["course"] = config.DEFAULT_COURSE
+    return rows
 
 
 def ensure_workbook(path=None):
-    path = path or config.LOGS_XLSX
-    with _lock:
-        _open(path).save(path)
+    """Make sure the database exists (kept under the old name)."""
+    _connect(path).close()
+
+
+ensure_db = ensure_workbook
 
 
 def delete_course_rows(code: str, path=None) -> int:
     """Remove every logged row of one course (questions, answers, visits, feedback, exams). Rows with no course belong to the first one."""
-    path = path or config.LOGS_XLSX
-    if not path.exists():
-        return 0
-    if _worker is not None:
-        _Q.join()
+    con = _connect(path)
     removed = 0
-    with _lock:
-        wb = _open(path)
+    try:
         for name, cols in SHEETS.items():
-            if "course" not in cols:
-                continue
-            ws, ci = wb[name], cols.index("course")
-            gone = [i for i, r in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2)
-                    if ((r[ci] if len(r) > ci else None) or config.DEFAULT_COURSE) == code]
-            for i in reversed(gone):
-                ws.delete_rows(i)
-            removed += len(gone)
-        wb.save(path)
-        _CACHE.pop(path, None)
+            if "course" in cols:
+                removed += con.execute(f'DELETE FROM "{name}" WHERE COALESCE(NULLIF("course",\'\'), ?)=?',
+                                       (config.DEFAULT_COURSE, code)).rowcount
+        con.commit()
+    finally:
+        con.close()
     return removed
 
 
 def delete_student_rows(student_code: str, path=None) -> int:
     """Remove every logged row of one student (questions, answers, visits, feedback, exams, registration)."""
-    path = path or config.LOGS_XLSX
-    if not path.exists():
-        return 0
-    if _worker is not None:
-        _Q.join()
+    con = _connect(path)
     removed = 0
-    with _lock:
-        wb = _open(path)
+    try:
         for name, cols in SHEETS.items():
-            if "student_code" not in cols:
-                continue
-            ws, ci = wb[name], cols.index("student_code")
-            gone = [i for i, r in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2) if (r[ci] if len(r) > ci else None) == student_code]
-            for i in reversed(gone):
-                ws.delete_rows(i)
-            removed += len(gone)
-        wb.save(path)
-        _CACHE.pop(path, None)
+            if "student_code" in cols:
+                removed += con.execute(f'DELETE FROM "{name}" WHERE "student_code"=?', (student_code,)).rowcount
+        con.commit()
+    finally:
+        con.close()
     return removed
+
+
+def export_xlsx(courses=None, path=None):
+    """The whole log as an Excel file in memory (for the Dashboard download). `courses` limits the rows to those courses."""
+    import pandas as pd
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as xw:
+        for sheet, cols in SHEETS.items():
+            rows = read_sheet(sheet, path=path)
+            if courses is not None:                       # a doctor gets only his courses; sheets with no course (Students) stay closed
+                rows = [r for r in rows if r.get("course") in courses]
+            pd.DataFrame(rows, columns=cols).to_excel(xw, sheet_name=sheet, index=False)
+    buf.seek(0)
+    return buf

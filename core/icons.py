@@ -105,6 +105,7 @@ P = {
     "tablet": "M5 3h14v18H5zM11 18h2",
     "monitor": "M3 4h18v12H3zM8 20h8M12 16v4",
     "bot": "M5 8h14v11H5zM12 8V4M9 13h.01M15 13h.01M3 13h2M19 13h2",
+    "send": "M21 3L10 14M21 3l-7 18-4-7-7-4z",
     "wifi": "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01",
     "pin": "M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z",
     "sparkle": "M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.7 2.3L22 19l-2.3.7L19 22l-.7-2.3L16 19l2.3-.7z",
@@ -113,7 +114,7 @@ P = {
 NOTIF = {"exam": "exam", "student": "cap", "security": "shield", "welcome": "sparkle", "badge": "award", "chat": "chat",
          "announce": "mega", "report": "chart", "study": "target", "support": "lifebuoy"}
 
-FLIP = {"arrow", "arrow-l", "back", "next"}       # mirrored on right-to-left pages
+FLIP = {"arrow", "arrow-l", "back", "next", "send"}       # mirrored on right-to-left pages
 
 EMOJI = {
     "→": "arrow", "←": "arrow-l", "↓": "down", "↑": "up",

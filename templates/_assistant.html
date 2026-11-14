@@ -1,0 +1,21 @@
+{# Chat assistant: floating button + small panel. Answers come from POST /assistant (intent router, no AI service). #}
+<button type="button" class="as-fab" id="asFab" aria-label="{{ t('as_title') }}" aria-expanded="false" aria-controls="asPanel" title="{{ t('as_title') }}">{{ icon('bot', 24) }}</button>
+<section class="as-panel" id="asPanel" role="dialog" aria-label="{{ t('as_title') }}" hidden>
+  <header class="as-head">
+    <span class="as-ava">{{ icon('bot', 20) }}</span>
+    <div><b>{{ t('as_title') }}</b><small>{{ t('as_sub') }}</small></div>
+    <button type="button" class="as-x" id="asClose" aria-label="{{ t('close') }}">{{ icon('x', 18) }}</button>
+  </header>
+  <div class="as-log" id="asLog" role="log" aria-live="polite">
+    <div class="as-msg bot">{{ t('as_hello_staff') if is_lecturer else t('as_hello') }}</div>
+  </div>
+  <div class="as-chips" id="asChips">
+    {% for c in (['as_c_dash', 'as_c_exam', 'as_c_up', 'as_c_stu'] if is_lecturer else ['as_c_next', 'as_c_exams', 'as_c_prog', 'as_c_files']) %}<button type="button" class="aud-chip as-chip">{{ t(c) }}</button>{% endfor %}
+  </div>
+  <form class="as-form" id="asForm" autocomplete="off">
+    <input type="text" id="asInput" maxlength="300" placeholder="{{ t('as_ph') }}" aria-label="{{ t('as_ph') }}">
+    <button type="submit" class="as-send" aria-label="{{ t('as_send') }}">{{ icon('send', 18) }}</button>
+  </form>
+</section>
+<script>window.STUDYMATE_AS = {url: "{{ url_for('assistant_api') }}", err: {{ t('as_err')|tojson }}, wait: {{ t('as_wait')|tojson }}, you: {{ t('as_you')|tojson }}};</script>
+<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>

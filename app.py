@@ -1850,19 +1850,9 @@ def dashboard_followup():
 @perm_required("data")
 def download_logs():
     from flask import send_file
-    ensure_workbook()
-    if is_master():
-        return send_file(config.LOGS_XLSX, as_attachment=True, download_name="logs.xlsx")
-    import io
-    mine = {c["code"] for c in visible_courses()}           # a doctor gets only the rows of his own courses
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine="openpyxl") as xw:
-        from core.logger import SHEETS
-        for sheet, cols in SHEETS.items():
-            rows = [r for r in read_sheet(sheet) if r.get("course") in mine]
-            pd.DataFrame(rows, columns=cols).to_excel(xw, sheet_name=sheet, index=False)
-    buf.seek(0)
-    return send_file(buf, as_attachment=True, download_name="logs.xlsx")
+    from core.logger import export_xlsx
+    mine = None if is_master() else {c["code"] for c in visible_courses()}     # a doctor gets only the rows of his own courses
+    return send_file(export_xlsx(mine), as_attachment=True, download_name="logs.xlsx")
 
 
 def courses_of(doctor_id):
@@ -2971,6 +2961,40 @@ def students_export(fmt):
 
 # ------------------------------------------------------------------ Arabic translation of answers (on demand)
 _TR_CACHE = {}
+
+
+# ------------------------------------------------------------------ chat assistant (layer 1: intent router, no AI service)
+@app.route("/assistant", methods=["POST"])
+def assistant_api():
+    """One message in, a short answer plus buttons out. Works for students and for the admin side."""
+    staff = bool(session.get("lecturer"))
+    if not staff and not student():
+        return jsonify(ok=False), 401
+    from core import assistant
+    q = ((request.get_json(silent=True) or {}).get("q") or "").strip()[:300]
+    if not q:
+        return jsonify(ok=False), 400
+
+    def allowed(gate):                                          # the same rules the pages themselves use
+        if not staff:
+            return True
+        return is_main() if gate == "main" else has_perm(gate)
+
+    def next_topic():
+        try:
+            return (topic_panel(my_mastery())[1] or {}).get("name")
+        except Exception:
+            return None
+
+    r = assistant.reply(q, "staff" if staff else "student", allowed, None if staff else next_topic, lang())
+    actions = [{"label": a["label"], "click": a["click"],
+                "url": url_for(a["endpoint"], **a["args"]) if a["endpoint"] else None} for a in r["actions"]]
+    try:
+        log("Assistant", {"student_code": student() or actor(), "question": q, "intent": r["intent"],
+                          "matched": "yes" if r["matched"] else "no"})
+    except Exception:
+        pass
+    return jsonify(ok=True, answer=r["answer"], actions=actions)
 
 
 @app.route("/translate", methods=["POST"])

@@ -57,6 +57,12 @@ def as_student(c, name):
     c.post("/my-courses", data={"course": [config.DEFAULT_COURSE]})
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _temp_logs(tmp_path_factory):
+    """No test ever writes into the real log database (logs.db next to logs.xlsx)."""
+    config.LOGS_XLSX = tmp_path_factory.mktemp("session_logs") / "logs.xlsx"
+
+
 @pytest.fixture(scope="module")
 def client(tmp_path_factory):
     config.LOGS_XLSX = tmp_path_factory.mktemp("logs") / "logs.xlsx"   # never touch the real logs
@@ -983,7 +989,34 @@ def test_delete_course_rows_removes_only_that_course_and_ids_stay_unique(tmp_pat
     assert rows == [] and logger.read_sheet("Answers", path=f) == []
     a = logger.log_to_excel("Questions", {"student_code": "S1", "question": "n", "course": "X1"}, path=f)
     b = logger.log_to_excel("Questions", {"student_code": "S1", "question": "m", "course": "X1"}, path=f)
-    assert (a, b) == (1, 2)
+    assert a > 4 and b == a + 1                      # a deleted row's id is never handed out again
+
+
+def test_logs_move_from_excel_to_sqlite_once_and_export_back(tmp_path):
+    from openpyxl import Workbook
+    from core import logger
+    xl = tmp_path / "logs.xlsx"
+    wb = Workbook(); wb.remove(wb.active)
+    ws = wb.create_sheet("Questions"); ws.append(logger.SHEETS["Questions"])
+    ws.append([7, "2026-01-02 10:00:00", "S1", "what is an agent", "t1", 0.5, "p1", "yes", "tfidf", "", "AI"])
+    ws.append([9, "2026-01-02 10:05:00", "S2", "what is search", "t2", 0.7, "p2", "yes", "tfidf", "yes", ""])
+    wb.create_sheet("Visits").append(logger.SHEETS["Visits"])
+    wb.save(xl)
+    rows = logger.read_sheet("Questions", path=xl)                    # first use: the old file is imported
+    assert [r["id"] for r in rows] == [7, 9] and rows[0]["question"] == "what is an agent" and rows[0]["confidence"] == 0.5
+    assert rows[1]["course"] == config.DEFAULT_COURSE                # an old row with no course = the first course
+    assert logger.log_to_excel("Questions", {"student_code": "S3", "question": "new"}, path=xl) == 10
+    logger.log_to_excel("Questions", {"helpful": "no"}, update_id=7, path=xl)
+    assert logger.read_sheet("Questions", path=xl)[0]["helpful"] == "no"
+    xl.unlink()                                                      # the database keeps working without the old file
+    assert len(logger.read_sheet("Questions", path=xl)) == 3
+    from openpyxl import load_workbook
+    out = load_workbook(logger.export_xlsx(path=xl))
+    assert out["Questions"].max_row == 4 and "Assistant" in out.sheetnames
+    mine = load_workbook(logger.export_xlsx({config.DEFAULT_COURSE}, path=xl))   # a doctor's copy: his courses only
+    assert mine["Questions"].max_row == 4
+    other = load_workbook(logger.export_xlsx({"NOPE"}, path=xl))
+    assert other["Questions"].max_row == 1
 
 
 def test_admin_badges_doctor_scope_notifications_and_student_view(tmp_path):
@@ -1311,7 +1344,9 @@ def test_help_is_public_and_only_staff_add(client):
     anon = A.app.test_client()
     page = anon.get("/help")
     assert page.status_code == 200 and 'name="q_en"' not in page.get_data(as_text=True)
-    assert 'class="help-fab"' in client.get("/studio").get_data(as_text=True)
+    studio = client.get("/studio").get_data(as_text=True)               # signed in: the assistant button takes the place of the "?" button
+    assert 'id="asFab"' in studio and 'class="help-fab"' not in studio
+    assert 'class="help-fab"' in anon.get("/start").get_data(as_text=True)    # a visitor who is not signed in still gets the help button
     assert 'class="help-fab"' in anon.get("/").get_data(as_text=True) or anon.get("/").status_code in (200, 302)
 
 
@@ -1724,3 +1759,48 @@ def test_visitors_page_devices_and_places():
     assert 'href="/visitors"' in adm.get("/overview").get_data(as_text=True)          # the visits card opens the page
     st = A.app.test_client(); as_student(st, "VISX")
     assert st.get("/visitors").status_code == 302
+
+
+# ------------------------------------------------------------------ chat assistant (layer 1: intent router)
+def test_assistant_router_understands_english_arabic_and_franco():
+    from core import assistant as AS
+    pick = lambda t, side="student", **k: AS.reply(t, side, **k)["actions"][0]["endpoint"]
+    assert pick("I need exams") == pick("عايز امتحانات") == pick("3ayez emtehan") == "exams"
+    assert pick("اذاكر ايه") == pick("what should i study next") == "plan_page"
+    assert pick("show my progress") == "progress" and pick("tadreeb") == "practice"
+    assert pick("مشكله في الموقع") is None                                  # opens the support form instead of a page
+    r = AS.reply("what is a heuristic search algorithm", "student")          # a course question goes to the real slide search
+    assert r["intent"] == "ask" and r["actions"][0]["args"]["q"] == "what is a heuristic search algorithm"
+    assert AS.reply("blah qwerty", "student")["intent"] == "ask_fallback" and AS.reply("blah qwerty", "student")["matched"] is False
+    assert AS.reply("hello", "student")["intent"] == "greet" and AS.reply("شكرا", "student")["intent"] == "thanks"
+    assert "الجاي ليك" in AS.reply("اذاكر ايه", "student", nxt=lambda: "Search")["answer"]
+    assert AS.reply("exams", "student")["answer"] != AS.reply("امتحانات", "student")["answer"]        # the answer follows the language typed
+    # the admin side: only pages the person may open
+    only_data = lambda g: g == "data"
+    assert pick("dashboard", "staff", allowed=only_data) == "dashboard"
+    assert AS.reply("create an exam", "staff", allowed=only_data)["intent"] == "none"
+    assert AS.reply("who visited the site", "staff", allowed=lambda g: True)["actions"][0]["endpoint"] == "visitors_page"
+    assert AS.reply("visitors", "staff", allowed=only_data)["intent"] == "none"
+    for it in AS.INTENTS:                                                    # every button points at a real page
+        assert it.get("endpoint") is None or it["endpoint"] in __import__("app").app.view_functions
+
+
+def test_assistant_endpoint_buttons_login_log_and_where_the_button_shows(client):   # `client` only points the logs at a temp folder
+    import app as A, config
+    from core import doctors
+    me = A.app.test_client()                          # its own student: earlier tests may have signed the shared client out
+    as_student(me, "ASSIST1")
+    guest = A.app.test_client()
+    assert guest.post("/assistant", json={"q": "exams"}).status_code == 401
+    assert "asFab" not in guest.get("/start").get_data(as_text=True)
+    r = me.post("/assistant", json={"q": "عايز امتحانات"}).get_json()
+    assert r["ok"] and any(a["url"] == "/exams" for a in r["actions"])
+    assert me.post("/assistant", json={"q": ""}).status_code == 400
+    assert any(x["question"] == "عايز امتحانات" and x["intent"] == "exams" for x in read_sheet("Assistant"))
+    assert "asFab" in me.get("/home").get_data(as_text=True)
+    adm = A.app.test_client()
+    with adm.session_transaction() as ses:
+        ses["lecturer"] = True; ses["admin_id"] = doctors.MASTER
+    r = adm.post("/assistant", json={"q": "who visited the site"}).get_json()
+    assert r["ok"] and r["actions"][0]["url"] == "/visitors"
+    assert "asFab" in adm.get("/overview").get_data(as_text=True)

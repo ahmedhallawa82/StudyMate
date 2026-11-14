@@ -92,4 +92,5 @@ Runtime data (accounts, logs, videos, follow-ups, password hashes) is created on
 * Slide *text* only: pictures inside slides are not searchable yet (the image notebook is the first step).
 * Scanned PDFs rely on OCR and are noisier (e.g. MAM336).
 * Free PythonAnywhere: no outbound internet except an allow-list (so no neural model download, no e-mail API), 512 MB disk, app must be renewed monthly.
-* Excel (`logs.xlsx`) is the log store — fine for a class, not for thousands of users.
+* The log store is SQLite (`logs.db`, one row added per event, safe for many users at the same time). The old `logs.xlsx` is imported once, automatically, the first time the site starts; the Dashboard's “Download logs.xlsx” builds an Excel file from the database.
+* The chat assistant (the round button at the bottom corner) is layer 1: an intent router that needs no AI service. It sends each message to the right page, and course questions to the slide search. Layer 2 (a free LLM) can plug in at `core/assistant.py: fallback()`.

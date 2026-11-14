@@ -10,7 +10,7 @@ The ZIP already contains everything needed to run the project: code, the 7 AI le
 It does **not** contain students, passwords or logs (they are never committed).
 
 ## 2. Never hand over
-`data/students.json`, `data/doctors.json`, `data/admin_auth.json`, `data/models_auth.json`, `logs.xlsx`, `secrets/` (Google key), `.env`, the real values of `LECTURER_PASSWORD` / `SECRET_KEY`, uploaded videos.
+`data/students.json`, `data/doctors.json`, `data/admin_auth.json`, `data/models_auth.json`, `logs.db` (and the old `logs.xlsx`), `secrets/` (Google key), `.env`, the real values of `LECTURER_PASSWORD` / `SECRET_KEY`, uploaded videos.
 
 ## 3. Can someone use the repo?
 Yes: `pip install -r requirements.txt && python app.py`. The repository contains no personal data, e-mails or API keys.
@@ -24,7 +24,7 @@ Everything else (accounts, logs, courses uploaded later) is created by the runni
 ## 5. Giving / selling it to an organisation
 Give: the repo ZIP, `docs/DEPLOY.md`, README, the notebooks, a licence of your choice (the repo has none yet → all rights reserved by default).
 They run it with: their own server (Linux/Docker, `gunicorn app:app` behind HTTPS), their own passwords and e-mail provider, their own courses uploaded by their doctors from the Admin page.
-They should: change the default passwords, back up `data/` and `logs.xlsx`, and for more than a few hundred users move the Excel log to a database.
+They should: change the default passwords, back up `data/` and `logs.db` (copy it with `sqlite3 logs.db ".backup backup.db"`), and for more than a few hundred users move to PostgreSQL.
 
 ## 6. Private repository
 * The website keeps running (the code is already copied on PythonAnywhere).

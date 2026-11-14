@@ -24,7 +24,9 @@ python3 -m venv venv && . venv/bin/activate && pip install -r requirements.txt
 export LECTURER_PASSWORD=...  SECRET_KEY=...
 gunicorn -w 2 -b 0.0.0.0:8000 app:app        # put nginx + HTTPS (Let's Encrypt) in front
 ```
-Keep `data/`, `models/` and `logs.xlsx` on a persistent disk and back them up (they hold accounts, logs, uploaded videos).
+Keep `data/`, `models/` and `logs.db` on a persistent disk and back them up (they hold accounts, logs, uploaded videos).
+
+**First start after the SQLite update:** the site creates `logs.db` and copies everything from the old `logs.xlsx` into it once (nothing is lost; keep `logs.xlsx` as a backup). Nothing else to do.
 
 ## C) Render
 `render.yaml` is included (see `deploy/DEPLOY_RENDER.md`). Free instances sleep and lose the disk on restart — attach a disk.

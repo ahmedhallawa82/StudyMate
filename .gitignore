@@ -18,6 +18,9 @@ data/admin_auth.json
 data/chat.json
 
 logs.xlsx
+logs.db
+logs.db-wal
+logs.db-shm
 data/faq.json
 data/followups.json
 data/models_auth.json

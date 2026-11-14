@@ -37,7 +37,7 @@ CATS = {
                   "data/*/videos", "data/*/videos.json", "models", "static/reports"],
     "exams":     ["data/*/exams"],
     "chat":      ["data/chat.json", "data/chat_files"],
-    "logs":      ["logs.xlsx", "data/audit.jsonl", "data/weekly_sent.json"],
+    "logs":      ["logs.xlsx", "logs.db", "logs.db-wal", "logs.db-shm", "data/audit.jsonl", "data/weekly_sent.json"],
     "notices":   ["data/notifications.json", "data/announcements.json", "data/schedule.json", "data/badges.json",
                   "data/custom_badges.json", "data/support.json", "data/faq.json"],
     "uploads":   ["data/uploads", "data/avatars", "data/chat_files", "data/profiles.json"],
