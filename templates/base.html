@@ -82,6 +82,7 @@
   </div>
 </header>
 <main>
+  {% if wipe_pending %}<a class="wp-banner" href="{{ url_for('vault_danger') }}">⏳ {{ t('wp_banner', d=wipe_pending.due_text) }} — <b>{{ t('wp_cancel') }}</b></a>{% endif %}
   {% with msgs = get_flashed_messages() %}{% for m in msgs %}<div class="flash">{{ m }}</div>{% endfor %}{% endwith %}
   {% if student_code and not is_lecturer and path.startswith(('/practice', '/progress', '/exams', '/materials')) %}
   <a class="st-back" href="{{ url_for('studio') }}">← {{ t('nav_studio') }}</a>

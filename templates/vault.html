@@ -53,6 +53,7 @@
     </tbody>
   </table></div>
 </section>
+<a class="card wp-link" href="{{ url_for('vault_danger') }}" style="margin-top:14px"><b>⚠️ {{ t('wp_title') }}</b><small>{{ t('wp_link_sub') }}</small><span>→</span></a>
 <details class="card" style="margin-top:14px"><summary><b>🔑 {{ t('vlt_change_pw') }}</b></summary>
   <form method="post" action="{{ url_for('vault_password') }}" class="stack" style="max-width:420px;margin-top:10px">
     <input type="password" name="old" placeholder="{{ t('vlt_pw_current') }}" required autocomplete="current-password">

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% from "_ui.html" import page_head %}
+{% block title %}{{ t('wp_title') }}{% endblock %}
+{% block content %}
+{{ page_head('⚠️', t('wp_title'), t('wp_sub')) }}
+<p style="margin:-6px 0 14px"><a href="{{ url_for('vault_page') }}">← {{ t('vlt_title') }}</a></p>
+
+{% if closed %}
+<section class="card wp-card wp-closed">
+  <h2>⛔ {{ t('wp_closed_now') }}</h2>
+  <p class="muted">{{ t('wp_closed_sub') }}</p>
+  <form method="post" action="{{ url_for('vault_reopen') }}"><button class="btn" type="submit">{{ t('wp_reopen') }}</button></form>
+</section>
+{% endif %}
+
+{% if pending %}
+<section class="card wp-card wp-pending">
+  <h2>⏳ {{ t('wp_pending_t') }}</h2>
+  <p>{{ t('wp_pending_b', d=pending.due_text) }}</p>
+  <p class="wp-clock" data-left="{{ pending.left }}">--:--:--</p>
+  <p class="small"><b>{{ t('wp_what') }}:</b> {% for c in pending.cats %}<span class="tag">{{ t('wp_c_' ~ c) }}</span> {% endfor %}</p>
+  <p class="muted small">{{ t('wp_pending_hint') }}</p>
+  <form method="post"><input type="hidden" name="action" value="cancel"><button class="btn wp-cancel" type="submit">✋ {{ t('wp_cancel') }}</button></form>
+</section>
+
+{% elif not code_set %}
+<section class="card wp-card">
+  <h2>🔑 {{ t('wp_setcode_t') }}</h2>
+  <p class="muted">{{ t('wp_setcode_sub', n=8) }}</p>
+  <form method="post" class="stack" style="max-width:440px">
+    <input type="hidden" name="action" value="setcode">
+    <input type="password" name="vault_pw" placeholder="{{ t('vlt_pw_current') }}" required autocomplete="current-password">
+    <input type="password" name="code" placeholder="{{ t('wp_code_new') }}" required minlength="8" autocomplete="new-password">
+    <input type="password" name="code2" placeholder="{{ t('wp_code_again') }}" required minlength="8" autocomplete="new-password">
+    <button class="btn" type="submit">{{ t('save') }}</button>
+  </form>
+</section>
+
+{% elif st.stage == 'choose' %}
+<ol class="wp-steps"><li class="done">{{ t('wp_s1') }}</li><li class="on">{{ t('wp_s2') }}</li><li>{{ t('wp_s3') }}</li><li>{{ t('wp_s4') }}</li></ol>
+<section class="card wp-card">
+  <h2>{{ t('wp_choose_t') }}</h2>
+  <form method="post" id="wpChoose">
+    <input type="hidden" name="action" value="choose">
+    <label class="wp-opt wp-all"><input type="checkbox" name="cats" value="everything" id="wpAll"> <span><b>💣 {{ t('wp_c_everything') }}</b><small>{{ t('wp_d_everything') }}</small></span></label>
+    <div class="wp-grid">
+    {% for c in cats %}<label class="wp-opt"><input type="checkbox" name="cats" value="{{ c }}" class="wp-one"> <span><b>{{ t('wp_c_' ~ c) }}</b><small>{{ t('wp_d_' ~ c) }}</small></span></label>{% endfor %}
+    </div>
+    <p style="margin-top:14px"><button class="btn wp-red" type="submit">{{ t('wp_next') }} →</button></p>
+  </form>
+  <form method="post"><input type="hidden" name="action" value="back"><button class="btn ghost small" type="submit">{{ t('wp_stop') }}</button></form>
+</section>
+
+{% elif st.stage == 'confirm' %}
+<ol class="wp-steps"><li class="done">{{ t('wp_s1') }}</li><li class="done">{{ t('wp_s2') }}</li><li class="on">{{ t('wp_s3') }}</li><li>{{ t('wp_s4') }}</li></ol>
+<section class="card wp-card wp-warn">
+  <h2>⚠️ {{ t('wp_warn_t') }}</h2>
+  <p>{{ t('wp_warn_b') }}</p>
+  <p><b>{{ t('wp_what') }}:</b> {% for c in st.cats %}<span class="tag">{{ t('wp_c_' ~ c) }}</span> {% endfor %}</p>
+  <form method="post" class="stack" style="max-width:480px" id="wpConfirm">
+    <input type="hidden" name="action" value="confirm">
+    <input type="hidden" name="agree" value="" id="wpAgreeVal">
+    <button type="button" class="btn wp-red" id="wpAgree" disabled data-left="{{ left }}">{{ t('wp_agree') }} (<span>{{ left }}</span>)</button>
+    <div id="wpAfter" hidden class="stack">
+      <label>{{ t('wp_delay') }}</label>
+      <div class="wp-delay">{% for h in [3, 24] %}<label><input type="radio" name="delay" value="{{ h }}" {{ 'checked' if h == 24 }}> {{ t('wp_after_h', h=h) }}</label>{% endfor %}</div>
+      <input type="password" name="code" placeholder="{{ t('wp_code') }}" required autocomplete="off">
+      <button class="btn wp-red" type="submit">🗑 {{ t('wp_final') }}</button>
+    </div>
+  </form>
+  <form method="post" style="margin-top:10px"><input type="hidden" name="action" value="back"><button class="btn ghost small" type="submit">{{ t('wp_stop') }}</button></form>
+</section>
+
+{% else %}
+<ol class="wp-steps"><li class="on">{{ t('wp_s1') }}</li><li>{{ t('wp_s2') }}</li><li>{{ t('wp_s3') }}</li><li>{{ t('wp_s4') }}</li></ol>
+<section class="card wp-card">
+  <h2>{{ t('wp_phrase_t') }}</h2>
+  <p class="muted">{{ t('wp_phrase_sub') }}</p>
+  <p class="small">{% for p in phrases[:3] %}<code dir="ltr">{{ p }}</code> {% endfor %}· <code dir="rtl">{{ phrases[5] }}</code></p>
+  <form method="post" class="inline" style="max-width:560px">
+    <input type="hidden" name="action" value="phrase">
+    <input type="text" name="phrase" required autocomplete="off" dir="auto" placeholder="delete all data">
+    <button class="btn wp-red" type="submit">{{ t('wp_next') }} →</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var all = document.getElementById('wpAll');            // "everything" ticks every box
+  if (all) all.addEventListener('change', function () { document.querySelectorAll('.wp-one').forEach(function (c) { c.checked = all.checked; c.disabled = all.checked; }); });
+  var b = document.getElementById('wpAgree');             // the agree button wakes up after the countdown
+  if (b) {
+    var n = +b.dataset.left, s = b.querySelector('span');
+    var tick = function () { if (n <= 0) { b.disabled = false; s.textContent = '✓'; return; } s.textContent = n; n -= 1; setTimeout(tick, 1000); };
+    tick();
+    b.addEventListener('click', function () { document.getElementById('wpAgreeVal').value = '1'; b.hidden = true; document.getElementById('wpAfter').hidden = false; });
+  }
+  var c = document.querySelector('.wp-clock');           // time left before the deletion
+  if (c) { var left = +c.dataset.left; var f = function () { var h = Math.floor(left / 3600), m = Math.floor(left % 3600 / 60), x = left % 60;
+    c.textContent = [h, m, x].map(function (v) { return String(v).padStart(2, '0'); }).join(':'); if (left > 0) { left -= 1; setTimeout(f, 1000); } }; f(); }
+})();
+</script>
+{% endblock %}

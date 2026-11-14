@@ -15,7 +15,7 @@ from markupsafe import Markup
 from werkzeug.utils import secure_filename
 
 import config
-from core import photoq, uploads, vault
+from core import photoq, uploads, vault, wipe
 from core import doctor_requests, bookmarks, audit, announce, plan as planlib, doctors, sheet_sync, students, mailer, notify, profiles, support, passgen, badges, catalog, custom_badges, adminpw, chat
 from core import studio as STU
 from core import accountdel
@@ -263,7 +263,29 @@ def remove_course_files(code):
 
 OPEN_WITHOUT_COURSES = {"static", "start", "register", "register_student", "register_doctor", "forgot", "logout", "lecturer_login", "lecturer_logout", "admin", "support_send",
                         "support_inbox", "staff_home", "doctors_page", "export_doctors", "students_page", "students_export", "export_students",
-                        "profile", "avatar", "notifications_page", "notifications_read", "generate_password", "download_logs", "course_codes_template"}
+                        "profile", "avatar", "notifications_page", "notifications_read", "generate_password", "download_logs", "course_codes_template",
+                        "vault_page", "vault_lock", "vault_password", "vault_user", "vault_reset", "vault_file", "vault_all_xlsx", "vault_user_xlsx",
+                        "vault_danger", "vault_reopen"}
+WIPE_OPEN = {"static", "lecturer_login", "lecturer_logout", "start"}
+
+
+@app.before_request
+def _wipe_guard():
+    """A scheduled deletion runs on the first request after its time; a closed site shows one page to everybody but the main admin."""
+    if wipe.due():
+        n = wipe.execute()
+        print("scheduled deletion done:", n, "items")
+        _clear_caches_after_wipe()
+    if wipe.closed() and request.endpoint not in WIPE_OPEN and not (session.get("lecturer") and is_main()):
+        return render_template("site_closed.html"), 503
+    return None
+
+
+def _clear_caches_after_wipe():
+    try:
+        STATE.clear()
+    except Exception:                                            # noqa: BLE001
+        pass
 
 
 @app.url_defaults
@@ -414,6 +436,14 @@ def quick_links():
             add("👤", "nav_profile", "profile", "profile password حسابي")
         add("❓", "nav_help", "help_page", "help faq مساعدة")
     return items
+
+
+@app.context_processor
+def _wipe_banner():
+    try:
+        return {"wipe_pending": wipe.pending() if session.get("lecturer") and is_main() else None}
+    except Exception:                                            # noqa: BLE001
+        return {"wipe_pending": None}
 
 
 @app.context_processor
@@ -2641,6 +2671,75 @@ def vault_page():
 def vault_lock():
     session.pop("vault_at", None)
     return redirect(url_for("profile"))
+
+
+@app.route("/vault/danger", methods=["GET", "POST"])
+@vault_required
+def vault_danger():
+    """Delete the site's data in steps: sentence -> what -> 10-second warning -> security code -> scheduled (cancellable)."""
+    import time as _t
+    st = session.get("wipe") or {}
+    if request.method == "POST":
+        a, f = request.form.get("action", ""), request.form
+        if a == "setcode":
+            if not vault.verify(f.get("vault_pw", "")):
+                flash_t("mdl_wrong")
+            elif f.get("code", "") != f.get("code2", ""):
+                flash_t("wp_code_mismatch")
+            else:
+                err = wipe.set_code(f.get("code", ""))
+                if not err:
+                    audit.record(actor(), "wipe_code_set")
+                flash_t(err or "wp_code_saved", n=wipe.MIN_CODE)
+            st = {}
+        elif a == "cancel":
+            if wipe.cancel():
+                audit.record(actor(), "wipe_cancelled")
+                notify.push(["d:" + doctors.MASTER], "security", tr("wp_cancel_note", lang()), "", url_for("vault_danger"))
+                flash_t("wp_cancelled")
+            st = {}
+        elif a == "back":
+            st = {}
+        elif a == "phrase":
+            if wipe.phrase_ok(f.get("phrase", "")):
+                st = {"stage": "choose"}
+            else:
+                flash_t("wp_phrase_bad")
+        elif a == "choose" and st.get("stage") == "choose":
+            cats = [c for c in f.getlist("cats") if c in wipe.CATS or c == "everything"]
+            if cats:
+                st = {"stage": "confirm", "cats": cats, "t0": _t.time()}
+            else:
+                flash_t("wp_choose_one")
+        elif a == "confirm" and st.get("stage") == "confirm":
+            if _t.time() - st.get("t0", 0) < wipe.COUNTDOWN:
+                flash_t("wp_too_fast")
+            elif f.get("agree") != "1":
+                flash_t("wp_agree_first")
+            elif not wipe.check_code(f.get("code", "")):
+                audit.record(actor(), "wipe_wrong_code")
+                flash_t("wp_code_wrong")
+            else:
+                h = int(f.get("delay", "24") or 24)
+                rec = wipe.schedule(st["cats"], h if h in wipe.DELAYS else 24, actor())
+                audit.record(actor(), "wipe_scheduled", ", ".join(rec["cats"]) + f" in {rec['delay_h']}h")
+                notify.push(["d:" + doctors.MASTER], "security", tr("wp_sched_note", lang(), h=rec["delay_h"]), "", url_for("vault_danger"))
+                flash_t("wp_scheduled", h=rec["delay_h"])
+                st = {}
+        session["wipe"] = st
+        return redirect(url_for("vault_danger"))
+    left = max(0, int(wipe.COUNTDOWN - (_t.time() - st.get("t0", 0)))) if st.get("stage") == "confirm" else 0
+    return render_template("vault_danger.html", st=st, left=left, pending=wipe.pending(), code_set=wipe.code_set(),
+                           cats=wipe.ORDER, phrases=wipe.PHRASES, closed=wipe.closed())
+
+
+@app.route("/vault/reopen", methods=["POST"])
+@vault_required
+def vault_reopen():
+    wipe.reopen()
+    audit.record(actor(), "site_reopened")
+    flash_t("wp_reopened")
+    return redirect(url_for("vault_danger"))
 
 
 @app.route("/vault/password", methods=["POST"])

@@ -34,3 +34,7 @@ data/bookmarks.json
 data/doctor_requests.json
 data/uploads/
 data/vault_auth.json
+data/wipe_pending.json
+data/wipe_auth.json
+data/site_closed.json
+data/wipe_log.jsonl

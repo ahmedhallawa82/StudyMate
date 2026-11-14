@@ -249,3 +249,23 @@ html, body { overflow-x: clip; }
   .vlt-head { gap: 12px; } .vlt-av { width: 60px; height: 60px; } .vlt-av.ph { font-size: 24px; }
   .vlt-id h1 { font-size: 20px; } .vlt-actions { width: 100%; } .vlt-actions .btn { flex: 1; justify-content: center; font-size: 14px; padding: 8px 10px; }
 }
+
+/* ---- danger zone ---- */
+.wp-banner { display: block; margin: 0 0 12px; padding: 10px 16px; border-radius: 12px; background: #b4232c; color: #fff !important; text-decoration: none; font-weight: 600; }
+.wp-link { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; border: 1.5px solid #f2b8bc; }
+.wp-link b { color: #b4232c; } .wp-link small { flex: 1; color: var(--muted); } .wp-link span { color: #b4232c; font-weight: 700; }
+.wp-card { max-width: 860px; } .wp-warn { border: 2px solid #e08a3c; } .wp-pending { border: 2px solid #b4232c; } .wp-closed { border: 2px solid #555; }
+.wp-steps { display: flex; gap: 8px; flex-wrap: wrap; list-style: none; padding: 0; margin: 0 0 14px; counter-reset: s; }
+.wp-steps li { counter-increment: s; padding: 6px 12px; border-radius: 999px; background: var(--card, #fff); border: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
+.wp-steps li::before { content: counter(s) " · "; font-weight: 700; }
+.wp-steps li.on { background: #b4232c; color: #fff; border-color: #b4232c; } .wp-steps li.done { color: #1f7a4d; border-color: #9ad3b5; }
+.wp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 10px; }
+.wp-opt { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--line); border-radius: 12px; cursor: pointer; }
+.wp-opt span { display: flex; flex-direction: column; } .wp-opt small { color: var(--muted); font-size: 13px; }
+.wp-opt:has(input:checked) { border-color: #b4232c; background: rgba(180,35,44,.06); }
+.wp-all { border: 1.5px dashed #b4232c; }
+.btn.wp-red { background: #b4232c; border-color: #b4232c; color: #fff; } .btn.wp-red:disabled { opacity: .45; cursor: not-allowed; }
+.btn.wp-cancel { background: #1f7a4d; border-color: #1f7a4d; color: #fff; font-size: 17px; padding: 12px 22px; }
+.wp-clock { font-size: 34px; font-weight: 700; letter-spacing: .05em; color: #b4232c; margin: 4px 0 8px; font-variant-numeric: tabular-nums; direction: ltr; text-align: start; }
+.wp-delay { display: flex; gap: 16px; }
+.wp-delay label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; } .wp-delay input { width: auto; margin: 0; }

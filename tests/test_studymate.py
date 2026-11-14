@@ -1655,3 +1655,47 @@ def test_data_vault_main_admin_only(client, tmp_path):
     assert adm.get(f"/vault?course={config.DEFAULT_COURSE}").status_code == 200
     assert adm.get(f"/vault/x/s:{code}.xlsx").status_code == 200 and adm.get("/vault/all.xlsx").status_code == 200
     assert adm.get("/vault/file/upload/../../config.py").status_code == 404
+
+
+def test_wipe_flow_and_execute(client, tmp_path):
+    """Danger zone: sentence -> choose -> 10 s -> code -> scheduled (cancellable); execute() deletes only the chosen parts."""
+    import app as A, time as _t, json as _j
+    from core import wipe, vault
+    for name in ("PENDING", "AUTH", "CLOSED"):
+        setattr(wipe, name, (lambda n: (lambda: tmp_path / f"{n}.json"))(name))
+    adm = A.app.test_client()
+    with adm.session_transaction() as ss:
+        ss["lecturer"], ss["admin_id"], ss["admin_name"], ss["vault_at"] = True, "master", "", _t.time()
+    vault.verify = lambda pw: pw == "vault-pass-1"
+    assert "wp_code_new" not in adm.get("/vault/danger").get_data(as_text=True)
+    adm.post("/vault/danger", data={"action": "setcode", "vault_pw": "vault-pass-1", "code": "Secret-123", "code2": "Secret-123"})
+    assert wipe.code_set()
+    adm.post("/vault/danger", data={"action": "phrase", "phrase": "hello"})
+    assert "wp-grid" not in adm.get("/vault/danger").get_data(as_text=True)          # wrong sentence: still step 1
+    adm.post("/vault/danger", data={"action": "phrase", "phrase": "Delete All Data"})
+    assert "wp-grid" in adm.get("/vault/danger").get_data(as_text=True)
+    adm.post("/vault/danger", data={"action": "choose", "cats": ["chat", "logs"]})
+    adm.post("/vault/danger", data={"action": "confirm", "agree": "1", "code": "Secret-123", "delay": "3"})
+    assert wipe.pending() is None                                                    # too fast: the 10-second countdown
+    with adm.session_transaction() as ss:
+        w = ss["wipe"]; w["t0"] -= 11; ss["wipe"] = w
+    adm.post("/vault/danger", data={"action": "confirm", "agree": "1", "code": "wrong-code", "delay": "3"})
+    assert wipe.pending() is None                                                    # wrong security code
+    adm.post("/vault/danger", data={"action": "confirm", "agree": "1", "code": "Secret-123", "delay": "3"})
+    p = wipe.pending()
+    assert p and p["cats"] == ["chat", "logs"] and 3 * 3600 - 60 < p["left"] <= 3 * 3600
+    assert "wp-banner" in adm.get("/overview").get_data(as_text=True)               # the admin sees the red banner
+    adm.post("/vault/danger", data={"action": "cancel"})
+    assert wipe.pending() is None
+    # execute on a fake project folder
+    base = tmp_path / "site"
+    for f in ("data/chat.json", "data/chat_files/a.png", "logs.xlsx", "data/students.json", "data/AI/lectures/l1.pdf"):
+        (base / f).parent.mkdir(parents=True, exist_ok=True); (base / f).write_text("x")
+    wipe.schedule(["chat", "logs"], 3, "t")
+    wipe.execute(base=base)
+    assert not (base / "data/chat.json").exists() and not (base / "logs.xlsx").exists() and not (base / "data/chat_files").exists()
+    assert (base / "data/students.json").exists() and (base / "data/AI/lectures/l1.pdf").exists() and not wipe.closed()
+    wipe.schedule(["everything"], 24, "t")
+    wipe.execute(base=base)
+    assert not (base / "data/students.json").exists() and not (base / "data/AI/lectures").exists() and wipe.closed()
+    wipe.reopen()
