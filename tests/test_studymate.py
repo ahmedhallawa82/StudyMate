@@ -1120,7 +1120,8 @@ def test_opening_the_site_link_from_outside_always_asks_for_a_sign_in():
     r = c.get("/", headers={"Sec-Fetch-Site": "none"})
     assert r.status_code == 302 and "/start" in r.headers["Location"]
     assert c.get("/home").status_code == 302                    # really signed out
-    assert "sign in to enter" in c.get("/start").get_data(as_text=True)
+    assert "username (or e-mail) and password" not in c.get("/start").get_data(as_text=True)   # no message just for opening the page
+    assert "username (or e-mail) and password" in c.post("/start", data={"username": "", "password": ""}).get_data(as_text=True)
     # same without the modern header: no Referer = from outside, own Referer = inside
     as_student(c, "LINK1")
     assert c.get("/", headers={"Referer": "http://localhost/home"}).headers["Location"].endswith("/home")

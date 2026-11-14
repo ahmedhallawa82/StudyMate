@@ -8,9 +8,9 @@
     <p class="muted">{{ t('auth_sub') }}</p>
     <form method="post">
       <label class="small" for="username">{{ t('username_or_email') }}</label>
-      <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username" required>
+      <input type="text" id="username" name="username" autofocus maxlength="120" dir="ltr" autocomplete="username">
       <label class="small" for="password" style="margin-top:12px">{{ t('password') }}</label>
-      <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password" required>
+      <input type="password" id="password" name="password" dir="ltr" autocomplete="current-password">
       <p class="auth-caps" id="capsNote" hidden>{{ icon('alert') }}{{ t('caps_on') }}</p>
       <div class="auth-row">
         <label class="small"><input type="checkbox" name="remember" value="1"> {{ t('remember') }}</label>

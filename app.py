@@ -519,8 +519,8 @@ def handle_login(default_next):
     if _locked(key):
         g.login_alert = {"kind": "locked", "left": 0, "ident": key}
         return None
-    if not (request.form.get("password") or "").strip():
-        flash_t("login_empty")
+    if not (request.form.get("password") or "").strip():           # nothing typed: ask for both; only the password missing: ask for it
+        flash_t("login_required" if not (request.form.get("username") or "").strip() else "login_empty")
         return None
     got = try_login(request.form.get("username", ""), request.form.get("password", ""))
     if not got:
@@ -668,7 +668,6 @@ def home():
         keep = {k: session[k] for k in ("lang", "theme", "mode") if k in session}          # a shared link always asks for a sign-in
         session.clear()
         session.update(keep)
-        flash_t("login_required")
         return redirect(url_for("start"))
     if session.get("lecturer"):
         return redirect(url_for("staff_home"))
